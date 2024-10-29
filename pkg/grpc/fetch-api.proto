@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+option go_package = "github.com/DIMO-Network/model-garage/pkg/grpc";
+
+package grpc;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// Define the service
+service IndexRepoService {
+  // GetLatestFileName returns the latest filename for the given options
+  rpc GetLatestFileName (GetLatestFileNameRequest) returns (GetLatestFileNameResponse);
+
+  // GetFileNames fetches and returns the list of filenames that match the specified options,
+  rpc GetFileNames (GetFileNamesRequest) returns (GetFileNamesResponse);
+
+  // GetLatestData fetches and returns the latest file that matches the specified options
+  rpc GetLatestFile (GetLatestFileRequest) returns (GetLatestFileResponse);
+
+  // GetFiles fetches and returns the list of files that match the specified options
+  rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
+
+}
+
+// Define the SearchOptions message, which provides filtering options
+// to narrow down the search results for cloud events based on various criteria.
+message SearchOptions {
+  google.protobuf.Timestamp after = 1; // Only include events after this timestamp.
+  google.protobuf.Timestamp before = 2; // Only include events before this timestamp.
+  google.protobuf.BoolValue timestamp_asc = 3; // Whether to sort results in ascending order by timestamp.
+  google.protobuf.StringValue primary_filler = 4; // Primary filler value used to filter events.
+  google.protobuf.StringValue data_type = 5; // Data type to filter events (e.g., temperature, humidity).
+  google.protobuf.StringValue subject = 6; // The subject NFT to filter events related to a specific token.
+  google.protobuf.StringValue secondary_filler = 7; // Secondary filler value used to filter events.
+  google.protobuf.StringValue source = 8; // The source identifier responsible for creating the data.
+  google.protobuf.StringValue producer = 9; // The producer of the data, represented as an NFTDID.
+  google.protobuf.StringValue optional = 10; // Additional optional metadata for more precise filtering.
+}
+
+// Define the Index message, which contains the index information for cloud events
+// that can be used to store or retrieve data related to specific NFTs.
+message Index {
+  google.protobuf.Timestamp timestamp = 1; // The timestamp indicating when the cloud event was created.
+  string primary_filler = 2; // Primary filler value used to categorize the event.
+  string data_type = 3; // The type of data this event represents.
+  google.protobuf.StringValue subject = 4; // The subject NFT associated with this event.
+  string secondary_filler = 5; // Secondary filler value used to further categorize the event.
+  string source = 6; // The identifier of the source that created this data.
+  google.protobuf.StringValue producer = 7; // The producer of the data, represented as an NFTDID.
+  string optional = 8; // Optional metadata associated with the event.
+}
+
+message GetLatestFileNameRequest {
+  SearchOptions options = 1; // Search options to filter the events.
+}
+message GetLatestFileNameResponse {
+  string filename = 1; // The latest filename retrieved for the specified search criteria.
+}
+
+message GetFileNamesRequest{
+  SearchOptions options = 1; // Search options to filter the events.
+  int32 limit = 2; // The maximum number of filenames to return.
+}
+message GetFileNamesResponse{
+  repeated string filenames = 1; // The latest filename retrieved for the specified search criteria.
+}
+
+
+// Request and response messages for fetching the latest cloud event data.
+message GetLatestFileRequest {
+  SearchOptions options = 1; // Search options to filter the events.
+}
+message GetLatestFileResponse {
+  bytes data = 1; // The data retrieved from the latest cloud event.
+}
+
+message GetFilesRequest {
+  SearchOptions options = 1; // Search options to filter the events.
+  int32 limit = 2; // The maximum number of cloud events to return.
+}
+message GetFilesResponse {
+  repeated bytes data = 1; // The list of data retrieved from the cloud events.
+}

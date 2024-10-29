@@ -1,0 +1,25 @@
+name: test
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    # Condition to skip merge commits
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+
+    name: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: mod verify
+        run: go mod verify
+
+      - name: Run Tests
+        run: make test
