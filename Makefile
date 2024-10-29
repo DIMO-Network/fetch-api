@@ -93,7 +93,7 @@ tools-swagger: ## install swagger tool
 
 tools: tools-golangci-lint tools-swagger tools-protoc tools-protoc-gen-go tools-protoc-gen-go-grpc  ## Install all tools
 
-generate: go-generate grpc-generate ## run all file generation for the project
+generate: go-generate generate-grpc generate-swagger ## run all file generation for the project
 
 go-generate:## run go generate
 	@go generate ./...

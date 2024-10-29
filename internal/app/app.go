@@ -7,9 +7,13 @@ import (
 	"strings"
 
 	"github.com/DIMO-Network/fetch-api/internal/config"
+	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/DIMO-Network/fetch-api/pkg/grpc/auth"
 	"github.com/DIMO-Network/shared/middleware/metrics"
+	"github.com/DIMO-Network/shared/privileges"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -31,10 +35,10 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 		DisableStartupMessage: true,
 	})
 
-	// 	jwtAuth := jwtware.New(jwtware.Config{
-	// 		JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
-	// 		Claims:     &privilegetoken.Token{},
-	// 	})
+	// jwtAuth := jwtware.New(jwtware.Config{
+	// 	JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
+	// 	Claims:     &privilegetoken.Token{},
+	// })
 
 	app.Use(recover.New(recover.Config{
 		Next:              nil,
@@ -51,6 +55,24 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 		StatusCode: http.StatusMovedPermanently,
 	}))
 	app.Get("/swagger/*", swagger.HandlerDefault)
+
+	// API v1 routes
+	v1 := app.Group("/v1")
+
+	permCheckMiddleware := auth.AllOf(common.HexToAddress("0x0"), []privileges.Privilege{privileges.Privilege(255)})
+	chConn, err := chClientFromSettings(settings)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
+	}
+
+	s3Client := s3ClientFromSettings(settings)
+
+	h := httphandler.NewHandler(chConn, s3Client, settings.CloudEventBucket, settings.CloudEventBucket)
+	// File endpoints
+	v1.Post("/latest-filename", h.GetLatestFileName)
+	v1.Post("/filenames", h.GetFileNames)
+	v1.Post("/files", h.GetFiles)
+	v1.Post("/latest-file", h.GetLatestFile)
 
 	return app, nil
 }

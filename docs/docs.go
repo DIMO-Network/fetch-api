@@ -38,6 +38,331 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/filenames": {
+            "post": {
+                "description": "Retrieves a list of filenames that match the provided search options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get multiple filenames based on search criteria",
+                "parameters": [
+                    {
+                        "description": "Search criteria and limit for finding files",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns list of filenames",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/files": {
+            "post": {
+                "description": "Retrieves the content of multiple files that match the provided search options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get multiple files based on search criteria",
+                "parameters": [
+                    {
+                        "description": "Search criteria and limit for finding files",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns file data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/latest-file": {
+            "post": {
+                "description": "Retrieves the content of the most recent file that matches the provided search options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get the latest file based on search criteria",
+                "parameters": [
+                    {
+                        "description": "Search criteria for finding the latest file",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/indexrepo.SearchOptions"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns latest file data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                    "type": "integer"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/latest-filename": {
+            "post": {
+                "description": "Retrieves the most recent filename that matches the provided search options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get the latest filename based on search criteria",
+                "parameters": [
+                    {
+                        "description": "Search criteria for finding the latest file",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/indexrepo.SearchOptions"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns the latest filename",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "indexrepo.SearchOptions": {
+            "type": "object",
+            "properties": {
+                "after": {
+                    "description": "After if set only files after this time are returned.",
+                    "type": "string"
+                },
+                "before": {
+                    "description": "Before if set only files before this time are returned.",
+                    "type": "string"
+                },
+                "dataType": {
+                    "description": "DataType if set only files for this data type are returned.",
+                    "type": "string"
+                },
+                "optional": {
+                    "description": "Optional is the optional data for additional metadata.",
+                    "type": "string"
+                },
+                "primaryFiller": {
+                    "description": "PrimaryFiller if set only files for this primary filler are returned.",
+                    "type": "string"
+                },
+                "producer": {
+                    "description": "Producer is the specific source entity that created the data.",
+                    "type": "string"
+                },
+                "secondaryFiller": {
+                    "description": "SecondaryFiller if set only files for this secondary filler are returned.",
+                    "type": "string"
+                },
+                "source": {
+                    "description": "Source is the party responsible for creating the data.",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Subject if set only files for this subject are returned.",
+                    "type": "string"
+                },
+                "timestampAsc": {
+                    "description": "TimestampAsc if set files are queried and returned in ascending order by timestamp.\nThis option is not applied for the latest file query.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_fetch_httphandler.SearchOptionsWithLimit": {
+            "type": "object",
+            "properties": {
+                "after": {
+                    "description": "After if set only files after this time are returned.",
+                    "type": "string"
+                },
+                "before": {
+                    "description": "Before if set only files before this time are returned.",
+                    "type": "string"
+                },
+                "dataType": {
+                    "description": "DataType if set only files for this data type are returned.",
+                    "type": "string"
+                },
+                "limit": {
+                    "type": "integer",
+                    "example": 10
+                },
+                "optional": {
+                    "description": "Optional is the optional data for additional metadata.",
+                    "type": "string"
+                },
+                "primaryFiller": {
+                    "description": "PrimaryFiller if set only files for this primary filler are returned.",
+                    "type": "string"
+                },
+                "producer": {
+                    "description": "Producer is the specific source entity that created the data.",
+                    "type": "string"
+                },
+                "secondaryFiller": {
+                    "description": "SecondaryFiller if set only files for this secondary filler are returned.",
+                    "type": "string"
+                },
+                "source": {
+                    "description": "Source is the party responsible for creating the data.",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Subject if set only files for this subject are returned.",
+                    "type": "string"
+                },
+                "timestampAsc": {
+                    "description": "TimestampAsc if set files are queried and returned in ascending order by timestamp.\nThis option is not applied for the latest file query.",
+                    "type": "boolean"
+                }
+            }
         }
     },
     "securityDefinitions": {

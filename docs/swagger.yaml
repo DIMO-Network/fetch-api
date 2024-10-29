@@ -1,3 +1,79 @@
+definitions:
+  indexrepo.SearchOptions:
+    properties:
+      after:
+        description: After if set only files after this time are returned.
+        type: string
+      before:
+        description: Before if set only files before this time are returned.
+        type: string
+      dataType:
+        description: DataType if set only files for this data type are returned.
+        type: string
+      optional:
+        description: Optional is the optional data for additional metadata.
+        type: string
+      primaryFiller:
+        description: PrimaryFiller if set only files for this primary filler are returned.
+        type: string
+      producer:
+        description: Producer is the specific source entity that created the data.
+        type: string
+      secondaryFiller:
+        description: SecondaryFiller if set only files for this secondary filler are
+          returned.
+        type: string
+      source:
+        description: Source is the party responsible for creating the data.
+        type: string
+      subject:
+        description: Subject if set only files for this subject are returned.
+        type: string
+      timestampAsc:
+        description: |-
+          TimestampAsc if set files are queried and returned in ascending order by timestamp.
+          This option is not applied for the latest file query.
+        type: boolean
+    type: object
+  internal_fetch_httphandler.SearchOptionsWithLimit:
+    properties:
+      after:
+        description: After if set only files after this time are returned.
+        type: string
+      before:
+        description: Before if set only files before this time are returned.
+        type: string
+      dataType:
+        description: DataType if set only files for this data type are returned.
+        type: string
+      limit:
+        example: 10
+        type: integer
+      optional:
+        description: Optional is the optional data for additional metadata.
+        type: string
+      primaryFiller:
+        description: PrimaryFiller if set only files for this primary filler are returned.
+        type: string
+      producer:
+        description: Producer is the specific source entity that created the data.
+        type: string
+      secondaryFiller:
+        description: SecondaryFiller if set only files for this secondary filler are
+          returned.
+        type: string
+      source:
+        description: Source is the party responsible for creating the data.
+        type: string
+      subject:
+        description: Subject if set only files for this subject are returned.
+        type: string
+      timestampAsc:
+        description: |-
+          TimestampAsc if set files are queried and returned in ascending order by timestamp.
+          This option is not applied for the latest file query.
+        type: boolean
+    type: object
 info:
   contact: {}
   title: DIMO Fetch API
@@ -19,6 +95,159 @@ paths:
       summary: Show the status of server.
       tags:
       - root
+  /filenames:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves a list of filenames that match the provided search options
+      parameters:
+      - description: Search criteria and limit for finding files
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns list of filenames
+          schema:
+            additionalProperties:
+              items:
+                type: string
+              type: array
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get multiple filenames based on search criteria
+      tags:
+      - files
+  /files:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves the content of multiple files that match the provided
+        search options
+      parameters:
+      - description: Search criteria and limit for finding files
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns file data
+          schema:
+            additionalProperties:
+              items:
+                type: integer
+              type: array
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get multiple files based on search criteria
+      tags:
+      - files
+  /latest-file:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves the content of the most recent file that matches the
+        provided search options
+      parameters:
+      - description: Search criteria for finding the latest file
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/indexrepo.SearchOptions'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns latest file data
+          schema:
+            additionalProperties:
+              items:
+                type: integer
+              type: array
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get the latest file based on search criteria
+      tags:
+      - files
+  /latest-filename:
+    post:
+      consumes:
+      - application/json
+      description: Retrieves the most recent filename that matches the provided search
+        options
+      parameters:
+      - description: Search criteria for finding the latest file
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/indexrepo.SearchOptions'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns the latest filename
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get the latest filename based on search criteria
+      tags:
+      - files
 securityDefinitions:
   BearerAuth:
     in: header
