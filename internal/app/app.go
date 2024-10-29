@@ -45,7 +45,8 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 	app.Get("/", HealthCheck)
 	app.Use(redirect.New(redirect.Config{
 		Rules: map[string]string{
-			"/v1/swagger/*": "/swagger/*",
+			"/v1/swagger":   "/swagger",
+			"/v1/swagger/*": "/swagger/$1",
 		},
 		StatusCode: http.StatusMovedPermanently,
 	}))
