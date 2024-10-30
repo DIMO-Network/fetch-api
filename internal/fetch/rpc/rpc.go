@@ -56,7 +56,14 @@ func (s *Server) GetFiles(ctx context.Context, req *grpc.GetFilesRequest) (*grpc
 	if err != nil {
 		return nil, fmt.Errorf("failed to get files: %w", err)
 	}
-	return &grpc.GetFilesResponse{Data: data}, nil
+	dataFiles := make([]*grpc.DataFile, len(data))
+	for i, d := range data {
+		dataFiles[i] = &grpc.DataFile{
+			Filename: d.Filename,
+			Data:     d.Data,
+		}
+	}
+	return &grpc.GetFilesResponse{DataFiles: dataFiles}, nil
 }
 
 // GetLatestFile translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
@@ -66,7 +73,26 @@ func (s *Server) GetLatestFile(ctx context.Context, req *grpc.GetLatestFileReque
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest file: %w", err)
 	}
-	return &grpc.GetLatestFileResponse{Data: latestData}, nil
+	return &grpc.GetLatestFileResponse{DataFile: &grpc.DataFile{
+		Filename: latestData.Filename,
+		Data:     latestData.Data,
+	}}, nil
+}
+
+// GetFiles translates the gRPC call to the indexrepo type and fetches data for the given options.
+func (s *Server) GetFilesFromNames(ctx context.Context, req *grpc.GetFilesFromNamesRequest) (*grpc.GetFilesFromNamesResponse, error) {
+	data, err := s.indexService.GetDataFromFileNames(ctx, req.GetFilenames(), s.cloudEventBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get files: %w", err)
+	}
+	dataFiles := make([]*grpc.DataFile, len(data))
+	for i, d := range data {
+		dataFiles[i] = &grpc.DataFile{
+			Filename: d.Filename,
+			Data:     d.Data,
+		}
+	}
+	return &grpc.GetFilesFromNamesResponse{DataFiles: dataFiles}, nil
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.

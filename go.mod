@@ -6,7 +6,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/model-garage v0.3.3
-	github.com/DIMO-Network/nameindexer v0.0.8
+	github.com/DIMO-Network/nameindexer v0.0.10-0.20241030203913-597fdb26b952
 	github.com/DIMO-Network/shared v0.11.1
 	github.com/aws/aws-sdk-go-v2 v1.32.2
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.27

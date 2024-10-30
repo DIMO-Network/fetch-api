@@ -23,6 +23,7 @@ const (
 	FetchService_GetFileNames_FullMethodName      = "/grpc.FetchService/GetFileNames"
 	FetchService_GetLatestFile_FullMethodName     = "/grpc.FetchService/GetLatestFile"
 	FetchService_GetFiles_FullMethodName          = "/grpc.FetchService/GetFiles"
+	FetchService_GetFilesFromNames_FullMethodName = "/grpc.FetchService/GetFilesFromNames"
 )
 
 // FetchServiceClient is the client API for FetchService service.
@@ -39,6 +40,8 @@ type FetchServiceClient interface {
 	GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error)
 	// GetFiles fetches and returns the list of files that match the specified options
 	GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
+	// GetFilesFromNames fetches and returns the list of files that match the specified filename
+	GetFilesFromNames(ctx context.Context, in *GetFilesFromNamesRequest, opts ...grpc.CallOption) (*GetFilesFromNamesResponse, error)
 }
 
 type fetchServiceClient struct {
@@ -89,6 +92,16 @@ func (c *fetchServiceClient) GetFiles(ctx context.Context, in *GetFilesRequest, 
 	return out, nil
 }
 
+func (c *fetchServiceClient) GetFilesFromNames(ctx context.Context, in *GetFilesFromNamesRequest, opts ...grpc.CallOption) (*GetFilesFromNamesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFilesFromNamesResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetFilesFromNames_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FetchServiceServer is the server API for FetchService service.
 // All implementations must embed UnimplementedFetchServiceServer
 // for forward compatibility.
@@ -103,6 +116,8 @@ type FetchServiceServer interface {
 	GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error)
 	// GetFiles fetches and returns the list of files that match the specified options
 	GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
+	// GetFilesFromNames fetches and returns the list of files that match the specified filename
+	GetFilesFromNames(context.Context, *GetFilesFromNamesRequest) (*GetFilesFromNamesResponse, error)
 	mustEmbedUnimplementedFetchServiceServer()
 }
 
@@ -124,6 +139,9 @@ func (UnimplementedFetchServiceServer) GetLatestFile(context.Context, *GetLatest
 }
 func (UnimplementedFetchServiceServer) GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiles not implemented")
+}
+func (UnimplementedFetchServiceServer) GetFilesFromNames(context.Context, *GetFilesFromNamesRequest) (*GetFilesFromNamesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFilesFromNames not implemented")
 }
 func (UnimplementedFetchServiceServer) mustEmbedUnimplementedFetchServiceServer() {}
 func (UnimplementedFetchServiceServer) testEmbeddedByValue()                      {}
@@ -218,6 +236,24 @@ func _FetchService_GetFiles_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FetchService_GetFilesFromNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFilesFromNamesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FetchServiceServer).GetFilesFromNames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FetchService_GetFilesFromNames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FetchServiceServer).GetFilesFromNames(ctx, req.(*GetFilesFromNamesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FetchService_ServiceDesc is the grpc.ServiceDesc for FetchService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -240,6 +276,10 @@ var FetchService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFiles",
 			Handler:    _FetchService_GetFiles_Handler,
+		},
+		{
+			MethodName: "GetFilesFromNames",
+			Handler:    _FetchService_GetFilesFromNames_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

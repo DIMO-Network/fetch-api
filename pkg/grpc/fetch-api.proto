@@ -20,6 +20,9 @@ service FetchService {
 
   // GetFiles fetches and returns the list of files that match the specified options
   rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
+
+  // GetFilesFromNames fetches and returns the list of files that match the specified filename
+  rpc GetFilesFromNames (GetFilesFromNamesRequest) returns (GetFilesFromNamesResponse);
 }
 
 // SearchOptions provides filtering options to narrow down the search results for files
@@ -56,32 +59,12 @@ message SearchOptions {
   google.protobuf.StringValue optional = 10;
 }
 
-// Index contains the index information for files
-// that can be used to store or retrieve data related to specific NFTs.
-message Index {
-  // The timestamp indicating when the cloud event was created.
-  google.protobuf.Timestamp timestamp = 1;
-  
-  // Primary filler value used to categorize the event.
-  string primary_filler = 2;
-  
-  // The type of data this event represents.
-  string data_type = 3;
-  
-  // The subject NFT associated with this event.
-  google.protobuf.StringValue subject = 4;
-  
-  // Secondary filler value used to further categorize the event.
-  string secondary_filler = 5;
-  
-  // The identifier of the source that created this data.
-  string source = 6;
-  
-  // The producer of the data, represented as an NFTDID.
-  google.protobuf.StringValue producer = 7;
-  
-  // Optional metadata associated with the event.
-  string optional = 8;
+// DataFile contains the filename and data retrieved from the file.
+message DataFile {
+  // The filename of the file.
+  string filename = 1;
+  // The data retrieved from the file.
+  bytes data = 2;
 }
 
 // GetLatestFileNameRequest includes search options to filter the events.
@@ -119,7 +102,7 @@ message GetLatestFileRequest {
 // GetLatestFileResponse provides the data retrieved from the latest cloud event.
 message GetLatestFileResponse {
   // The data retrieved from the latest cloud event.
-  bytes data = 1;
+  DataFile data_file = 1;
 }
 
 // GetFilesRequest includes search options to filter the events.
@@ -134,5 +117,17 @@ message GetFilesRequest {
 // GetFilesResponse provides the list of data retrieved from the files.
 message GetFilesResponse {
   // The list of data retrieved from the files.
-  repeated bytes data = 1;
+  repeated DataFile data_files = 1;
+}
+
+// GetFilesFromNameRequest includes the filename to filter the events.
+message GetFilesFromNamesRequest {
+  // The filenames that will be retrieved.
+  repeated string filenames = 1;
+}
+
+// GetFilesFromNameResponse provides the list of data retrieved from the files.
+message GetFilesFromNamesResponse {
+  // The list of data retrieved from the files.
+  repeated DataFile data_files = 1;
 }
