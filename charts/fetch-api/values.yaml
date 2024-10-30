@@ -2,14 +2,14 @@ replicaCount: 1
 image:
   repository: dimozone/fetch-api
   pullPolicy: IfNotPresent
-  tag: fcccb65
+  tag: 44f21bd
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 serviceAccount:
   create: true
   annotations: {}
-  name: ""
+  name: ''
 podAnnotations: {}
 podSecurityContext:
   runAsNonRoot: true
@@ -34,7 +34,6 @@ env:
   CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
   EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
   S3_AWS_REGION: us-east-2
-
 service:
   type: ClusterIP
   ports:
@@ -65,10 +64,10 @@ ingress:
   className: nginx
   annotations:
     nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
-    nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
-    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
     nginx.ingress.kubernetes.io/cors-allow-origin: https://app.dev.dimo.zone, https://admin.dev.dimo.zone
-    nginx.ingress.kubernetes.io/limit-rps: "25"
+    nginx.ingress.kubernetes.io/limit-rps: '25'
     external-dns.alpha.kubernetes.io/hostname: fetch-api.dev.dimo.zone
   hosts:
     - host: fetch-api.dev.dimo.zone
