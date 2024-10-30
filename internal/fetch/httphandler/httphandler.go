@@ -1,28 +1,77 @@
+// Packagge httphandler provides the HTTP handler for the fetch service.
 package httphandler
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/nameindexer"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog"
 )
 
-// Handler contains the dependencies for the HTTP handlers.
+var (
+	errInternal = errors.New("internal error")
+	errTimeout  = errors.New("request exceeded or is estimated to exceed the maximum execution time")
+)
+
+// Handler is the HTTP handler for the fetch service.
 type Handler struct {
 	indexService     *indexrepo.Service
 	cloudEventBucket string
 	ephemeralBucket  string
+	vehicleAddr      common.Address
+	chainID          uint64
+	logger           *zerolog.Logger
 }
 
 // NewHandler creates a new Handler instance.
-func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, cloudEventBucket, ephemeralBucket string) *Handler {
+func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client,
+	cloudEventBucket, ephemeralBucket string,
+	vehicleAddr common.Address, chainID uint64,
+) *Handler {
 	indexService := indexrepo.New(chConn, s3Client)
 	return &Handler{
 		indexService:     indexService,
 		cloudEventBucket: cloudEventBucket,
 		ephemeralBucket:  ephemeralBucket,
+		vehicleAddr:      vehicleAddr,
+		chainID:          chainID,
+		logger:           logger,
+	}
+}
+
+type searchParams struct {
+	Type     *string   `query:"type"`
+	Source   *string   `query:"source"`
+	Producer *string   `query:"producer"`
+	Before   time.Time `query:"before"`
+	After    time.Time `query:"after"`
+	Limit    int       `query:"limit"`
+}
+
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.SearchOptions {
+	var primaryFiller *string
+	if s.Type != nil {
+		filler := nameindexer.CloudTypeToFiller(*s.Type)
+		primaryFiller = &filler
+	}
+	encodedSubject := nameindexer.EncodeNFTDID(subject)
+	return indexrepo.SearchOptions{
+		Subject:       &encodedSubject,
+		PrimaryFiller: primaryFiller,
+		Source:        s.Source,
+		Producer:      s.Producer,
+		Before:        s.Before,
+		After:         s.After,
 	}
 }
 
@@ -32,32 +81,34 @@ func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, cloudEventBucket, e
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param request body indexrepo.SearchOptions true "Search criteria for finding the latest file"
+// @Param params query SearchParams false "Search parameters"
 // @Success 200 {object} map[string]string "Returns the latest filename"
-// @Failure 400 {object} map[string]string "Invalid request body"
+// @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /latest-filename [post]
-func (h *Handler) GetLatestFileName(c *fiber.Ctx) error {
-	var req indexrepo.SearchOptions
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to parse request body: %v", err),
-		})
-	}
-	filename, err := h.indexService.GetLatestFileName(c.Context(), req)
+// @Router /v1/vehicle/{tokenId}/latest-filename [get]
+func (h *Handler) GetLatestFileName(fCtx *fiber.Ctx) error {
+	tokenID := fCtx.Params("tokenId")
+	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to get latest file name: %v", err),
-		})
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
 	}
-	return c.JSON(fiber.Map{
+
+	var params searchParams
+	err = fCtx.QueryParser(&params)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
+	}
+
+	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+
+	filename, err := h.indexService.GetLatestFileName(fCtx.Context(), opts)
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
+
+	return fCtx.JSON(fiber.Map{
 		"filename": filename,
 	})
-}
-
-type SearchOptionsWithLimit struct {
-	indexrepo.SearchOptions
-	Limit int `json:"limit" example:"10"`
 }
 
 // GetFileNames handles requests for multiple filenames
@@ -66,25 +117,32 @@ type SearchOptionsWithLimit struct {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param request body SearchOptionsWithLimit true "Search criteria and limit for finding files"
+// @Param params query SearchParams false "Search parameters"
 // @Success 200 {object} map[string][]string "Returns list of filenames"
-// @Failure 400 {object} map[string]string "Invalid request body"
+// @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /filenames [post]
-func (h *Handler) GetFileNames(c *fiber.Ctx) error {
-	var req SearchOptionsWithLimit
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to parse request body: %v", err),
-		})
-	}
-	filenames, err := h.indexService.GetFileNames(c.Context(), req.Limit, req.SearchOptions)
+// @Router /v1/vehicle/{tokenId}/filenames [get]
+func (h *Handler) GetFileNames(fCtx *fiber.Ctx) error {
+	tokenID := fCtx.Params("tokenId")
+	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to get file names: %v", err),
-		})
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
 	}
-	return c.JSON(fiber.Map{
+
+	var params searchParams
+	err = fCtx.QueryParser(&params)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
+	}
+
+	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+
+	filenames, err := h.indexService.GetFileNames(fCtx.Context(), params.Limit, opts)
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
+
+	return fCtx.JSON(fiber.Map{
 		"filenames": filenames,
 	})
 }
@@ -95,25 +153,32 @@ func (h *Handler) GetFileNames(c *fiber.Ctx) error {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param request body SearchOptionsWithLimit true "Search criteria and limit for finding files"
+// @Param params query SearchParams false "Search parameters"
 // @Success 200 {object} map[string][]byte "Returns file data"
-// @Failure 400 {object} map[string]string "Invalid request body"
+// @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /files [post]
-func (h *Handler) GetFiles(c *fiber.Ctx) error {
-	var req SearchOptionsWithLimit
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to parse request body: %v", err),
-		})
-	}
-	data, err := h.indexService.GetData(c.Context(), h.cloudEventBucket, req.Limit, req.SearchOptions)
+// @Router /v1/vehicle/{tokenId}/files [get]
+func (h *Handler) GetFiles(fCtx *fiber.Ctx) error {
+	tokenID := fCtx.Params("tokenId")
+	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to get files: %v", err),
-		})
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
 	}
-	return c.JSON(fiber.Map{
+
+	var params searchParams
+	err = fCtx.QueryParser(&params)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
+	}
+
+	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+
+	data, err := h.indexService.GetData(fCtx.Context(), h.cloudEventBucket, params.Limit, opts)
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
+
+	return fCtx.JSON(fiber.Map{
 		"data": data,
 	})
 }
@@ -124,25 +189,42 @@ func (h *Handler) GetFiles(c *fiber.Ctx) error {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param request body indexrepo.SearchOptions true "Search criteria for finding the latest file"
+// @Param params query SearchParams false "Search parameters"
 // @Success 200 {object} map[string][]byte "Returns latest file data"
-// @Failure 400 {object} map[string]string "Invalid request body"
+// @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /latest-file [post]
-func (h *Handler) GetLatestFile(c *fiber.Ctx) error {
-	var req indexrepo.SearchOptions
-	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to parse request body: %v", err),
-		})
-	}
-	data, err := h.indexService.GetLatestData(c.Context(), h.cloudEventBucket, req)
+// @Router /v1/vehicle/{tokenId}/latest-file [get]
+func (h *Handler) GetLatestFile(fCtx *fiber.Ctx) error {
+	tokenID := fCtx.Params("tokenId")
+	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": fmt.Sprintf("failed to get latest file: %v", err),
-		})
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
 	}
-	return c.JSON(fiber.Map{
+
+	var params searchParams
+	err = fCtx.QueryParser(&params)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
+	}
+
+	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+
+	data, err := h.indexService.GetLatestData(fCtx.Context(), h.cloudEventBucket, opts)
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
+
+	return fCtx.JSON(fiber.Map{
 		"data": data,
 	})
+}
+
+// handleDBError logs the error and returns a generic error message.
+func handleDBError(err error, log *zerolog.Logger) error {
+	if errors.Is(err, context.DeadlineExceeded) {
+		log.Error().Err(err).Msg("failed to query db")
+		return errTimeout
+	}
+	log.Error().Err(err).Msg("failed to query db")
+	return errInternal
 }

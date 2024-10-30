@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/DIMO-Network/fetch-api/internal/config"
@@ -29,11 +30,16 @@ import (
 	"google.golang.org/grpc"
 )
 
+// CreateWebServer creates a new web server with the given logger and settings.
 func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.App, error) {
 	if !common.IsHexAddress(settings.VehicleNFTAddress) {
 		return nil, errors.New("invalid vehicle NFT address")
 	}
 	vehicleNFTAddress := common.HexToAddress(settings.VehicleNFTAddress)
+	chainId, err := strconv.ParseUint(settings.ChainID, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
+	}
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
@@ -75,17 +81,18 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 	}
 
 	s3Client := s3ClientFromSettings(settings)
-
-	h := httphandler.NewHandler(chConn, s3Client, settings.CloudEventBucket, settings.CloudEventBucket)
+	vehHandler := httphandler.NewHandler(logger, chConn, s3Client,
+		settings.CloudEventBucket, settings.EphemeralBucket, vehicleNFTAddress, chainId)
 	// File endpoints
-	vehicleGroup.Post("/latest-filename/:tokenId", vehiclePriv, jwtAuth, h.GetLatestFileName)
-	vehicleGroup.Post("/filenames/:tokenId", vehiclePriv, jwtAuth, h.GetFileNames)
-	vehicleGroup.Post("/files/:tokenId", jwtAuth, vehiclePriv, h.GetFiles)
-	vehicleGroup.Post("/latest-file/:tokenId", jwtAuth, vehiclePriv, h.GetLatestFile)
+	vehicleGroup.Post("/latest-filename/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestFileName)
+	vehicleGroup.Post("/filenames/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetFileNames)
+	vehicleGroup.Post("/files/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetFiles)
+	vehicleGroup.Post("/latest-file/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetLatestFile)
 
 	return app, nil
 }
 
+// CreateGRPCServer creates a new gRPC server with the given logger and settings.
 func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.Server, error) {
 	chConn, err := chClientFromSettings(settings)
 	if err != nil {

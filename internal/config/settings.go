@@ -11,6 +11,7 @@ type Settings struct {
 	TokenExchangeJWTKeySetURL string          `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
 	TokenExchangeIssuer       string          `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
 	VehicleNFTAddress         string          `yaml:"VEHICLE_NFT_ADDRESS"`
+	ChainID                   string          `yaml:"CHAIN_ID"`
 	CloudEventBucket          string          `yaml:"CLOUDEVENT_BUCKET"`
 	EphemeralBucket           string          `yaml:"EPHEMERAL_BUCKET"`
 	S3AWSRegion               string          `yaml:"S3_AWS_REGION"`
