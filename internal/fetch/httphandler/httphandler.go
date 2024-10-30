@@ -81,7 +81,7 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.Sear
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param params query SearchParams false "Search parameters"
+// @Param params query searchParams false "Search parameters"
 // @Success 200 {object} map[string]string "Returns the latest filename"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
@@ -117,7 +117,7 @@ func (h *Handler) GetLatestFileName(fCtx *fiber.Ctx) error {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param params query SearchParams false "Search parameters"
+// @Param params query searchParams false "Search parameters"
 // @Success 200 {object} map[string][]string "Returns list of filenames"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
@@ -153,7 +153,7 @@ func (h *Handler) GetFileNames(fCtx *fiber.Ctx) error {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param params query SearchParams false "Search parameters"
+// @Param params query searchParams false "Search parameters"
 // @Success 200 {object} map[string][]byte "Returns file data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
@@ -189,7 +189,7 @@ func (h *Handler) GetFiles(fCtx *fiber.Ctx) error {
 // @Tags files
 // @Accept json
 // @Produce json
-// @Param params query SearchParams false "Search parameters"
+// @Param params query searchParams false "Search parameters"
 // @Success 200 {object} map[string][]byte "Returns latest file data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"

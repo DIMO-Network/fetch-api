@@ -39,8 +39,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/filenames": {
-            "post": {
+        "/v1/vehicle/{tokenId}/filenames": {
+            "get": {
                 "description": "Retrieves a list of filenames that match the provided search options",
                 "consumes": [
                     "application/json"
@@ -54,13 +54,34 @@ const docTemplate = `{
                 "summary": "Get multiple filenames based on search criteria",
                 "parameters": [
                     {
-                        "description": "Search criteria and limit for finding files",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit"
-                        }
+                        "type": "string",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -77,7 +98,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Invalid request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -97,8 +118,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/files": {
-            "post": {
+        "/v1/vehicle/{tokenId}/files": {
+            "get": {
                 "description": "Retrieves the content of multiple files that match the provided search options",
                 "consumes": [
                     "application/json"
@@ -112,13 +133,34 @@ const docTemplate = `{
                 "summary": "Get multiple files based on search criteria",
                 "parameters": [
                     {
-                        "description": "Search criteria and limit for finding files",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_fetch_httphandler.SearchOptionsWithLimit"
-                        }
+                        "type": "string",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -135,7 +177,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Invalid request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -155,8 +197,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/latest-file": {
-            "post": {
+        "/v1/vehicle/{tokenId}/latest-file": {
+            "get": {
                 "description": "Retrieves the content of the most recent file that matches the provided search options",
                 "consumes": [
                     "application/json"
@@ -170,13 +212,34 @@ const docTemplate = `{
                 "summary": "Get the latest file based on search criteria",
                 "parameters": [
                     {
-                        "description": "Search criteria for finding the latest file",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/indexrepo.SearchOptions"
-                        }
+                        "type": "string",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -193,7 +256,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Invalid request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -213,8 +276,8 @@ const docTemplate = `{
                 }
             }
         },
-        "/latest-filename": {
-            "post": {
+        "/v1/vehicle/{tokenId}/latest-filename": {
+            "get": {
                 "description": "Retrieves the most recent filename that matches the provided search options",
                 "consumes": [
                     "application/json"
@@ -228,13 +291,34 @@ const docTemplate = `{
                 "summary": "Get the latest filename based on search criteria",
                 "parameters": [
                     {
-                        "description": "Search criteria for finding the latest file",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/indexrepo.SearchOptions"
-                        }
+                        "type": "string",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -248,7 +332,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body",
+                        "description": "Invalid request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -265,102 +349,6 @@ const docTemplate = `{
                             }
                         }
                     }
-                }
-            }
-        }
-    },
-    "definitions": {
-        "indexrepo.SearchOptions": {
-            "type": "object",
-            "properties": {
-                "after": {
-                    "description": "After if set only files after this time are returned.",
-                    "type": "string"
-                },
-                "before": {
-                    "description": "Before if set only files before this time are returned.",
-                    "type": "string"
-                },
-                "dataType": {
-                    "description": "DataType if set only files for this data type are returned.",
-                    "type": "string"
-                },
-                "optional": {
-                    "description": "Optional is the optional data for additional metadata.",
-                    "type": "string"
-                },
-                "primaryFiller": {
-                    "description": "PrimaryFiller if set only files for this primary filler are returned.",
-                    "type": "string"
-                },
-                "producer": {
-                    "description": "Producer is the specific source entity that created the data.",
-                    "type": "string"
-                },
-                "secondaryFiller": {
-                    "description": "SecondaryFiller if set only files for this secondary filler are returned.",
-                    "type": "string"
-                },
-                "source": {
-                    "description": "Source is the party responsible for creating the data.",
-                    "type": "string"
-                },
-                "subject": {
-                    "description": "Subject if set only files for this subject are returned.",
-                    "type": "string"
-                },
-                "timestampAsc": {
-                    "description": "TimestampAsc if set files are queried and returned in ascending order by timestamp.\nThis option is not applied for the latest file query.",
-                    "type": "boolean"
-                }
-            }
-        },
-        "internal_fetch_httphandler.SearchOptionsWithLimit": {
-            "type": "object",
-            "properties": {
-                "after": {
-                    "description": "After if set only files after this time are returned.",
-                    "type": "string"
-                },
-                "before": {
-                    "description": "Before if set only files before this time are returned.",
-                    "type": "string"
-                },
-                "dataType": {
-                    "description": "DataType if set only files for this data type are returned.",
-                    "type": "string"
-                },
-                "limit": {
-                    "type": "integer",
-                    "example": 10
-                },
-                "optional": {
-                    "description": "Optional is the optional data for additional metadata.",
-                    "type": "string"
-                },
-                "primaryFiller": {
-                    "description": "PrimaryFiller if set only files for this primary filler are returned.",
-                    "type": "string"
-                },
-                "producer": {
-                    "description": "Producer is the specific source entity that created the data.",
-                    "type": "string"
-                },
-                "secondaryFiller": {
-                    "description": "SecondaryFiller if set only files for this secondary filler are returned.",
-                    "type": "string"
-                },
-                "source": {
-                    "description": "Source is the party responsible for creating the data.",
-                    "type": "string"
-                },
-                "subject": {
-                    "description": "Subject if set only files for this subject are returned.",
-                    "type": "string"
-                },
-                "timestampAsc": {
-                    "description": "TimestampAsc if set files are queried and returned in ascending order by timestamp.\nThis option is not applied for the latest file query.",
-                    "type": "boolean"
                 }
             }
         }
