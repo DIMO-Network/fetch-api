@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/DIMO-Network/attestation-api/pkg/auth"
+	"github.com/DIMO-Network/fetch-api/pkg/auth"
 	"github.com/DIMO-Network/shared/middleware/privilegetoken"
 	"github.com/DIMO-Network/shared/privileges"
 	"github.com/ethereum/go-ethereum/common"

@@ -9,11 +9,13 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
+	"github.com/DIMO-Network/fetch-api/pkg/auth"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
-	"github.com/DIMO-Network/fetch-api/pkg/grpc/auth"
 	"github.com/DIMO-Network/shared/middleware/metrics"
+	"github.com/DIMO-Network/shared/middleware/privilegetoken"
 	"github.com/DIMO-Network/shared/privileges"
 	"github.com/ethereum/go-ethereum/common"
+	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -28,6 +30,11 @@ import (
 )
 
 func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.App, error) {
+	if !common.IsHexAddress(settings.VehicleNFTAddress) {
+		return nil, errors.New("invalid vehicle NFT address")
+	}
+	vehicleNFTAddress := common.HexToAddress(settings.VehicleNFTAddress)
+
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return ErrorHandler(c, err, logger)
@@ -35,10 +42,10 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 		DisableStartupMessage: true,
 	})
 
-	// jwtAuth := jwtware.New(jwtware.Config{
-	// 	JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
-	// 	Claims:     &privilegetoken.Token{},
-	// })
+	jwtAuth := jwtware.New(jwtware.Config{
+		JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
+		Claims:     &privilegetoken.Token{},
+	})
 
 	app.Use(recover.New(recover.Config{
 		Next:              nil,
@@ -58,8 +65,10 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 
 	// API v1 routes
 	v1 := app.Group("/v1")
+	vehicleGroup := v1.Group("/vehicle")
 
-	permCheckMiddleware := auth.AllOf(common.HexToAddress("0x0"), []privileges.Privilege{privileges.Privilege(255)})
+	vehiclePriv := auth.AllOf(vehicleNFTAddress, "tokenId", []privileges.Privilege{privileges.Privilege(7)})
+
 	chConn, err := chClientFromSettings(settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
@@ -69,10 +78,10 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 
 	h := httphandler.NewHandler(chConn, s3Client, settings.CloudEventBucket, settings.CloudEventBucket)
 	// File endpoints
-	v1.Post("/latest-filename", h.GetLatestFileName)
-	v1.Post("/filenames", h.GetFileNames)
-	v1.Post("/files", h.GetFiles)
-	v1.Post("/latest-file", h.GetLatestFile)
+	vehicleGroup.Post("/latest-filename/:tokenId", vehiclePriv, jwtAuth, h.GetLatestFileName)
+	vehicleGroup.Post("/filenames/:tokenId", vehiclePriv, jwtAuth, h.GetFileNames)
+	vehicleGroup.Post("/files/:tokenId", jwtAuth, vehiclePriv, h.GetFiles)
+	vehicleGroup.Post("/latest-file/:tokenId", jwtAuth, vehiclePriv, h.GetLatestFile)
 
 	return app, nil
 }
