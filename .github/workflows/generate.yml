@@ -28,7 +28,7 @@ jobs:
       - name: install tools
         run: make tools
 
-      - name: generate graphql files
+      - name: generate files
         run: make generate
 
       - name: porcelain
