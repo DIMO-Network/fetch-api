@@ -99,9 +99,9 @@ go-generate:## run go generate
 	@go generate ./...
 
 generate-grpc:
-	@protoc --go_out=. --go_opt=paths=source_relative \
-    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-    pkg/grpc/*.proto
+	protoc --go_out=./ --go_opt=paths=source_relative \
+    --go-grpc_out=./ --go-grpc_opt=paths=source_relative \
+    ./pkg/grpc/*.proto
 
 generate-swagger: ## generate swagger documentation
 	@swag -version
