@@ -7,8 +7,8 @@ package grpc;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-// Define the service
-service IndexRepoService {
+// FetchService defines the gRPC service for fetching DIMO files
+service FetchService {
   // GetLatestFileName returns the latest filename for the given options
   rpc GetLatestFileName (GetLatestFileNameRequest) returns (GetLatestFileNameResponse);
 

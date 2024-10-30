@@ -15,7 +15,7 @@ import (
 // Server is used to implement grpc.IndexRepoServiceServer.
 type Server struct {
 	indexService *indexrepo.Service
-	grpc.UnimplementedIndexRepoServiceServer
+	grpc.UnimplementedFetchServiceServer
 	cloudEventBucket string
 	ephemeralBucket  string
 }

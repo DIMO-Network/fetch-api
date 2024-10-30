@@ -113,7 +113,7 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 		)),
 		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
 	)
-	fetchgrpc.RegisterIndexRepoServiceServer(server, rpcServer)
+	fetchgrpc.RegisterFetchServiceServer(server, rpcServer)
 
 	return server, nil
 }

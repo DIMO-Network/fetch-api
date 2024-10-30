@@ -18,10 +18,10 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// IndexRepoServiceClient is the client API for IndexRepoService service.
+// FetchServiceClient is the client API for FetchService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type IndexRepoServiceClient interface {
+type FetchServiceClient interface {
 	// GetLatestFileName returns the latest filename for the given options
 	GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error)
 	// GetFileNames fetches and returns the list of filenames that match the specified options,
@@ -32,54 +32,54 @@ type IndexRepoServiceClient interface {
 	GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
 }
 
-type indexRepoServiceClient struct {
+type fetchServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewIndexRepoServiceClient(cc grpc.ClientConnInterface) IndexRepoServiceClient {
-	return &indexRepoServiceClient{cc}
+func NewFetchServiceClient(cc grpc.ClientConnInterface) FetchServiceClient {
+	return &fetchServiceClient{cc}
 }
 
-func (c *indexRepoServiceClient) GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error) {
+func (c *fetchServiceClient) GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error) {
 	out := new(GetLatestFileNameResponse)
-	err := c.cc.Invoke(ctx, "/grpc.IndexRepoService/GetLatestFileName", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.FetchService/GetLatestFileName", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *indexRepoServiceClient) GetFileNames(ctx context.Context, in *GetFileNamesRequest, opts ...grpc.CallOption) (*GetFileNamesResponse, error) {
+func (c *fetchServiceClient) GetFileNames(ctx context.Context, in *GetFileNamesRequest, opts ...grpc.CallOption) (*GetFileNamesResponse, error) {
 	out := new(GetFileNamesResponse)
-	err := c.cc.Invoke(ctx, "/grpc.IndexRepoService/GetFileNames", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.FetchService/GetFileNames", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *indexRepoServiceClient) GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error) {
+func (c *fetchServiceClient) GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error) {
 	out := new(GetLatestFileResponse)
-	err := c.cc.Invoke(ctx, "/grpc.IndexRepoService/GetLatestFile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.FetchService/GetLatestFile", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *indexRepoServiceClient) GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error) {
+func (c *fetchServiceClient) GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error) {
 	out := new(GetFilesResponse)
-	err := c.cc.Invoke(ctx, "/grpc.IndexRepoService/GetFiles", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.FetchService/GetFiles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// IndexRepoServiceServer is the server API for IndexRepoService service.
-// All implementations must embed UnimplementedIndexRepoServiceServer
+// FetchServiceServer is the server API for FetchService service.
+// All implementations must embed UnimplementedFetchServiceServer
 // for forward compatibility
-type IndexRepoServiceServer interface {
+type FetchServiceServer interface {
 	// GetLatestFileName returns the latest filename for the given options
 	GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error)
 	// GetFileNames fetches and returns the list of filenames that match the specified options,
@@ -88,132 +88,132 @@ type IndexRepoServiceServer interface {
 	GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error)
 	// GetFiles fetches and returns the list of files that match the specified options
 	GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
-	mustEmbedUnimplementedIndexRepoServiceServer()
+	mustEmbedUnimplementedFetchServiceServer()
 }
 
-// UnimplementedIndexRepoServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedIndexRepoServiceServer struct {
+// UnimplementedFetchServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedFetchServiceServer struct {
 }
 
-func (UnimplementedIndexRepoServiceServer) GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error) {
+func (UnimplementedFetchServiceServer) GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestFileName not implemented")
 }
-func (UnimplementedIndexRepoServiceServer) GetFileNames(context.Context, *GetFileNamesRequest) (*GetFileNamesResponse, error) {
+func (UnimplementedFetchServiceServer) GetFileNames(context.Context, *GetFileNamesRequest) (*GetFileNamesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileNames not implemented")
 }
-func (UnimplementedIndexRepoServiceServer) GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error) {
+func (UnimplementedFetchServiceServer) GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestFile not implemented")
 }
-func (UnimplementedIndexRepoServiceServer) GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error) {
+func (UnimplementedFetchServiceServer) GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFiles not implemented")
 }
-func (UnimplementedIndexRepoServiceServer) mustEmbedUnimplementedIndexRepoServiceServer() {}
+func (UnimplementedFetchServiceServer) mustEmbedUnimplementedFetchServiceServer() {}
 
-// UnsafeIndexRepoServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to IndexRepoServiceServer will
+// UnsafeFetchServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FetchServiceServer will
 // result in compilation errors.
-type UnsafeIndexRepoServiceServer interface {
-	mustEmbedUnimplementedIndexRepoServiceServer()
+type UnsafeFetchServiceServer interface {
+	mustEmbedUnimplementedFetchServiceServer()
 }
 
-func RegisterIndexRepoServiceServer(s grpc.ServiceRegistrar, srv IndexRepoServiceServer) {
-	s.RegisterService(&IndexRepoService_ServiceDesc, srv)
+func RegisterFetchServiceServer(s grpc.ServiceRegistrar, srv FetchServiceServer) {
+	s.RegisterService(&FetchService_ServiceDesc, srv)
 }
 
-func _IndexRepoService_GetLatestFileName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FetchService_GetLatestFileName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetLatestFileNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexRepoServiceServer).GetLatestFileName(ctx, in)
+		return srv.(FetchServiceServer).GetLatestFileName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc.IndexRepoService/GetLatestFileName",
+		FullMethod: "/grpc.FetchService/GetLatestFileName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexRepoServiceServer).GetLatestFileName(ctx, req.(*GetLatestFileNameRequest))
+		return srv.(FetchServiceServer).GetLatestFileName(ctx, req.(*GetLatestFileNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IndexRepoService_GetFileNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FetchService_GetFileNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetFileNamesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexRepoServiceServer).GetFileNames(ctx, in)
+		return srv.(FetchServiceServer).GetFileNames(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc.IndexRepoService/GetFileNames",
+		FullMethod: "/grpc.FetchService/GetFileNames",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexRepoServiceServer).GetFileNames(ctx, req.(*GetFileNamesRequest))
+		return srv.(FetchServiceServer).GetFileNames(ctx, req.(*GetFileNamesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IndexRepoService_GetLatestFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FetchService_GetLatestFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetLatestFileRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexRepoServiceServer).GetLatestFile(ctx, in)
+		return srv.(FetchServiceServer).GetLatestFile(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc.IndexRepoService/GetLatestFile",
+		FullMethod: "/grpc.FetchService/GetLatestFile",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexRepoServiceServer).GetLatestFile(ctx, req.(*GetLatestFileRequest))
+		return srv.(FetchServiceServer).GetLatestFile(ctx, req.(*GetLatestFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _IndexRepoService_GetFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FetchService_GetFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetFilesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(IndexRepoServiceServer).GetFiles(ctx, in)
+		return srv.(FetchServiceServer).GetFiles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/grpc.IndexRepoService/GetFiles",
+		FullMethod: "/grpc.FetchService/GetFiles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexRepoServiceServer).GetFiles(ctx, req.(*GetFilesRequest))
+		return srv.(FetchServiceServer).GetFiles(ctx, req.(*GetFilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// IndexRepoService_ServiceDesc is the grpc.ServiceDesc for IndexRepoService service.
+// FetchService_ServiceDesc is the grpc.ServiceDesc for FetchService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var IndexRepoService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "grpc.IndexRepoService",
-	HandlerType: (*IndexRepoServiceServer)(nil),
+var FetchService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "grpc.FetchService",
+	HandlerType: (*FetchServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "GetLatestFileName",
-			Handler:    _IndexRepoService_GetLatestFileName_Handler,
+			Handler:    _FetchService_GetLatestFileName_Handler,
 		},
 		{
 			MethodName: "GetFileNames",
-			Handler:    _IndexRepoService_GetFileNames_Handler,
+			Handler:    _FetchService_GetFileNames_Handler,
 		},
 		{
 			MethodName: "GetLatestFile",
-			Handler:    _IndexRepoService_GetLatestFile_Handler,
+			Handler:    _FetchService_GetLatestFile_Handler,
 		},
 		{
 			MethodName: "GetFiles",
-			Handler:    _IndexRepoService_GetFiles_Handler,
+			Handler:    _FetchService_GetFiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
