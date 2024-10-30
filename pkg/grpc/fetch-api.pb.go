@@ -22,23 +22,33 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Define the SearchOptions message, which provides filtering options
-// to narrow down the search results for cloud events based on various criteria.
+// SearchOptions provides filtering options to narrow down the search results for files
+// based on various criteria. If a field is not set, it is not used for filtering.
 type SearchOptions struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	After           *timestamppb.Timestamp  `protobuf:"bytes,1,opt,name=after,proto3" json:"after,omitempty"`                                            // Only include events after this timestamp.
-	Before          *timestamppb.Timestamp  `protobuf:"bytes,2,opt,name=before,proto3" json:"before,omitempty"`                                          // Only include events before this timestamp.
-	TimestampAsc    *wrapperspb.BoolValue   `protobuf:"bytes,3,opt,name=timestamp_asc,json=timestampAsc,proto3" json:"timestamp_asc,omitempty"`          // Whether to sort results in ascending order by timestamp.
-	PrimaryFiller   *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=primary_filler,json=primaryFiller,proto3" json:"primary_filler,omitempty"`       // Primary filler value used to filter events.
-	DataType        *wrapperspb.StringValue `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                      // Data type to filter events (e.g., temperature, humidity).
-	Subject         *wrapperspb.StringValue `protobuf:"bytes,6,opt,name=subject,proto3" json:"subject,omitempty"`                                        // The subject NFT to filter events related to a specific token.
-	SecondaryFiller *wrapperspb.StringValue `protobuf:"bytes,7,opt,name=secondary_filler,json=secondaryFiller,proto3" json:"secondary_filler,omitempty"` // Secondary filler value used to filter events.
-	Source          *wrapperspb.StringValue `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"`                                          // The source identifier responsible for creating the data.
-	Producer        *wrapperspb.StringValue `protobuf:"bytes,9,opt,name=producer,proto3" json:"producer,omitempty"`                                      // The producer of the data, represented as an NFTDID.
-	Optional        *wrapperspb.StringValue `protobuf:"bytes,10,opt,name=optional,proto3" json:"optional,omitempty"`                                     // Additional optional metadata for more precise filtering.
+	// Only include events after this timestamp.
+	After *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=after,proto3" json:"after,omitempty"`
+	// Only include events before this timestamp.
+	Before *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=before,proto3" json:"before,omitempty"`
+	// Whether to sort results in ascending order by timestamp.
+	TimestampAsc *wrapperspb.BoolValue `protobuf:"bytes,3,opt,name=timestamp_asc,json=timestampAsc,proto3" json:"timestamp_asc,omitempty"`
+	// Primary filler value used to filter events.
+	PrimaryFiller *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=primary_filler,json=primaryFiller,proto3" json:"primary_filler,omitempty"`
+	// Data type to filter events.
+	DataType *wrapperspb.StringValue `protobuf:"bytes,5,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
+	// The subject of the event to filter.
+	Subject *wrapperspb.StringValue `protobuf:"bytes,6,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Secondary filler value used to filter events.
+	SecondaryFiller *wrapperspb.StringValue `protobuf:"bytes,7,opt,name=secondary_filler,json=secondaryFiller,proto3" json:"secondary_filler,omitempty"`
+	// The source identifier responsible for creating the data.
+	Source *wrapperspb.StringValue `protobuf:"bytes,8,opt,name=source,proto3" json:"source,omitempty"`
+	// The producer of the data, source entity responsible for creating the data.
+	Producer *wrapperspb.StringValue `protobuf:"bytes,9,opt,name=producer,proto3" json:"producer,omitempty"`
+	// Additional optional metadata for more precise filtering.
+	Optional *wrapperspb.StringValue `protobuf:"bytes,10,opt,name=optional,proto3" json:"optional,omitempty"`
 }
 
 func (x *SearchOptions) Reset() {
@@ -143,21 +153,29 @@ func (x *SearchOptions) GetOptional() *wrapperspb.StringValue {
 	return nil
 }
 
-// Define the Index message, which contains the index information for cloud events
+// Index contains the index information for files
 // that can be used to store or retrieve data related to specific NFTs.
 type Index struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Timestamp       *timestamppb.Timestamp  `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`                                    // The timestamp indicating when the cloud event was created.
-	PrimaryFiller   string                  `protobuf:"bytes,2,opt,name=primary_filler,json=primaryFiller,proto3" json:"primary_filler,omitempty"`       // Primary filler value used to categorize the event.
-	DataType        string                  `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                      // The type of data this event represents.
-	Subject         *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`                                        // The subject NFT associated with this event.
-	SecondaryFiller string                  `protobuf:"bytes,5,opt,name=secondary_filler,json=secondaryFiller,proto3" json:"secondary_filler,omitempty"` // Secondary filler value used to further categorize the event.
-	Source          string                  `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`                                          // The identifier of the source that created this data.
-	Producer        *wrapperspb.StringValue `protobuf:"bytes,7,opt,name=producer,proto3" json:"producer,omitempty"`                                      // The producer of the data, represented as an NFTDID.
-	Optional        string                  `protobuf:"bytes,8,opt,name=optional,proto3" json:"optional,omitempty"`                                      // Optional metadata associated with the event.
+	// The timestamp indicating when the cloud event was created.
+	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	// Primary filler value used to categorize the event.
+	PrimaryFiller string `protobuf:"bytes,2,opt,name=primary_filler,json=primaryFiller,proto3" json:"primary_filler,omitempty"`
+	// The type of data this event represents.
+	DataType string `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
+	// The subject NFT associated with this event.
+	Subject *wrapperspb.StringValue `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
+	// Secondary filler value used to further categorize the event.
+	SecondaryFiller string `protobuf:"bytes,5,opt,name=secondary_filler,json=secondaryFiller,proto3" json:"secondary_filler,omitempty"`
+	// The identifier of the source that created this data.
+	Source string `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`
+	// The producer of the data, represented as an NFTDID.
+	Producer *wrapperspb.StringValue `protobuf:"bytes,7,opt,name=producer,proto3" json:"producer,omitempty"`
+	// Optional metadata associated with the event.
+	Optional string `protobuf:"bytes,8,opt,name=optional,proto3" json:"optional,omitempty"`
 }
 
 func (x *Index) Reset() {
@@ -248,12 +266,13 @@ func (x *Index) GetOptional() string {
 	return ""
 }
 
+// GetLatestFileNameRequest includes search options to filter the events.
 type GetLatestFileNameRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"` // Search options to filter the events.
+	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *GetLatestFileNameRequest) Reset() {
@@ -295,12 +314,14 @@ func (x *GetLatestFileNameRequest) GetOptions() *SearchOptions {
 	return nil
 }
 
+// GetLatestFileNameResponse provides the latest filename retrieved for the specified search criteria.
 type GetLatestFileNameResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Filename string `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"` // The latest filename retrieved for the specified search criteria.
+	// The latest filename retrieved for the specified search criteria.
+	Filename string `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
 }
 
 func (x *GetLatestFileNameResponse) Reset() {
@@ -342,13 +363,16 @@ func (x *GetLatestFileNameResponse) GetFilename() string {
 	return ""
 }
 
+// GetFileNamesRequest includes search options to filter the events.
 type GetFileNamesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"` // Search options to filter the events.
-	Limit   int32          `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`    // The maximum number of filenames to return.
+	// Search options to filter the events.
+	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
+	// The maximum number of filenames to return.
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 }
 
 func (x *GetFileNamesRequest) Reset() {
@@ -397,12 +421,14 @@ func (x *GetFileNamesRequest) GetLimit() int32 {
 	return 0
 }
 
+// GetFileNamesResponse returns the list of filenames retrieved for the specified search criteria.
 type GetFileNamesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Filenames []string `protobuf:"bytes,1,rep,name=filenames,proto3" json:"filenames,omitempty"` // The latest filename retrieved for the specified search criteria.
+	// The list of filenames retrieved for the specified search criteria.
+	Filenames []string `protobuf:"bytes,1,rep,name=filenames,proto3" json:"filenames,omitempty"`
 }
 
 func (x *GetFileNamesResponse) Reset() {
@@ -444,13 +470,14 @@ func (x *GetFileNamesResponse) GetFilenames() []string {
 	return nil
 }
 
-// Request and response messages for fetching the latest cloud event data.
+// GetLatestFileRequest includes search options to filter the events.
 type GetLatestFileRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"` // Search options to filter the events.
+	// Search options to filter the events.
+	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
 }
 
 func (x *GetLatestFileRequest) Reset() {
@@ -492,12 +519,14 @@ func (x *GetLatestFileRequest) GetOptions() *SearchOptions {
 	return nil
 }
 
+// GetLatestFileResponse provides the data retrieved from the latest cloud event.
 type GetLatestFileResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"` // The data retrieved from the latest cloud event.
+	// The data retrieved from the latest cloud event.
+	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetLatestFileResponse) Reset() {
@@ -539,13 +568,16 @@ func (x *GetLatestFileResponse) GetData() []byte {
 	return nil
 }
 
+// GetFilesRequest includes search options to filter the events.
 type GetFilesRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"` // Search options to filter the events.
-	Limit   int32          `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`    // The maximum number of cloud events to return.
+	// Search options to filter the events.
+	Options *SearchOptions `protobuf:"bytes,1,opt,name=options,proto3" json:"options,omitempty"`
+	// The maximum number of files to return.
+	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 }
 
 func (x *GetFilesRequest) Reset() {
@@ -594,12 +626,14 @@ func (x *GetFilesRequest) GetLimit() int32 {
 	return 0
 }
 
+// GetFilesResponse provides the list of data retrieved from the files.
 type GetFilesResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Data [][]byte `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"` // The list of data retrieved from the cloud events.
+	// The list of data retrieved from the files.
+	Data [][]byte `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetFilesResponse) Reset() {

@@ -33,7 +33,7 @@ const (
 type FetchServiceClient interface {
 	// GetLatestFileName returns the latest filename for the given options
 	GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error)
-	// GetFileNames fetches and returns the list of filenames that match the specified options,
+	// GetFileNames fetches and returns the list of filenames that match the specified options
 	GetFileNames(ctx context.Context, in *GetFileNamesRequest, opts ...grpc.CallOption) (*GetFileNamesResponse, error)
 	// GetLatestData fetches and returns the latest file that matches the specified options
 	GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error)
@@ -97,7 +97,7 @@ func (c *fetchServiceClient) GetFiles(ctx context.Context, in *GetFilesRequest, 
 type FetchServiceServer interface {
 	// GetLatestFileName returns the latest filename for the given options
 	GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error)
-	// GetFileNames fetches and returns the list of filenames that match the specified options,
+	// GetFileNames fetches and returns the list of filenames that match the specified options
 	GetFileNames(context.Context, *GetFileNamesRequest) (*GetFileNamesResponse, error)
 	// GetLatestData fetches and returns the latest file that matches the specified options
 	GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error)

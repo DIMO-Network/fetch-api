@@ -53,9 +53,9 @@ func main() {
 
 	logger.Info().Str("port", strconv.Itoa(settings.GRPCPort)).Msgf("Starting gRPC server")
 	runGRPC(gCtx, rpcServer, ":"+strconv.Itoa(settings.GRPCPort), group)
-	logger.Info().Str("port", strconv.Itoa(settings.MonPort)).Msgf("Starting monitering server")
+	logger.Info().Str("port", strconv.Itoa(settings.MonPort)).Msgf("Starting monitoring server")
 	runFiber(gCtx, monApp, ":"+strconv.Itoa(settings.MonPort), group)
-	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msgf("Web server")
+	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msgf("Starting web server")
 	runFiber(gCtx, webServer, ":"+strconv.Itoa(settings.Port), group)
 
 	err = group.Wait()
