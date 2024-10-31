@@ -56,14 +56,14 @@ func (s *Server) GetObjects(ctx context.Context, req *grpc.GetObjectsRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	DataObjects := make([]*grpc.DataObject, len(data))
+	dataObjects := make([]*grpc.DataObject, len(data))
 	for i, d := range data {
-		DataObjects[i] = &grpc.DataObject{
+		dataObjects[i] = &grpc.DataObject{
 			IndexKey: d.IndexKey,
 			Data:     d.Data,
 		}
 	}
-	return &grpc.GetObjectsResponse{DataObjects: DataObjects}, nil
+	return &grpc.GetObjectsResponse{DataObjects: dataObjects}, nil
 }
 
 // GetLatestObject translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
@@ -85,14 +85,14 @@ func (s *Server) GetObjectsFromIndexKeys(ctx context.Context, req *grpc.GetObjec
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	DataObjects := make([]*grpc.DataObject, len(data))
+	dataObjects := make([]*grpc.DataObject, len(data))
 	for i, d := range data {
-		DataObjects[i] = &grpc.DataObject{
+		dataObjects[i] = &grpc.DataObject{
 			IndexKey: d.IndexKey,
 			Data:     d.Data,
 		}
 	}
-	return &grpc.GetObjectsFromIndexKeysResponse{DataObjects: DataObjects}, nil
+	return &grpc.GetObjectsFromIndexKeysResponse{DataObjects: dataObjects}, nil
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
