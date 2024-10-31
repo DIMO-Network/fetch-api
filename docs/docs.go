@@ -39,9 +39,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/filenames": {
+        "/v1/vehicle/{tokenId}/index-keys": {
             "get": {
-                "description": "Retrieves a list of filenames that match the provided search options",
+                "description": "Retrieves a list of index keys that match the provided search options",
                 "consumes": [
                     "application/json"
                 ],
@@ -49,9 +49,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "objects"
                 ],
-                "summary": "Get multiple filenames based on search criteria",
+                "summary": "Get multiple index keys based on search criteria",
                 "parameters": [
                     {
                         "type": "string",
@@ -86,7 +86,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns list of filenames",
+                        "description": "Returns list of index keys",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -118,9 +118,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/files": {
+        "/v1/vehicle/{tokenId}/latest-index-key": {
             "get": {
-                "description": "Retrieves the content of multiple files that match the provided search options",
+                "description": "Retrieves the most recent index key that matches the provided search options",
                 "consumes": [
                     "application/json"
                 ],
@@ -128,9 +128,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "objects"
                 ],
-                "summary": "Get multiple files based on search criteria",
+                "summary": "Get the latest index key based on search criteria",
                 "parameters": [
                     {
                         "type": "string",
@@ -165,7 +165,83 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns file data",
+                        "description": "Returns the latest index key",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/vehicle/{tokenId}/latest-object": {
+            "get": {
+                "description": "Retrieves the content of the most recent object that matches the provided search options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "objects"
+                ],
+                "summary": "Get the latest object based on search criteria",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns latest object data",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -197,9 +273,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/latest-file": {
+        "/v1/vehicle/{tokenId}/objects": {
             "get": {
-                "description": "Retrieves the content of the most recent file that matches the provided search options",
+                "description": "Retrieves the content of multiple objects that match the provided search options",
                 "consumes": [
                     "application/json"
                 ],
@@ -207,9 +283,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "files"
+                    "objects"
                 ],
-                "summary": "Get the latest file based on search criteria",
+                "summary": "Get multiple objects based on search criteria",
                 "parameters": [
                     {
                         "type": "string",
@@ -244,7 +320,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns latest file data",
+                        "description": "Returns objects",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -252,82 +328,6 @@ const docTemplate = `{
                                 "items": {
                                     "type": "integer"
                                 }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/vehicle/{tokenId}/latest-filename": {
-            "get": {
-                "description": "Retrieves the most recent filename that matches the provided search options",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get the latest filename based on search criteria",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "after",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "before",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "producer",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "type",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Returns the latest filename",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
                             }
                         }
                     },

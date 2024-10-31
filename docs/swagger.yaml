@@ -19,11 +19,11 @@ paths:
       summary: Show the status of server.
       tags:
       - root
-  /v1/vehicle/{tokenId}/filenames:
+  /v1/vehicle/{tokenId}/index-keys:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of filenames that match the provided search options
+      description: Retrieves a list of index keys that match the provided search options
       parameters:
       - in: query
         name: after
@@ -47,7 +47,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns list of filenames
+          description: Returns list of index keys
           schema:
             additionalProperties:
               items:
@@ -66,116 +66,14 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Get multiple filenames based on search criteria
+      summary: Get multiple index keys based on search criteria
       tags:
-      - files
-  /v1/vehicle/{tokenId}/files:
+      - objects
+  /v1/vehicle/{tokenId}/latest-index-key:
     get:
       consumes:
       - application/json
-      description: Retrieves the content of multiple files that match the provided
-        search options
-      parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
-      - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
-        type: string
-      - in: query
-        name: source
-        type: string
-      - in: query
-        name: type
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns file data
-          schema:
-            additionalProperties:
-              items:
-                type: integer
-              type: array
-            type: object
-        "400":
-          description: Invalid request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get multiple files based on search criteria
-      tags:
-      - files
-  /v1/vehicle/{tokenId}/latest-file:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the content of the most recent file that matches the
-        provided search options
-      parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
-      - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
-        type: string
-      - in: query
-        name: source
-        type: string
-      - in: query
-        name: type
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns latest file data
-          schema:
-            additionalProperties:
-              items:
-                type: integer
-              type: array
-            type: object
-        "400":
-          description: Invalid request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get the latest file based on search criteria
-      tags:
-      - files
-  /v1/vehicle/{tokenId}/latest-filename:
-    get:
-      consumes:
-      - application/json
-      description: Retrieves the most recent filename that matches the provided search
+      description: Retrieves the most recent index key that matches the provided search
         options
       parameters:
       - in: query
@@ -200,7 +98,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns the latest filename
+          description: Returns the latest index key
           schema:
             additionalProperties:
               type: string
@@ -217,9 +115,111 @@ paths:
             additionalProperties:
               type: string
             type: object
-      summary: Get the latest filename based on search criteria
+      summary: Get the latest index key based on search criteria
       tags:
-      - files
+      - objects
+  /v1/vehicle/{tokenId}/latest-object:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the content of the most recent object that matches the
+        provided search options
+      parameters:
+      - in: query
+        name: after
+        type: string
+      - in: query
+        name: before
+        type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: producer
+        type: string
+      - in: query
+        name: source
+        type: string
+      - in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns latest object data
+          schema:
+            additionalProperties:
+              items:
+                type: integer
+              type: array
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get the latest object based on search criteria
+      tags:
+      - objects
+  /v1/vehicle/{tokenId}/objects:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the content of multiple objects that match the provided
+        search options
+      parameters:
+      - in: query
+        name: after
+        type: string
+      - in: query
+        name: before
+        type: string
+      - in: query
+        name: limit
+        type: integer
+      - in: query
+        name: producer
+        type: string
+      - in: query
+        name: source
+        type: string
+      - in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns objects
+          schema:
+            additionalProperties:
+              items:
+                type: integer
+              type: array
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get multiple objects based on search criteria
+      tags:
+      - objects
 securityDefinitions:
   BearerAuth:
     in: header
