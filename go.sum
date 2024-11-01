@@ -74,10 +74,8 @@ github.com/DIMO-Network/clickhouse-infra v0.0.3 h1:B6/4IY9IxLcyydET14IjHUT+A5SDE
 github.com/DIMO-Network/clickhouse-infra v0.0.3/go.mod h1:NtpQ1btkPzebDvpYYygeqiiBmJ/q5oJb/T/JWzUVRlk=
 github.com/DIMO-Network/model-garage v0.3.3 h1:Mb6wz1siYiZC20aoQwoSawzjXQqIvBhIsY4kKP63RSg=
 github.com/DIMO-Network/model-garage v0.3.3/go.mod h1:TKajLKnkYw7n6cUuay6CBS15b81jVHRsQshW2WHeXzM=
-github.com/DIMO-Network/nameindexer v0.0.8 h1:UuBMcdeVaHn0FzNYiT0ysv89LWDLWNn8gt4h7QZBH7c=
-github.com/DIMO-Network/nameindexer v0.0.8/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
-github.com/DIMO-Network/nameindexer v0.0.10-0.20241030203913-597fdb26b952 h1:tw6Fo+8/gg1BhAIbJ0MeAmQqNZ+ph1lR/rU9p+/WD38=
-github.com/DIMO-Network/nameindexer v0.0.10-0.20241030203913-597fdb26b952/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
+github.com/DIMO-Network/nameindexer v0.0.10-0.20241031131836-425572ba4fe9 h1:EjmGhmuPDxWCYOJSFFASdNBXxfedTSwfaZIBAdA0PW8=
+github.com/DIMO-Network/nameindexer v0.0.10-0.20241031131836-425572ba4fe9/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
 github.com/DIMO-Network/shared v0.11.1 h1:LpI2rROKjrBo6KO76sU3dZDvSv4YbQ4XUBEC4P5NosM=
 github.com/DIMO-Network/shared v0.11.1/go.mod h1:lm7rUB5i7Jx7t3EomtCwep0aC+sB+nlYYTJkTdUeKHM=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=

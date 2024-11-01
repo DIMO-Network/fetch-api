@@ -84,10 +84,10 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 	vehHandler := httphandler.NewHandler(logger, chConn, s3Client,
 		settings.CloudEventBucket, settings.EphemeralBucket, vehicleNFTAddress, chainId)
 	// File endpoints
-	vehicleGroup.Post("/latest-filename/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestFileName)
-	vehicleGroup.Post("/filenames/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetFileNames)
-	vehicleGroup.Post("/files/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetFiles)
-	vehicleGroup.Post("/latest-file/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetLatestFile)
+	vehicleGroup.Post("/latest-index-key/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestIndexKey)
+	vehicleGroup.Post("/index-keys/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetIndexKeys)
+	vehicleGroup.Post("/objects/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetObjects)
+	vehicleGroup.Post("/latest-object/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetLatestObject)
 
 	return app, nil
 }

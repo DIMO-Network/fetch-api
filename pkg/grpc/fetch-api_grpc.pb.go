@@ -19,29 +19,29 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FetchService_GetLatestFileName_FullMethodName = "/grpc.FetchService/GetLatestFileName"
-	FetchService_GetFileNames_FullMethodName      = "/grpc.FetchService/GetFileNames"
-	FetchService_GetLatestFile_FullMethodName     = "/grpc.FetchService/GetLatestFile"
-	FetchService_GetFiles_FullMethodName          = "/grpc.FetchService/GetFiles"
-	FetchService_GetFilesFromNames_FullMethodName = "/grpc.FetchService/GetFilesFromNames"
+	FetchService_GetLatestIndexKey_FullMethodName       = "/grpc.FetchService/GetLatestIndexKey"
+	FetchService_GetIndexKeys_FullMethodName            = "/grpc.FetchService/GetIndexKeys"
+	FetchService_GetLatestObject_FullMethodName         = "/grpc.FetchService/GetLatestObject"
+	FetchService_GetObjects_FullMethodName              = "/grpc.FetchService/GetObjects"
+	FetchService_GetObjectsFromIndexKeys_FullMethodName = "/grpc.FetchService/GetObjectsFromIndexKeys"
 )
 
 // FetchServiceClient is the client API for FetchService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// FetchService defines the gRPC service for fetching DIMO files
+// FetchService defines the gRPC service for fetching DIMO objects
 type FetchServiceClient interface {
-	// GetLatestFileName returns the latest filename for the given options
-	GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error)
-	// GetFileNames fetches and returns the list of filenames that match the specified options
-	GetFileNames(ctx context.Context, in *GetFileNamesRequest, opts ...grpc.CallOption) (*GetFileNamesResponse, error)
-	// GetLatestData fetches and returns the latest file that matches the specified options
-	GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error)
-	// GetFiles fetches and returns the list of files that match the specified options
-	GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error)
-	// GetFilesFromNames fetches and returns the list of files that match the specified filename
-	GetFilesFromNames(ctx context.Context, in *GetFilesFromNamesRequest, opts ...grpc.CallOption) (*GetFilesFromNamesResponse, error)
+	// GetLatestIndexKey returns the latest index key for the given options
+	GetLatestIndexKey(ctx context.Context, in *GetLatestIndexKeyRequest, opts ...grpc.CallOption) (*GetLatestIndexKeyResponse, error)
+	// GetIndexKeys fetches and returns the list of index_keys that match the specified options
+	GetIndexKeys(ctx context.Context, in *GetIndexKeysRequest, opts ...grpc.CallOption) (*GetIndexKeysResponse, error)
+	// GetLatestObject fetches and returns the latest object that matches the specified options
+	GetLatestObject(ctx context.Context, in *GetLatestObjectRequest, opts ...grpc.CallOption) (*GetLatestObjectResponse, error)
+	// GetObjects fetches and returns the list of objects that match the specified options
+	GetObjects(ctx context.Context, in *GetObjectsRequest, opts ...grpc.CallOption) (*GetObjectsResponse, error)
+	// GetObjectsFromIndexKeys fetches and returns the list of objects that match the specified index key
+	GetObjectsFromIndexKeys(ctx context.Context, in *GetObjectsFromIndexKeysRequest, opts ...grpc.CallOption) (*GetObjectsFromIndexKeysResponse, error)
 }
 
 type fetchServiceClient struct {
@@ -52,50 +52,50 @@ func NewFetchServiceClient(cc grpc.ClientConnInterface) FetchServiceClient {
 	return &fetchServiceClient{cc}
 }
 
-func (c *fetchServiceClient) GetLatestFileName(ctx context.Context, in *GetLatestFileNameRequest, opts ...grpc.CallOption) (*GetLatestFileNameResponse, error) {
+func (c *fetchServiceClient) GetLatestIndexKey(ctx context.Context, in *GetLatestIndexKeyRequest, opts ...grpc.CallOption) (*GetLatestIndexKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLatestFileNameResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetLatestFileName_FullMethodName, in, out, cOpts...)
+	out := new(GetLatestIndexKeyResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetLatestIndexKey_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fetchServiceClient) GetFileNames(ctx context.Context, in *GetFileNamesRequest, opts ...grpc.CallOption) (*GetFileNamesResponse, error) {
+func (c *fetchServiceClient) GetIndexKeys(ctx context.Context, in *GetIndexKeysRequest, opts ...grpc.CallOption) (*GetIndexKeysResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetFileNamesResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetFileNames_FullMethodName, in, out, cOpts...)
+	out := new(GetIndexKeysResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetIndexKeys_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fetchServiceClient) GetLatestFile(ctx context.Context, in *GetLatestFileRequest, opts ...grpc.CallOption) (*GetLatestFileResponse, error) {
+func (c *fetchServiceClient) GetLatestObject(ctx context.Context, in *GetLatestObjectRequest, opts ...grpc.CallOption) (*GetLatestObjectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLatestFileResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetLatestFile_FullMethodName, in, out, cOpts...)
+	out := new(GetLatestObjectResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetLatestObject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fetchServiceClient) GetFiles(ctx context.Context, in *GetFilesRequest, opts ...grpc.CallOption) (*GetFilesResponse, error) {
+func (c *fetchServiceClient) GetObjects(ctx context.Context, in *GetObjectsRequest, opts ...grpc.CallOption) (*GetObjectsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetFilesResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetFiles_FullMethodName, in, out, cOpts...)
+	out := new(GetObjectsResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetObjects_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fetchServiceClient) GetFilesFromNames(ctx context.Context, in *GetFilesFromNamesRequest, opts ...grpc.CallOption) (*GetFilesFromNamesResponse, error) {
+func (c *fetchServiceClient) GetObjectsFromIndexKeys(ctx context.Context, in *GetObjectsFromIndexKeysRequest, opts ...grpc.CallOption) (*GetObjectsFromIndexKeysResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetFilesFromNamesResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetFilesFromNames_FullMethodName, in, out, cOpts...)
+	out := new(GetObjectsFromIndexKeysResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetObjectsFromIndexKeys_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,18 +106,18 @@ func (c *fetchServiceClient) GetFilesFromNames(ctx context.Context, in *GetFiles
 // All implementations must embed UnimplementedFetchServiceServer
 // for forward compatibility.
 //
-// FetchService defines the gRPC service for fetching DIMO files
+// FetchService defines the gRPC service for fetching DIMO objects
 type FetchServiceServer interface {
-	// GetLatestFileName returns the latest filename for the given options
-	GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error)
-	// GetFileNames fetches and returns the list of filenames that match the specified options
-	GetFileNames(context.Context, *GetFileNamesRequest) (*GetFileNamesResponse, error)
-	// GetLatestData fetches and returns the latest file that matches the specified options
-	GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error)
-	// GetFiles fetches and returns the list of files that match the specified options
-	GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error)
-	// GetFilesFromNames fetches and returns the list of files that match the specified filename
-	GetFilesFromNames(context.Context, *GetFilesFromNamesRequest) (*GetFilesFromNamesResponse, error)
+	// GetLatestIndexKey returns the latest index key for the given options
+	GetLatestIndexKey(context.Context, *GetLatestIndexKeyRequest) (*GetLatestIndexKeyResponse, error)
+	// GetIndexKeys fetches and returns the list of index_keys that match the specified options
+	GetIndexKeys(context.Context, *GetIndexKeysRequest) (*GetIndexKeysResponse, error)
+	// GetLatestObject fetches and returns the latest object that matches the specified options
+	GetLatestObject(context.Context, *GetLatestObjectRequest) (*GetLatestObjectResponse, error)
+	// GetObjects fetches and returns the list of objects that match the specified options
+	GetObjects(context.Context, *GetObjectsRequest) (*GetObjectsResponse, error)
+	// GetObjectsFromIndexKeys fetches and returns the list of objects that match the specified index key
+	GetObjectsFromIndexKeys(context.Context, *GetObjectsFromIndexKeysRequest) (*GetObjectsFromIndexKeysResponse, error)
 	mustEmbedUnimplementedFetchServiceServer()
 }
 
@@ -128,20 +128,20 @@ type FetchServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFetchServiceServer struct{}
 
-func (UnimplementedFetchServiceServer) GetLatestFileName(context.Context, *GetLatestFileNameRequest) (*GetLatestFileNameResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLatestFileName not implemented")
+func (UnimplementedFetchServiceServer) GetLatestIndexKey(context.Context, *GetLatestIndexKeyRequest) (*GetLatestIndexKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestIndexKey not implemented")
 }
-func (UnimplementedFetchServiceServer) GetFileNames(context.Context, *GetFileNamesRequest) (*GetFileNamesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFileNames not implemented")
+func (UnimplementedFetchServiceServer) GetIndexKeys(context.Context, *GetIndexKeysRequest) (*GetIndexKeysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetIndexKeys not implemented")
 }
-func (UnimplementedFetchServiceServer) GetLatestFile(context.Context, *GetLatestFileRequest) (*GetLatestFileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLatestFile not implemented")
+func (UnimplementedFetchServiceServer) GetLatestObject(context.Context, *GetLatestObjectRequest) (*GetLatestObjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestObject not implemented")
 }
-func (UnimplementedFetchServiceServer) GetFiles(context.Context, *GetFilesRequest) (*GetFilesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFiles not implemented")
+func (UnimplementedFetchServiceServer) GetObjects(context.Context, *GetObjectsRequest) (*GetObjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjects not implemented")
 }
-func (UnimplementedFetchServiceServer) GetFilesFromNames(context.Context, *GetFilesFromNamesRequest) (*GetFilesFromNamesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFilesFromNames not implemented")
+func (UnimplementedFetchServiceServer) GetObjectsFromIndexKeys(context.Context, *GetObjectsFromIndexKeysRequest) (*GetObjectsFromIndexKeysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObjectsFromIndexKeys not implemented")
 }
 func (UnimplementedFetchServiceServer) mustEmbedUnimplementedFetchServiceServer() {}
 func (UnimplementedFetchServiceServer) testEmbeddedByValue()                      {}
@@ -164,92 +164,92 @@ func RegisterFetchServiceServer(s grpc.ServiceRegistrar, srv FetchServiceServer)
 	s.RegisterService(&FetchService_ServiceDesc, srv)
 }
 
-func _FetchService_GetLatestFileName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLatestFileNameRequest)
+func _FetchService_GetLatestIndexKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestIndexKeyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetLatestFileName(ctx, in)
+		return srv.(FetchServiceServer).GetLatestIndexKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetLatestFileName_FullMethodName,
+		FullMethod: FetchService_GetLatestIndexKey_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetLatestFileName(ctx, req.(*GetLatestFileNameRequest))
+		return srv.(FetchServiceServer).GetLatestIndexKey(ctx, req.(*GetLatestIndexKeyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_GetFileNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFileNamesRequest)
+func _FetchService_GetIndexKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetIndexKeysRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetFileNames(ctx, in)
+		return srv.(FetchServiceServer).GetIndexKeys(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetFileNames_FullMethodName,
+		FullMethod: FetchService_GetIndexKeys_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetFileNames(ctx, req.(*GetFileNamesRequest))
+		return srv.(FetchServiceServer).GetIndexKeys(ctx, req.(*GetIndexKeysRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_GetLatestFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLatestFileRequest)
+func _FetchService_GetLatestObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestObjectRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetLatestFile(ctx, in)
+		return srv.(FetchServiceServer).GetLatestObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetLatestFile_FullMethodName,
+		FullMethod: FetchService_GetLatestObject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetLatestFile(ctx, req.(*GetLatestFileRequest))
+		return srv.(FetchServiceServer).GetLatestObject(ctx, req.(*GetLatestObjectRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_GetFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFilesRequest)
+func _FetchService_GetObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetObjectsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetFiles(ctx, in)
+		return srv.(FetchServiceServer).GetObjects(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetFiles_FullMethodName,
+		FullMethod: FetchService_GetObjects_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetFiles(ctx, req.(*GetFilesRequest))
+		return srv.(FetchServiceServer).GetObjects(ctx, req.(*GetObjectsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_GetFilesFromNames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetFilesFromNamesRequest)
+func _FetchService_GetObjectsFromIndexKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetObjectsFromIndexKeysRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetFilesFromNames(ctx, in)
+		return srv.(FetchServiceServer).GetObjectsFromIndexKeys(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetFilesFromNames_FullMethodName,
+		FullMethod: FetchService_GetObjectsFromIndexKeys_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetFilesFromNames(ctx, req.(*GetFilesFromNamesRequest))
+		return srv.(FetchServiceServer).GetObjectsFromIndexKeys(ctx, req.(*GetObjectsFromIndexKeysRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -262,24 +262,24 @@ var FetchService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FetchServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetLatestFileName",
-			Handler:    _FetchService_GetLatestFileName_Handler,
+			MethodName: "GetLatestIndexKey",
+			Handler:    _FetchService_GetLatestIndexKey_Handler,
 		},
 		{
-			MethodName: "GetFileNames",
-			Handler:    _FetchService_GetFileNames_Handler,
+			MethodName: "GetIndexKeys",
+			Handler:    _FetchService_GetIndexKeys_Handler,
 		},
 		{
-			MethodName: "GetLatestFile",
-			Handler:    _FetchService_GetLatestFile_Handler,
+			MethodName: "GetLatestObject",
+			Handler:    _FetchService_GetLatestObject_Handler,
 		},
 		{
-			MethodName: "GetFiles",
-			Handler:    _FetchService_GetFiles_Handler,
+			MethodName: "GetObjects",
+			Handler:    _FetchService_GetObjects_Handler,
 		},
 		{
-			MethodName: "GetFilesFromNames",
-			Handler:    _FetchService_GetFilesFromNames_Handler,
+			MethodName: "GetObjectsFromIndexKeys",
+			Handler:    _FetchService_GetObjectsFromIndexKeys_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

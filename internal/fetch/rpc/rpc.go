@@ -29,70 +29,70 @@ func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, cloudEv
 	}
 }
 
-// GetLatestFileName translates the gRPC call to the indexrepo type and returns the latest filename for the given options.
-func (s *Server) GetLatestFileName(ctx context.Context, req *grpc.GetLatestFileNameRequest) (*grpc.GetLatestFileNameResponse, error) {
+// GetLatestIndexKey translates the gRPC call to the indexrepo type and returns the latest index key for the given options.
+func (s *Server) GetLatestIndexKey(ctx context.Context, req *grpc.GetLatestIndexKeyRequest) (*grpc.GetLatestIndexKeyResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	filename, err := s.indexService.GetLatestFileName(ctx, options)
+	indexKey, err := s.indexService.GetLatestIndexKey(ctx, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest file name: %w", err)
+		return nil, fmt.Errorf("failed to get latest index key: %w", err)
 	}
-	return &grpc.GetLatestFileNameResponse{Filename: filename}, nil
+	return &grpc.GetLatestIndexKeyResponse{IndexKey: indexKey}, nil
 }
 
-// GetFileNames translates the gRPC call to the indexrepo type and fetches filenames for the given options.
-func (s *Server) GetFileNames(ctx context.Context, req *grpc.GetFileNamesRequest) (*grpc.GetFileNamesResponse, error) {
+// GetIndexKeys translates the gRPC call to the indexrepo type and fetches index keys for the given options.
+func (s *Server) GetIndexKeys(ctx context.Context, req *grpc.GetIndexKeysRequest) (*grpc.GetIndexKeysResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	filenames, err := s.indexService.GetFileNames(ctx, int(req.GetLimit()), options)
+	indexKeys, err := s.indexService.GetIndexKeys(ctx, int(req.GetLimit()), options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get file names: %w", err)
+		return nil, fmt.Errorf("failed to get index keys: %w", err)
 	}
-	return &grpc.GetFileNamesResponse{Filenames: filenames}, nil
+	return &grpc.GetIndexKeysResponse{IndexKeys: indexKeys}, nil
 }
 
-// GetFiles translates the gRPC call to the indexrepo type and fetches data for the given options.
-func (s *Server) GetFiles(ctx context.Context, req *grpc.GetFilesRequest) (*grpc.GetFilesResponse, error) {
+// GetObjects translates the gRPC call to the indexrepo type and fetches data for the given options.
+func (s *Server) GetObjects(ctx context.Context, req *grpc.GetObjectsRequest) (*grpc.GetObjectsResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	data, err := s.indexService.GetData(ctx, s.cloudEventBucket, int(req.GetLimit()), options)
+	data, err := s.indexService.GetObject(ctx, s.cloudEventBucket, int(req.GetLimit()), options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get files: %w", err)
+		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	dataFiles := make([]*grpc.DataFile, len(data))
+	dataObjects := make([]*grpc.DataObject, len(data))
 	for i, d := range data {
-		dataFiles[i] = &grpc.DataFile{
-			Filename: d.Filename,
+		dataObjects[i] = &grpc.DataObject{
+			IndexKey: d.IndexKey,
 			Data:     d.Data,
 		}
 	}
-	return &grpc.GetFilesResponse{DataFiles: dataFiles}, nil
+	return &grpc.GetObjectsResponse{DataObjects: dataObjects}, nil
 }
 
-// GetLatestFile translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
-func (s *Server) GetLatestFile(ctx context.Context, req *grpc.GetLatestFileRequest) (*grpc.GetLatestFileResponse, error) {
+// GetLatestObject translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
+func (s *Server) GetLatestObject(ctx context.Context, req *grpc.GetLatestObjectRequest) (*grpc.GetLatestObjectResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	latestData, err := s.indexService.GetLatestData(ctx, s.cloudEventBucket, options)
+	latestData, err := s.indexService.GetLatestObject(ctx, s.cloudEventBucket, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest file: %w", err)
+		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
-	return &grpc.GetLatestFileResponse{DataFile: &grpc.DataFile{
-		Filename: latestData.Filename,
+	return &grpc.GetLatestObjectResponse{DataObject: &grpc.DataObject{
+		IndexKey: latestData.IndexKey,
 		Data:     latestData.Data,
 	}}, nil
 }
 
-// GetFiles translates the gRPC call to the indexrepo type and fetches data for the given options.
-func (s *Server) GetFilesFromNames(ctx context.Context, req *grpc.GetFilesFromNamesRequest) (*grpc.GetFilesFromNamesResponse, error) {
-	data, err := s.indexService.GetDataFromFileNames(ctx, req.GetFilenames(), s.cloudEventBucket)
+// GetObjectsFromIndexKeys translates the gRPC call to the indexrepo type and fetches data for the given options.
+func (s *Server) GetObjectsFromIndexKeys(ctx context.Context, req *grpc.GetObjectsFromIndexKeysRequest) (*grpc.GetObjectsFromIndexKeysResponse, error) {
+	data, err := s.indexService.GetObjectsFromIndexKeys(ctx, req.GetIndexKeys(), s.cloudEventBucket)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get files: %w", err)
+		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	dataFiles := make([]*grpc.DataFile, len(data))
+	dataObjects := make([]*grpc.DataObject, len(data))
 	for i, d := range data {
-		dataFiles[i] = &grpc.DataFile{
-			Filename: d.Filename,
+		dataObjects[i] = &grpc.DataObject{
+			IndexKey: d.IndexKey,
 			Data:     d.Data,
 		}
 	}
-	return &grpc.GetFilesFromNamesResponse{DataFiles: dataFiles}, nil
+	return &grpc.GetObjectsFromIndexKeysResponse{DataObjects: dataObjects}, nil
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.

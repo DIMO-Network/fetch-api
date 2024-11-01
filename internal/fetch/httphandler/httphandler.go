@@ -75,18 +75,18 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.Sear
 	}
 }
 
-// GetLatestFileName handles requests for the latest filename
-// @Summary Get the latest filename based on search criteria
-// @Description Retrieves the most recent filename that matches the provided search options
-// @Tags files
+// GetLatestIndexKey handles requests for the latest index key
+// @Summary Get the latest index key based on search criteria
+// @Description Retrieves the most recent index key that matches the provided search options
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string]string "Returns the latest filename"
+// @Success 200 {object} map[string]string "Returns the latest index key"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/latest-filename [get]
-func (h *Handler) GetLatestFileName(fCtx *fiber.Ctx) error {
+// @Router /v1/vehicle/{tokenId}/latest-index-key [get]
+func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
@@ -101,28 +101,28 @@ func (h *Handler) GetLatestFileName(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	filename, err := h.indexService.GetLatestFileName(fCtx.Context(), opts)
+	indexKey, err := h.indexService.GetLatestIndexKey(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
 
 	return fCtx.JSON(fiber.Map{
-		"filename": filename,
+		"indexKey": indexKey,
 	})
 }
 
-// GetFileNames handles requests for multiple filenames
-// @Summary Get multiple filenames based on search criteria
-// @Description Retrieves a list of filenames that match the provided search options
-// @Tags files
+// GetIndexKeys handles requests for multiple index keys
+// @Summary Get multiple index keys based on search criteria
+// @Description Retrieves a list of index keys that match the provided search options
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]string "Returns list of filenames"
+// @Success 200 {object} map[string][]string "Returns list of index keys"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/filenames [get]
-func (h *Handler) GetFileNames(fCtx *fiber.Ctx) error {
+// @Router /v1/vehicle/{tokenId}/index-keys [get]
+func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
@@ -137,28 +137,28 @@ func (h *Handler) GetFileNames(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	filenames, err := h.indexService.GetFileNames(fCtx.Context(), params.Limit, opts)
+	indexKeys, err := h.indexService.GetIndexKeys(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
 
 	return fCtx.JSON(fiber.Map{
-		"filenames": filenames,
+		"indexKeys": indexKeys,
 	})
 }
 
-// GetFiles handles requests for multiple files
-// @Summary Get multiple files based on search criteria
-// @Description Retrieves the content of multiple files that match the provided search options
-// @Tags files
+// GetObjects handles requests for multiple objects
+// @Summary Get multiple objects based on search criteria
+// @Description Retrieves the content of multiple objects that match the provided search options
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]byte "Returns file data"
+// @Success 200 {object} map[string][]byte "Returns objects"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/files [get]
-func (h *Handler) GetFiles(fCtx *fiber.Ctx) error {
+// @Router /v1/vehicle/{tokenId}/objects [get]
+func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
@@ -173,7 +173,7 @@ func (h *Handler) GetFiles(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	data, err := h.indexService.GetData(fCtx.Context(), h.cloudEventBucket, params.Limit, opts)
+	data, err := h.indexService.GetObject(fCtx.Context(), h.cloudEventBucket, params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -183,18 +183,18 @@ func (h *Handler) GetFiles(fCtx *fiber.Ctx) error {
 	})
 }
 
-// GetLatestFile handles requests for the latest file
-// @Summary Get the latest file based on search criteria
-// @Description Retrieves the content of the most recent file that matches the provided search options
-// @Tags files
+// GetLatestObject handles requests for the latest object
+// @Summary Get the latest object based on search criteria
+// @Description Retrieves the content of the most recent object that matches the provided search options
+// @Tags objects
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]byte "Returns latest file data"
+// @Success 200 {object} map[string][]byte "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/latest-file [get]
-func (h *Handler) GetLatestFile(fCtx *fiber.Ctx) error {
+// @Router /v1/vehicle/{tokenId}/latest-object [get]
+func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
@@ -209,7 +209,7 @@ func (h *Handler) GetLatestFile(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	data, err := h.indexService.GetLatestData(fCtx.Context(), h.cloudEventBucket, opts)
+	data, err := h.indexService.GetLatestObject(fCtx.Context(), h.cloudEventBucket, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}

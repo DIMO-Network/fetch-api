@@ -7,25 +7,25 @@ package grpc;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-// FetchService defines the gRPC service for fetching DIMO files
+// FetchService defines the gRPC service for fetching DIMO objects
 service FetchService {
-  // GetLatestFileName returns the latest filename for the given options
-  rpc GetLatestFileName (GetLatestFileNameRequest) returns (GetLatestFileNameResponse);
+  // GetLatestIndexKey returns the latest index key for the given options
+  rpc GetLatestIndexKey (GetLatestIndexKeyRequest) returns (GetLatestIndexKeyResponse);
 
-  // GetFileNames fetches and returns the list of filenames that match the specified options
-  rpc GetFileNames (GetFileNamesRequest) returns (GetFileNamesResponse);
+  // GetIndexKeys fetches and returns the list of index_keys that match the specified options
+  rpc GetIndexKeys (GetIndexKeysRequest) returns (GetIndexKeysResponse);
 
-  // GetLatestData fetches and returns the latest file that matches the specified options
-  rpc GetLatestFile (GetLatestFileRequest) returns (GetLatestFileResponse);
+  // GetLatestObject fetches and returns the latest object that matches the specified options
+  rpc GetLatestObject (GetLatestObjectRequest) returns (GetLatestObjectResponse);
 
-  // GetFiles fetches and returns the list of files that match the specified options
-  rpc GetFiles (GetFilesRequest) returns (GetFilesResponse);
+  // GetObjects fetches and returns the list of objects that match the specified options
+  rpc GetObjects (GetObjectsRequest) returns (GetObjectsResponse);
 
-  // GetFilesFromNames fetches and returns the list of files that match the specified filename
-  rpc GetFilesFromNames (GetFilesFromNamesRequest) returns (GetFilesFromNamesResponse);
+  // GetObjectsFromIndexKeys fetches and returns the list of objects that match the specified index key
+  rpc GetObjectsFromIndexKeys (GetObjectsFromIndexKeysRequest) returns (GetObjectsFromIndexKeysResponse);
 }
 
-// SearchOptions provides filtering options to narrow down the search results for files
+// SearchOptions provides filtering options to narrow down the search results for objects
 // based on various criteria. If a field is not set, it is not used for filtering.
 message SearchOptions {
   // Only include events after this timestamp.
@@ -59,75 +59,75 @@ message SearchOptions {
   google.protobuf.StringValue optional = 10;
 }
 
-// DataFile contains the filename and data retrieved from the file.
-message DataFile {
-  // The filename of the file.
-  string filename = 1;
-  // The data retrieved from the file.
+// DataObject contains the index key and data retrieved from the object.
+message DataObject {
+  // The index key of the object.
+  string index_key = 1;
+  // The data retrieved from the object.
   bytes data = 2;
 }
 
-// GetLatestFileNameRequest includes search options to filter the events.
-message GetLatestFileNameRequest {
+// GetLatestIndexKeyRequest includes search options to filter the events.
+message GetLatestIndexKeyRequest {
   SearchOptions options = 1;
 }
 
-// GetLatestFileNameResponse provides the latest filename retrieved for the specified search criteria.
-message GetLatestFileNameResponse {
-  // The latest filename retrieved for the specified search criteria.
-  string filename = 1;
+// GetLatestIndexKeyResponse provides the latest index key retrieved for the specified search criteria.
+message GetLatestIndexKeyResponse {
+  // The latest index key retrieved for the specified search criteria.
+  string index_key = 1;
 }
 
-// GetFileNamesRequest includes search options to filter the events.
-message GetFileNamesRequest{
+// GetIndexKeysRequest includes search options to filter the events.
+message GetIndexKeysRequest{
   // Search options to filter the events.
   SearchOptions options = 1;
   
-  // The maximum number of filenames to return.
+  // The maximum number of index_keys to return.
   int32 limit = 2;
 }
 
-// GetFileNamesResponse returns the list of filenames retrieved for the specified search criteria.
-message GetFileNamesResponse{
-  // The list of filenames retrieved for the specified search criteria.
-  repeated string filenames = 1;
+// GetIndexKeysResponse returns the list of index_keys retrieved for the specified search criteria.
+message GetIndexKeysResponse{
+  // The list of index_keys retrieved for the specified search criteria.
+  repeated string index_keys = 1;
 }
 
-// GetLatestFileRequest includes search options to filter the events.
-message GetLatestFileRequest {
+// GetLatestObjectRequest includes search options to filter the events.
+message GetLatestObjectRequest {
   // Search options to filter the events.
   SearchOptions options = 1;
 }
 
-// GetLatestFileResponse provides the data retrieved from the latest cloud event.
-message GetLatestFileResponse {
+// GetLatestObjectResponse provides the data retrieved from the latest cloud event.
+message GetLatestObjectResponse {
   // The data retrieved from the latest cloud event.
-  DataFile data_file = 1;
+  DataObject data_object = 1;
 }
 
-// GetFilesRequest includes search options to filter the events.
-message GetFilesRequest {
+// GetObjectsRequest includes search options to filter the events.
+message GetObjectsRequest {
   // Search options to filter the events.
   SearchOptions options = 1;
   
-  // The maximum number of files to return.
+  // The maximum number of objects to return.
   int32 limit = 2;
 }
 
-// GetFilesResponse provides the list of data retrieved from the files.
-message GetFilesResponse {
-  // The list of data retrieved from the files.
-  repeated DataFile data_files = 1;
+// GetObjectsResponse provides the list of data retrieved from the objects.
+message GetObjectsResponse {
+  // The list of data retrieved from the objects.
+  repeated DataObject data_objects = 1;
 }
 
-// GetFilesFromNameRequest includes the filename to filter the events.
-message GetFilesFromNamesRequest {
-  // The filenames that will be retrieved.
-  repeated string filenames = 1;
+// GetObjectsFromIndexKeysRequest includes the index key to filter the events.
+message GetObjectsFromIndexKeysRequest {
+  // The index_keys that will be retrieved.
+  repeated string index_keys = 1;
 }
 
-// GetFilesFromNameResponse provides the list of data retrieved from the files.
-message GetFilesFromNamesResponse {
-  // The list of data retrieved from the files.
-  repeated DataFile data_files = 1;
+// GetObjectsFromNameResponse provides the list of data retrieved from the objects.
+message GetObjectsFromIndexKeysResponse {
+  // The list of data retrieved from the objects.
+  repeated DataObject data_objects = 1;
 }
