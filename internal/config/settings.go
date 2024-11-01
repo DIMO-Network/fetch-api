@@ -1,7 +1,10 @@
 // Package config holds application configuration settings.
 package config
 
-import "github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
+import (
+	"github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
+	"github.com/ethereum/go-ethereum/common"
+)
 
 // Settings contains the application config.
 type Settings struct {
@@ -10,7 +13,7 @@ type Settings struct {
 	GRPCPort                  int             `yaml:"GRPC_PORT"`
 	TokenExchangeJWTKeySetURL string          `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
 	TokenExchangeIssuer       string          `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
-	VehicleNFTAddress         string          `yaml:"VEHICLE_NFT_ADDRESS"`
+	VehicleNFTAddress         common.Address  `yaml:"VEHICLE_NFT_ADDRESS"`
 	ChainID                   string          `yaml:"CHAIN_ID"`
 	CloudEventBucket          string          `yaml:"CLOUDEVENT_BUCKET"`
 	EphemeralBucket           string          `yaml:"EPHEMERAL_BUCKET"`

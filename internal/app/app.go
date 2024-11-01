@@ -15,7 +15,6 @@ import (
 	"github.com/DIMO-Network/shared/middleware/metrics"
 	"github.com/DIMO-Network/shared/middleware/privilegetoken"
 	"github.com/DIMO-Network/shared/privileges"
-	"github.com/ethereum/go-ethereum/common"
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -32,10 +31,6 @@ import (
 
 // CreateWebServer creates a new web server with the given logger and settings.
 func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.App, error) {
-	if !common.IsHexAddress(settings.VehicleNFTAddress) {
-		return nil, errors.New("invalid vehicle NFT address")
-	}
-	vehicleNFTAddress := common.HexToAddress(settings.VehicleNFTAddress)
 	chainId, err := strconv.ParseUint(settings.ChainID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
@@ -73,7 +68,7 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 	v1 := app.Group("/v1")
 	vehicleGroup := v1.Group("/vehicle")
 
-	vehiclePriv := auth.AllOf(vehicleNFTAddress, "tokenId", []privileges.Privilege{privileges.Privilege(7)})
+	vehiclePriv := auth.AllOf(settings.VehicleNFTAddress, "tokenId", []privileges.Privilege{privileges.Privilege(7)})
 
 	chConn, err := chClientFromSettings(settings)
 	if err != nil {
@@ -82,7 +77,7 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 
 	s3Client := s3ClientFromSettings(settings)
 	vehHandler := httphandler.NewHandler(logger, chConn, s3Client,
-		settings.CloudEventBucket, settings.EphemeralBucket, vehicleNFTAddress, chainId)
+		settings.CloudEventBucket, settings.EphemeralBucket, settings.VehicleNFTAddress, chainId)
 	// File endpoints
 	vehicleGroup.Post("/latest-index-key/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestIndexKey)
 	vehicleGroup.Post("/index-keys/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetIndexKeys)
