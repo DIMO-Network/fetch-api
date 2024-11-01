@@ -33,20 +33,11 @@ type Handler struct {
 	logger           *zerolog.Logger
 }
 
-// NewHandler creates a new Handler instance.
-func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client,
-	cloudEventBucket, ephemeralBucket string,
-	vehicleAddr common.Address, chainID uint64,
-) *Handler {
-	indexService := indexrepo.New(chConn, s3Client)
-	return &Handler{
-		indexService:     indexService,
-		cloudEventBucket: cloudEventBucket,
-		ephemeralBucket:  ephemeralBucket,
-		vehicleAddr:      vehicleAddr,
-		chainID:          chainID,
-		logger:           logger,
-	}
+type indexKeyResponse struct {
+	IndexKeys []string `json:"indexKeys"`
+}
+type indexKeysResponse struct {
+	IndexKey string `json:"indexKey"`
 }
 
 type searchParams struct {
@@ -75,6 +66,22 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.Sear
 	}
 }
 
+// NewHandler creates a new Handler instance.
+func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client,
+	cloudEventBucket, ephemeralBucket string,
+	vehicleAddr common.Address, chainID uint64,
+) *Handler {
+	indexService := indexrepo.New(chConn, s3Client)
+	return &Handler{
+		indexService:     indexService,
+		cloudEventBucket: cloudEventBucket,
+		ephemeralBucket:  ephemeralBucket,
+		vehicleAddr:      vehicleAddr,
+		chainID:          chainID,
+		logger:           logger,
+	}
+}
+
 // GetLatestIndexKey handles requests for the latest index key
 // @Summary Get the latest index key based on search criteria
 // @Description Retrieves the most recent index key that matches the provided search options
@@ -82,10 +89,11 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.Sear
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string]string "Returns the latest index key"
+// @Param tokenId path string true "Token ID"
+// @Success 200 {object} indexKeyResponse "Returns the latest index key"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/latest-index-key [get]
+// @Router /v1/vehicle/latest-index-key/{tokenId} [get]
 func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
@@ -106,9 +114,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(fiber.Map{
-		"indexKey": indexKey,
-	})
+	return fCtx.JSON(indexKeysResponse{IndexKey: indexKey})
 }
 
 // GetIndexKeys handles requests for multiple index keys
@@ -118,10 +124,11 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]string "Returns list of index keys"
+// @Param tokenId path string true "Token ID"
+// @Success 200 {object} indexKeysResponse "Returns list of index keys"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/index-keys [get]
+// @Router /v1/vehicle/index-keys/{tokenId} [get]
 func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
@@ -142,9 +149,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(fiber.Map{
-		"indexKeys": indexKeys,
-	})
+	return fCtx.JSON(indexKeyResponse{IndexKeys: indexKeys})
 }
 
 // GetObjects handles requests for multiple objects
@@ -154,10 +159,11 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]byte "Returns objects"
+// @Param tokenId path string true "Token ID"
+// @Success 200 {object} []indexrepo.DataObject "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/objects [get]
+// @Router /v1/vehicle/objects/{tokenId} [get]
 func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
@@ -178,9 +184,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(fiber.Map{
-		"data": data,
-	})
+	return fCtx.JSON(data)
 }
 
 // GetLatestObject handles requests for the latest object
@@ -190,10 +194,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param params query searchParams false "Search parameters"
-// @Success 200 {object} map[string][]byte "Returns latest object data"
+// @Param tokenId path string true "Token ID"
+// @Success 200 {object} indexrepo.DataObject "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
-// @Router /v1/vehicle/{tokenId}/latest-object [get]
+// @Router /v1/vehicle/latest-object/{tokenId} [get]
 func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params("tokenId")
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
@@ -214,9 +219,7 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(fiber.Map{
-		"data": data,
-	})
+	return fCtx.JSON(data)
 }
 
 // handleDBError logs the error and returns a generic error message.

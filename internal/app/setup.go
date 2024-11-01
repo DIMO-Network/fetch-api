@@ -1,9 +1,7 @@
 package app
 
 import (
-	"context"
 	"fmt"
-	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/clickhouse-infra/pkg/connect"
@@ -32,11 +30,11 @@ func chClientFromSettings(settings *config.Settings) (clickhouse.Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancel()
-	err = chConn.Ping(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
-	}
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	// defer cancel()
+	// err = chConn.Ping(ctx)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to ping ClickHouse: %w", err)
+	// }
 	return chConn, nil
 }

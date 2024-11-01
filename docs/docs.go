@@ -39,7 +39,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/index-keys": {
+        "/v1/vehicle/index-keys/{tokenId}": {
             "get": {
                 "description": "Retrieves a list of index keys that match the provided search options",
                 "consumes": [
@@ -82,19 +82,20 @@ const docTemplate = `{
                         "type": "string",
                         "name": "type",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Returns list of index keys",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                }
-                            }
+                            "$ref": "#/definitions/internal_fetch_httphandler.indexKeysResponse"
                         }
                     },
                     "400": {
@@ -118,7 +119,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/latest-index-key": {
+        "/v1/vehicle/latest-index-key/{tokenId}": {
             "get": {
                 "description": "Retrieves the most recent index key that matches the provided search options",
                 "consumes": [
@@ -161,16 +162,20 @@ const docTemplate = `{
                         "type": "string",
                         "name": "type",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Returns the latest index key",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/internal_fetch_httphandler.indexKeyResponse"
                         }
                     },
                     "400": {
@@ -194,7 +199,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/latest-object": {
+        "/v1/vehicle/latest-object/{tokenId}": {
             "get": {
                 "description": "Retrieves the content of the most recent object that matches the provided search options",
                 "consumes": [
@@ -237,19 +242,20 @@ const docTemplate = `{
                         "type": "string",
                         "name": "type",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Returns latest object data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                }
-                            }
+                            "$ref": "#/definitions/indexrepo.DataObject"
                         }
                     },
                     "400": {
@@ -273,7 +279,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/vehicle/{tokenId}/objects": {
+        "/v1/vehicle/objects/{tokenId}": {
             "get": {
                 "description": "Retrieves the content of multiple objects that match the provided search options",
                 "consumes": [
@@ -316,18 +322,22 @@ const docTemplate = `{
                         "type": "string",
                         "name": "type",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns objects",
+                        "description": "Returns latest object data",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                }
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/indexrepo.DataObject"
                             }
                         }
                     },
@@ -349,6 +359,41 @@ const docTemplate = `{
                             }
                         }
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "indexrepo.DataObject": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "indexKey": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_fetch_httphandler.indexKeyResponse": {
+            "type": "object",
+            "properties": {
+                "indexKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "internal_fetch_httphandler.indexKeysResponse": {
+            "type": "object",
+            "properties": {
+                "indexKey": {
+                    "type": "string"
                 }
             }
         }

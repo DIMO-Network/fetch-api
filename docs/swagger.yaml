@@ -1,3 +1,25 @@
+definitions:
+  indexrepo.DataObject:
+    properties:
+      data:
+        items:
+          type: integer
+        type: array
+      indexKey:
+        type: string
+    type: object
+  internal_fetch_httphandler.indexKeyResponse:
+    properties:
+      indexKeys:
+        items:
+          type: string
+        type: array
+    type: object
+  internal_fetch_httphandler.indexKeysResponse:
+    properties:
+      indexKey:
+        type: string
+    type: object
 info:
   contact: {}
   title: DIMO Fetch API
@@ -19,7 +41,7 @@ paths:
       summary: Show the status of server.
       tags:
       - root
-  /v1/vehicle/{tokenId}/index-keys:
+  /v1/vehicle/index-keys/{tokenId}:
     get:
       consumes:
       - application/json
@@ -43,17 +65,18 @@ paths:
       - in: query
         name: type
         type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Returns list of index keys
           schema:
-            additionalProperties:
-              items:
-                type: string
-              type: array
-            type: object
+            $ref: '#/definitions/internal_fetch_httphandler.indexKeysResponse'
         "400":
           description: Invalid request
           schema:
@@ -69,7 +92,7 @@ paths:
       summary: Get multiple index keys based on search criteria
       tags:
       - objects
-  /v1/vehicle/{tokenId}/latest-index-key:
+  /v1/vehicle/latest-index-key/{tokenId}:
     get:
       consumes:
       - application/json
@@ -94,15 +117,18 @@ paths:
       - in: query
         name: type
         type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Returns the latest index key
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/internal_fetch_httphandler.indexKeyResponse'
         "400":
           description: Invalid request
           schema:
@@ -118,7 +144,7 @@ paths:
       summary: Get the latest index key based on search criteria
       tags:
       - objects
-  /v1/vehicle/{tokenId}/latest-object:
+  /v1/vehicle/latest-object/{tokenId}:
     get:
       consumes:
       - application/json
@@ -143,17 +169,18 @@ paths:
       - in: query
         name: type
         type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Returns latest object data
           schema:
-            additionalProperties:
-              items:
-                type: integer
-              type: array
-            type: object
+            $ref: '#/definitions/indexrepo.DataObject'
         "400":
           description: Invalid request
           schema:
@@ -169,7 +196,7 @@ paths:
       summary: Get the latest object based on search criteria
       tags:
       - objects
-  /v1/vehicle/{tokenId}/objects:
+  /v1/vehicle/objects/{tokenId}:
     get:
       consumes:
       - application/json
@@ -194,17 +221,20 @@ paths:
       - in: query
         name: type
         type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
-          description: Returns objects
+          description: Returns latest object data
           schema:
-            additionalProperties:
-              items:
-                type: integer
-              type: array
-            type: object
+            items:
+              $ref: '#/definitions/indexrepo.DataObject'
+            type: array
         "400":
           description: Invalid request
           schema:
