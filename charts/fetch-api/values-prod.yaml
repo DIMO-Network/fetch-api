@@ -9,8 +9,8 @@ cronJob:
 env:
   TOKEN_EXCHANGE_JWK_KEY_SET_URL: http://dex-roles-rights-prod.prod.svc.cluster.local:5556/keys
   TOKEN_EXCHANGE_ISSUER_URL: https://auth-roles-rights.dimo.zone
-  CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
-  EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
+  CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-prod
+  EPHEMERAL_BUCKET: dimo-ingest-ephemeral-prod
   VEHICLE_NFT_ADDRESS: '0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF'
   CHAIN_ID: 137
 ingress:
