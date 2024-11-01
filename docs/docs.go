@@ -381,19 +381,19 @@ const docTemplate = `{
         "internal_fetch_httphandler.indexKeyResponse": {
             "type": "object",
             "properties": {
-                "indexKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "indexKey": {
+                    "type": "string"
                 }
             }
         },
         "internal_fetch_httphandler.indexKeysResponse": {
             "type": "object",
             "properties": {
-                "indexKey": {
-                    "type": "string"
+                "indexKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         }

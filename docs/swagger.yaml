@@ -10,15 +10,15 @@ definitions:
     type: object
   internal_fetch_httphandler.indexKeyResponse:
     properties:
+      indexKey:
+        type: string
+    type: object
+  internal_fetch_httphandler.indexKeysResponse:
+    properties:
       indexKeys:
         items:
           type: string
         type: array
-    type: object
-  internal_fetch_httphandler.indexKeysResponse:
-    properties:
-      indexKey:
-        type: string
     type: object
 info:
   contact: {}

@@ -33,10 +33,10 @@ type Handler struct {
 	logger           *zerolog.Logger
 }
 
-type indexKeyResponse struct {
+type indexKeysResponse struct {
 	IndexKeys []string `json:"indexKeys"`
 }
-type indexKeysResponse struct {
+type indexKeyResponse struct {
 	IndexKey string `json:"indexKey"`
 }
 
@@ -114,7 +114,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(indexKeysResponse{IndexKey: indexKey})
+	return fCtx.JSON(indexKeyResponse{IndexKey: indexKey})
 }
 
 // GetIndexKeys handles requests for multiple index keys
@@ -149,7 +149,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(indexKeyResponse{IndexKeys: indexKeys})
+	return fCtx.JSON(indexKeysResponse{IndexKeys: indexKeys})
 }
 
 // GetObjects handles requests for multiple objects
