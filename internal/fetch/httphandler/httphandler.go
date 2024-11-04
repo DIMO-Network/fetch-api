@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
@@ -179,7 +180,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	data, err := h.indexService.GetObject(fCtx.Context(), h.cloudEventBucket, params.Limit, opts)
+	indexKeys, err := h.indexService.GetIndexKeys(fCtx.Context(), params.Limit, opts)
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
+	data, err := fetch.GetObjectsFromIndexs(fCtx.Context(), h.indexService, indexKeys, []string{h.cloudEventBucket, h.ephemeralBucket})
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -213,12 +218,14 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	}
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
-
-	data, err := h.indexService.GetLatestObject(fCtx.Context(), h.cloudEventBucket, opts)
+	indexKey, err := h.indexService.GetLatestIndexKey(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-
+	data, err := fetch.GetObjectFromIndex(fCtx.Context(), h.indexService, indexKey, []string{h.cloudEventBucket, h.ephemeralBucket})
+	if err != nil {
+		return handleDBError(err, h.logger)
+	}
 	return fCtx.JSON(data)
 }
 
