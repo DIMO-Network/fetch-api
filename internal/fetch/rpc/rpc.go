@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -52,10 +53,15 @@ func (s *Server) GetIndexKeys(ctx context.Context, req *grpc.GetIndexKeysRequest
 // GetObjects translates the gRPC call to the indexrepo type and fetches data for the given options.
 func (s *Server) GetObjects(ctx context.Context, req *grpc.GetObjectsRequest) (*grpc.GetObjectsResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	data, err := s.indexService.GetObject(ctx, s.cloudEventBucket, int(req.GetLimit()), options)
+	idxKeys, err := s.indexService.GetIndexKeys(ctx, int(req.GetLimit()), options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
+	data, err := fetch.GetObjectsFromIndexs(ctx, s.indexService, idxKeys, []string{s.cloudEventBucket, s.ephemeralBucket})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest object: %w", err)
+	}
+
 	dataObjects := make([]*grpc.DataObject, len(data))
 	for i, d := range data {
 		dataObjects[i] = &grpc.DataObject{
@@ -69,7 +75,11 @@ func (s *Server) GetObjects(ctx context.Context, req *grpc.GetObjectsRequest) (*
 // GetLatestObject translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
 func (s *Server) GetLatestObject(ctx context.Context, req *grpc.GetLatestObjectRequest) (*grpc.GetLatestObjectResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	latestData, err := s.indexService.GetLatestObject(ctx, s.cloudEventBucket, options)
+	idxKey, err := s.indexService.GetLatestIndexKey(ctx, options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get latest object: %w", err)
+	}
+	latestData, err := fetch.GetObjectFromIndex(ctx, s.indexService, idxKey, []string{s.cloudEventBucket, s.ephemeralBucket})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
@@ -81,7 +91,7 @@ func (s *Server) GetLatestObject(ctx context.Context, req *grpc.GetLatestObjectR
 
 // GetObjectsFromIndexKeys translates the gRPC call to the indexrepo type and fetches data for the given options.
 func (s *Server) GetObjectsFromIndexKeys(ctx context.Context, req *grpc.GetObjectsFromIndexKeysRequest) (*grpc.GetObjectsFromIndexKeysResponse, error) {
-	data, err := s.indexService.GetObjectsFromIndexKeys(ctx, req.GetIndexKeys(), s.cloudEventBucket)
+	data, err := fetch.GetObjectsFromIndexs(ctx, s.indexService, req.GetIndexKeys(), []string{s.cloudEventBucket, s.ephemeralBucket})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
