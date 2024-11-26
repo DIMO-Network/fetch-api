@@ -3,13 +3,16 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
@@ -62,14 +65,11 @@ func (s *Server) GetObjects(ctx context.Context, req *grpc.GetObjectsRequest) (*
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
 
-	dataObjects := make([]*grpc.DataObject, len(data))
+	events := make([]*grpc.CloudEvent, len(data))
 	for i, d := range data {
-		dataObjects[i] = &grpc.DataObject{
-			IndexKey: d.IndexKey,
-			Data:     d.Data,
-		}
+		events[i] = cloudEventToProto(d)
 	}
-	return &grpc.GetObjectsResponse{DataObjects: dataObjects}, nil
+	return &grpc.GetObjectsResponse{CloudEvents: events}, nil
 }
 
 // GetLatestObject translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
@@ -83,10 +83,7 @@ func (s *Server) GetLatestObject(ctx context.Context, req *grpc.GetLatestObjectR
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
-	return &grpc.GetLatestObjectResponse{DataObject: &grpc.DataObject{
-		IndexKey: latestData.IndexKey,
-		Data:     latestData.Data,
-	}}, nil
+	return &grpc.GetLatestObjectResponse{DataObject: cloudEventToProto(latestData)}, nil
 }
 
 // GetObjectsFromIndexKeys translates the gRPC call to the indexrepo type and fetches data for the given options.
@@ -95,14 +92,11 @@ func (s *Server) GetObjectsFromIndexKeys(ctx context.Context, req *grpc.GetObjec
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	dataObjects := make([]*grpc.DataObject, len(data))
+	dataObjects := make([]*grpc.CloudEvent, len(data))
 	for i, d := range data {
-		dataObjects[i] = &grpc.DataObject{
-			IndexKey: d.IndexKey,
-			Data:     d.Data,
-		}
+		dataObjects[i] = cloudEventToProto(d)
 	}
-	return &grpc.GetObjectsFromIndexKeysResponse{DataObjects: dataObjects}, nil
+	return &grpc.GetObjectsFromIndexKeysResponse{CloudEvents: dataObjects}, nil
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
@@ -150,4 +144,32 @@ func getStringValue(protoStr *wrapperspb.StringValue) *string {
 	}
 	val := protoStr.GetValue()
 	return &val
+}
+
+func cloudEventToProto(event cloudevent.CloudEvent[json.RawMessage]) *grpc.CloudEvent {
+	extras := make(map[string][]byte)
+	for k, v := range event.Extras {
+		v, err := json.Marshal(v)
+		if err != nil {
+			// Skip the extra if it can't be marshaled
+			continue
+		}
+		extras[k] = v
+	}
+	return &grpc.CloudEvent{
+		Header: &grpc.CloudEventHeader{
+			Id:              event.ID,
+			Source:          event.Source,
+			Producer:        event.Producer,
+			Subject:         event.Subject,
+			SpecVersion:     event.SpecVersion,
+			Time:            timestamppb.New(event.Time),
+			Type:            event.Type,
+			DataContentType: event.DataContentType,
+			DataSchema:      event.DataSchema,
+			DataVersion:     event.DataVersion,
+			Extras:          extras,
+		},
+		Data: event.Data,
+	}
 }

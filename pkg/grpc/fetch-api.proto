@@ -1,11 +1,12 @@
 syntax = "proto3";
 
-option go_package = "github.com/DIMO-Network/model-garage/pkg/grpc";
+option go_package = "github.com/DIMO-Network/fetch-api/pkg/grpc";
 
 package grpc;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
+import "pkg/grpc/cloudevent.proto";
 
 // FetchService defines the gRPC service for fetching DIMO objects
 service FetchService {
@@ -59,13 +60,6 @@ message SearchOptions {
   google.protobuf.StringValue optional = 10;
 }
 
-// DataObject contains the index key and data retrieved from the object.
-message DataObject {
-  // The index key of the object.
-  string index_key = 1;
-  // The data retrieved from the object.
-  bytes data = 2;
-}
 
 // GetLatestIndexKeyRequest includes search options to filter the events.
 message GetLatestIndexKeyRequest {
@@ -102,7 +96,7 @@ message GetLatestObjectRequest {
 // GetLatestObjectResponse provides the data retrieved from the latest cloud event.
 message GetLatestObjectResponse {
   // The data retrieved from the latest cloud event.
-  DataObject data_object = 1;
+  cloudevent.CloudEvent data_object = 1;
 }
 
 // GetObjectsRequest includes search options to filter the events.
@@ -117,7 +111,7 @@ message GetObjectsRequest {
 // GetObjectsResponse provides the list of data retrieved from the objects.
 message GetObjectsResponse {
   // The list of data retrieved from the objects.
-  repeated DataObject data_objects = 1;
+  repeated cloudevent.CloudEvent cloud_events = 1;
 }
 
 // GetObjectsFromIndexKeysRequest includes the index key to filter the events.
@@ -129,5 +123,5 @@ message GetObjectsFromIndexKeysRequest {
 // GetObjectsFromNameResponse provides the list of data retrieved from the objects.
 message GetObjectsFromIndexKeysResponse {
   // The list of data retrieved from the objects.
-  repeated DataObject data_objects = 1;
+  repeated cloudevent.CloudEvent cloud_events = 1;
 }
