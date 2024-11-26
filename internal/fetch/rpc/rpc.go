@@ -11,6 +11,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/nameindexer"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -24,7 +25,7 @@ type Server struct {
 	ephemeralBucket  string
 }
 
-// New creates a new Server instance.
+// NewServer creates a new Server instance.
 func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, cloudEventBucket, ephemeralBucket string) *Server {
 	return &Server{
 		indexService:     indexrepo.New(chConn, objGetter),
@@ -83,7 +84,7 @@ func (s *Server) GetLatestObject(ctx context.Context, req *grpc.GetLatestObjectR
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
-	return &grpc.GetLatestObjectResponse{DataObject: cloudEventToProto(latestData)}, nil
+	return &grpc.GetLatestObjectResponse{CloudEvent: cloudEventToProto(latestData)}, nil
 }
 
 // GetObjectsFromIndexKeys translates the gRPC call to the indexrepo type and fetches data for the given options.
@@ -122,13 +123,18 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.SearchOp
 	if protoOptions.GetTimestampAsc() != nil {
 		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
 	}
-
+	var filler *string
+	if protoOptions.GetType() != nil {
+		val := protoOptions.GetType().GetValue()
+		val = nameindexer.CloudTypeToFiller(val)
+		filler = &val
+	}
 	return indexrepo.SearchOptions{
 		After:           after,
 		Before:          before,
 		TimestampAsc:    timestampAsc,
-		PrimaryFiller:   getStringValue(protoOptions.GetPrimaryFiller()),
-		DataType:        getStringValue(protoOptions.GetDataType()),
+		PrimaryFiller:   filler,
+		DataType:        getStringValue(protoOptions.GetDataVersion()),
 		Subject:         getStringValue(protoOptions.GetSubject()),
 		SecondaryFiller: getStringValue(protoOptions.GetSecondaryFiller()),
 		Source:          getStringValue(protoOptions.GetSource()),

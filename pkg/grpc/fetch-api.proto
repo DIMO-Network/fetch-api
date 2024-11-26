@@ -38,11 +38,11 @@ message SearchOptions {
   // Whether to sort results in ascending order by timestamp.
   google.protobuf.BoolValue timestamp_asc = 3;
   
-  // Primary filler value used to filter events.
-  google.protobuf.StringValue primary_filler = 4;
+  // Type of the event to filter.
+  google.protobuf.StringValue type = 4;
   
-  // Data type to filter events.
-  google.protobuf.StringValue data_type = 5;
+  // DataVersion of the event to filter.
+  google.protobuf.StringValue data_version = 5;
   
   // The subject of the event to filter.
   google.protobuf.StringValue subject = 6;
