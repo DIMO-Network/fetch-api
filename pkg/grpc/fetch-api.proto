@@ -96,7 +96,7 @@ message GetLatestObjectRequest {
 // GetLatestObjectResponse provides the data retrieved from the latest cloud event.
 message GetLatestObjectResponse {
   // The data retrieved from the latest cloud event.
-  cloudevent.CloudEvent data_object = 1;
+  cloudevent.CloudEvent cloud_event = 1;
 }
 
 // GetObjectsRequest includes search options to filter the events.
