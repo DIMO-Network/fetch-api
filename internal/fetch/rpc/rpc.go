@@ -11,7 +11,6 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
-	"github.com/DIMO-Network/nameindexer"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
@@ -101,9 +100,9 @@ func (s *Server) GetObjectsFromIndexKeys(ctx context.Context, req *grpc.GetObjec
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
-func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.SearchOptions {
+func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.RawSearchOptions {
 	if protoOptions == nil {
-		return indexrepo.SearchOptions{}
+		return indexrepo.RawSearchOptions{}
 	}
 
 	// Converting after timestamp from proto to Go time
@@ -123,23 +122,17 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.SearchOp
 	if protoOptions.GetTimestampAsc() != nil {
 		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
 	}
-	var filler *string
-	if protoOptions.GetType() != nil {
-		val := protoOptions.GetType().GetValue()
-		val = nameindexer.CloudTypeToFiller(val)
-		filler = &val
-	}
-	return indexrepo.SearchOptions{
-		After:           after,
-		Before:          before,
-		TimestampAsc:    timestampAsc,
-		PrimaryFiller:   filler,
-		DataType:        getStringValue(protoOptions.GetDataVersion()),
-		Subject:         getStringValue(protoOptions.GetSubject()),
-		SecondaryFiller: getStringValue(protoOptions.GetSecondaryFiller()),
-		Source:          getStringValue(protoOptions.GetSource()),
-		Producer:        getStringValue(protoOptions.GetProducer()),
-		Optional:        getStringValue(protoOptions.GetOptional()),
+
+	return indexrepo.RawSearchOptions{
+		After:        after,
+		Before:       before,
+		TimestampAsc: timestampAsc,
+		Type:         getStringValue(protoOptions.GetType()),
+		DataVersion:  getStringValue(protoOptions.GetDataVersion()),
+		Subject:      getStringValue(protoOptions.GetSubject()),
+		Source:       getStringValue(protoOptions.GetSource()),
+		Producer:     getStringValue(protoOptions.GetProducer()),
+		Optional:     getStringValue(protoOptions.GetOptional()),
 	}
 }
 

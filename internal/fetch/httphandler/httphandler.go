@@ -50,20 +50,15 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.SearchOptions {
-	var primaryFiller *string
-	if s.Type != nil {
-		filler := nameindexer.CloudTypeToFiller(*s.Type)
-		primaryFiller = &filler
-	}
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.RawSearchOptions {
 	encodedSubject := nameindexer.EncodeNFTDID(subject)
-	return indexrepo.SearchOptions{
-		Subject:       &encodedSubject,
-		PrimaryFiller: primaryFiller,
-		Source:        s.Source,
-		Producer:      s.Producer,
-		Before:        s.Before,
-		After:         s.After,
+	return indexrepo.RawSearchOptions{
+		Subject:  &encodedSubject,
+		Type:     s.Type,
+		Source:   s.Source,
+		Producer: s.Producer,
+		Before:   s.Before,
+		After:    s.After,
 	}
 }
 

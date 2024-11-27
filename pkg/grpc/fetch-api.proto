@@ -47,9 +47,6 @@ message SearchOptions {
   // The subject of the event to filter.
   google.protobuf.StringValue subject = 6;
   
-  // Secondary filler value used to filter events.
-  google.protobuf.StringValue secondary_filler = 7;
-  
   // The source identifier responsible for creating the data.
   google.protobuf.StringValue source = 8;
   
