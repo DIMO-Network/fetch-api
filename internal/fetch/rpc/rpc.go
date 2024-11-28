@@ -112,9 +112,9 @@ func (s *Server) ListCloudEventsFromKeys(ctx context.Context, req *grpc.ListClou
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
-func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.RawSearchOptions {
+func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.RawSearchOptions {
 	if protoOptions == nil {
-		return indexrepo.RawSearchOptions{}
+		return nil
 	}
 
 	// Converting after timestamp from proto to Go time
@@ -135,7 +135,7 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) indexrepo.RawSearc
 		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
 	}
 
-	return indexrepo.RawSearchOptions{
+	return &indexrepo.RawSearchOptions{
 		After:        after,
 		Before:       before,
 		TimestampAsc: timestampAsc,

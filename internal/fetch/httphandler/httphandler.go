@@ -43,9 +43,9 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.RawSearchOptions {
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.RawSearchOptions {
 	encodedSubject := nameindexer.EncodeNFTDID(subject)
-	return indexrepo.RawSearchOptions{
+	return &indexrepo.RawSearchOptions{
 		Subject:  &encodedSubject,
 		Type:     s.Type,
 		Source:   s.Source,
