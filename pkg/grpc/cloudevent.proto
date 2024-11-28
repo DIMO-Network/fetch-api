@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 message CloudEvent {
     CloudEventHeader header = 1;
     bytes data = 2;
-  }
+}
 
 // CloudEventHeader represents the header structure of a CloudEvent.
 message CloudEventHeader {

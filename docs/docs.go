@@ -95,7 +95,10 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns list of index keys",
                         "schema": {
-                            "$ref": "#/definitions/internal_fetch_httphandler.indexKeysResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/indexrepo.CloudEventMetadata"
+                            }
                         }
                     },
                     "400": {
@@ -175,7 +178,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns the latest index key",
                         "schema": {
-                            "$ref": "#/definitions/internal_fetch_httphandler.indexKeyResponse"
+                            "$ref": "#/definitions/indexrepo.CloudEventMetadata"
                         }
                     },
                     "400": {
@@ -416,22 +419,51 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_fetch_httphandler.indexKeyResponse": {
+        "indexrepo.CloudEventMetadata": {
             "type": "object",
             "properties": {
-                "indexKey": {
+                "datacontenttype": {
+                    "description": "DataContentType is an optional MIME type for the data field. We almost\nalways serialize to JSON and in that case this field is implicitly\n\"application/json\".",
                     "type": "string"
-                }
-            }
-        },
-        "internal_fetch_httphandler.indexKeysResponse": {
-            "type": "object",
-            "properties": {
-                "indexKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                },
+                "dataschema": {
+                    "description": "DataSchema is an optional URI pointing to a schema for the data field.",
+                    "type": "string"
+                },
+                "dataversion": {
+                    "description": "DataVersion is the version of the data type.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID is an identifier for the event. The combination of ID and Source must\nbe unique.",
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "producer": {
+                    "description": "Producer is a specific instance, process or device that creates the data structure describing the CloudEvent.",
+                    "type": "string"
+                },
+                "source": {
+                    "description": "Source is the context in which the event happened. In a distributed system it might consist of multiple Producers.",
+                    "type": "string"
+                },
+                "specversion": {
+                    "description": "SpecVersion is the version of CloudEvents specification used.\nThis is always hardcoded \"1.0\".",
+                    "type": "string"
+                },
+                "subject": {
+                    "description": "Subject is an optional field identifying the subject of the event within\nthe context of the event producer. In practice, we always set this.",
+                    "type": "string"
+                },
+                "time": {
+                    "description": "Time is an optional field giving the time at which the event occurred. In\npractice, we always set this.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type describes the type of event. It should generally be a reverse-DNS\nname.",
+                    "type": "string"
                 }
             }
         }
