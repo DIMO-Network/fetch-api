@@ -1,28 +1,29 @@
 syntax = "proto3";
 
-option go_package = "github.com/DIMO-Network/model-garage/pkg/grpc";
+option go_package = "github.com/DIMO-Network/fetch-api/pkg/grpc";
 
 package grpc;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
+import "pkg/grpc/cloudevent.proto";
 
 // FetchService defines the gRPC service for fetching DIMO objects
 service FetchService {
-  // GetLatestIndexKey returns the latest index key for the given options
-  rpc GetLatestIndexKey (GetLatestIndexKeyRequest) returns (GetLatestIndexKeyResponse);
+  // GetLatestMetadatareturns the latest index key for the given options
+  rpc GetLatestMetadata (GetLatestMetadataRequest) returns (GetLatestMetadataResponse);
 
-  // GetIndexKeys fetches and returns the list of index_keys that match the specified options
-  rpc GetIndexKeys (GetIndexKeysRequest) returns (GetIndexKeysResponse);
+  // ListMetadata fetches and returns the list of cloud event metadata objects that match the specified options
+  rpc ListMetadata (ListMetadataRequest) returns (ListMetadataResponse);
 
-  // GetLatestObject fetches and returns the latest object that matches the specified options
-  rpc GetLatestObject (GetLatestObjectRequest) returns (GetLatestObjectResponse);
+  // GetLatestCloudEvent fetches and returns the latest object that matches the specified options
+  rpc GetLatestCloudEvent (GetLatestCloudEventRequest) returns (GetLatestCloudEventResponse);
 
-  // GetObjects fetches and returns the list of objects that match the specified options
-  rpc GetObjects (GetObjectsRequest) returns (GetObjectsResponse);
+  // ListCloudEvents fetches and returns the list of objects that match the specified options
+  rpc ListCloudEvents (ListCloudEventsRequest) returns (ListCloudEventsResponse);
 
-  // GetObjectsFromIndexKeys fetches and returns the list of objects that match the specified index key
-  rpc GetObjectsFromIndexKeys (GetObjectsFromIndexKeysRequest) returns (GetObjectsFromIndexKeysResponse);
+  // ListCloudEventsFromKeys fetches and returns the list of objects that match the specified index key
+  rpc ListCloudEventsFromKeys (ListCloudEventsFromKeysRequest) returns (ListCloudEventsFromKeysResponse);
 }
 
 // SearchOptions provides filtering options to narrow down the search results for objects
@@ -37,17 +38,14 @@ message SearchOptions {
   // Whether to sort results in ascending order by timestamp.
   google.protobuf.BoolValue timestamp_asc = 3;
   
-  // Primary filler value used to filter events.
-  google.protobuf.StringValue primary_filler = 4;
+  // Type of the event to filter.
+  google.protobuf.StringValue type = 4;
   
-  // Data type to filter events.
-  google.protobuf.StringValue data_type = 5;
+  // DataVersion of the event to filter.
+  google.protobuf.StringValue data_version = 5;
   
   // The subject of the event to filter.
   google.protobuf.StringValue subject = 6;
-  
-  // Secondary filler value used to filter events.
-  google.protobuf.StringValue secondary_filler = 7;
   
   // The source identifier responsible for creating the data.
   google.protobuf.StringValue source = 8;
@@ -59,54 +57,54 @@ message SearchOptions {
   google.protobuf.StringValue optional = 10;
 }
 
-// DataObject contains the index key and data retrieved from the object.
-message DataObject {
-  // The index key of the object.
-  string index_key = 1;
-  // The data retrieved from the object.
-  bytes data = 2;
+message CloudEventMetadata {
+  // The cloud event header of the cloud event.
+  cloudevent.CloudEventHeader header = 1;
+  // The index key of the cloud event.
+  string key = 2;
 }
 
-// GetLatestIndexKeyRequest includes search options to filter the events.
-message GetLatestIndexKeyRequest {
+
+// GetLatestMetadataRequest includes search options to filter the events.
+message GetLatestMetadataRequest {
   SearchOptions options = 1;
 }
 
-// GetLatestIndexKeyResponse provides the latest index key retrieved for the specified search criteria.
-message GetLatestIndexKeyResponse {
+// GetLatestMetadataResponse provides the latest metadata retrieved for the specified search criteria.
+message GetLatestMetadataResponse {
   // The latest index key retrieved for the specified search criteria.
-  string index_key = 1;
+  CloudEventMetadata metadata = 1;
 }
 
-// GetIndexKeysRequest includes search options to filter the events.
-message GetIndexKeysRequest{
+// ListMetadataRequest includes search options to filter the events.
+message ListMetadataRequest{
   // Search options to filter the events.
   SearchOptions options = 1;
   
-  // The maximum number of index_keys to return.
+  // The maximum number of metadata objects to return.
   int32 limit = 2;
 }
 
-// GetIndexKeysResponse returns the list of index_keys retrieved for the specified search criteria.
-message GetIndexKeysResponse{
-  // The list of index_keys retrieved for the specified search criteria.
-  repeated string index_keys = 1;
+// ListMetadataResponse returns the list of metadata for cloud events retrieved for the specified search criteria.
+message ListMetadataResponse{
+  // The list of metadata objects retrieved for the specified search criteria.
+  repeated CloudEventMetadata metadata_list = 1;
 }
 
-// GetLatestObjectRequest includes search options to filter the events.
-message GetLatestObjectRequest {
+// GetLatestCloudEventRequest includes search options to filter the events.
+message GetLatestCloudEventRequest {
   // Search options to filter the events.
   SearchOptions options = 1;
 }
 
-// GetLatestObjectResponse provides the data retrieved from the latest cloud event.
-message GetLatestObjectResponse {
+// GetLatestCloudEventResponse provides the data retrieved from the latest cloud event.
+message GetLatestCloudEventResponse {
   // The data retrieved from the latest cloud event.
-  DataObject data_object = 1;
+  cloudevent.CloudEvent cloud_event = 1;
 }
 
-// GetObjectsRequest includes search options to filter the events.
-message GetObjectsRequest {
+// ListCloudEventsRequest includes search options to filter the events.
+message ListCloudEventsRequest {
   // Search options to filter the events.
   SearchOptions options = 1;
   
@@ -114,20 +112,20 @@ message GetObjectsRequest {
   int32 limit = 2;
 }
 
-// GetObjectsResponse provides the list of data retrieved from the objects.
-message GetObjectsResponse {
+// ListCloudEventsResponse provides the list of data retrieved from the objects.
+message ListCloudEventsResponse {
   // The list of data retrieved from the objects.
-  repeated DataObject data_objects = 1;
+  repeated cloudevent.CloudEvent cloud_events = 1;
 }
 
-// GetObjectsFromIndexKeysRequest includes the index key to filter the events.
-message GetObjectsFromIndexKeysRequest {
+// ListCloudEventsFromKeysRequest includes the index key to filter the events.
+message ListCloudEventsFromKeysRequest {
   // The index_keys that will be retrieved.
   repeated string index_keys = 1;
 }
 
-// GetObjectsFromNameResponse provides the list of data retrieved from the objects.
-message GetObjectsFromIndexKeysResponse {
+// ListCloudEventsFromNameResponse provides the list of data retrieved from the objects.
+message ListCloudEventsFromKeysResponse {
   // The list of data retrieved from the objects.
-  repeated DataObject data_objects = 1;
+  repeated cloudevent.CloudEvent cloud_events = 1;
 }

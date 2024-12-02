@@ -34,13 +34,6 @@ type Handler struct {
 	logger           *zerolog.Logger
 }
 
-type indexKeysResponse struct {
-	IndexKeys []string `json:"indexKeys"`
-}
-type indexKeyResponse struct {
-	IndexKey string `json:"indexKey"`
-}
-
 type searchParams struct {
 	Type     *string   `query:"type"`
 	Source   *string   `query:"source"`
@@ -50,20 +43,15 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) indexrepo.SearchOptions {
-	var primaryFiller *string
-	if s.Type != nil {
-		filler := nameindexer.CloudTypeToFiller(*s.Type)
-		primaryFiller = &filler
-	}
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.RawSearchOptions {
 	encodedSubject := nameindexer.EncodeNFTDID(subject)
-	return indexrepo.SearchOptions{
-		Subject:       &encodedSubject,
-		PrimaryFiller: primaryFiller,
-		Source:        s.Source,
-		Producer:      s.Producer,
-		Before:        s.Before,
-		After:         s.After,
+	return &indexrepo.RawSearchOptions{
+		Subject:  &encodedSubject,
+		Type:     s.Type,
+		Source:   s.Source,
+		Producer: s.Producer,
+		Before:   s.Before,
+		After:    s.After,
 	}
 }
 
@@ -91,7 +79,7 @@ func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Cli
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} indexKeyResponse "Returns the latest index key"
+// @Success 200 {object} indexrepo.CloudEventMetadata "Returns the latest index key"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-index-key/{tokenId} [get]
@@ -110,12 +98,12 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	indexKey, err := h.indexService.GetLatestIndexKey(fCtx.Context(), opts)
+	metadata, err := h.indexService.GetLatestMetadataFromRaw(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(indexKeyResponse{IndexKey: indexKey})
+	return fCtx.JSON(metadata)
 }
 
 // GetIndexKeys handles requests for multiple index keys
@@ -126,7 +114,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} indexKeysResponse "Returns list of index keys"
+// @Success 200 {object} []indexrepo.CloudEventMetadata "Returns list of index keys"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/index-keys/{tokenId} [get]
@@ -145,12 +133,12 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	indexKeys, err := h.indexService.GetIndexKeys(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.indexService.ListMetadataFromRaw(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
 
-	return fCtx.JSON(indexKeysResponse{IndexKeys: indexKeys})
+	return fCtx.JSON(metaList)
 }
 
 // GetObjects handles requests for multiple objects
@@ -161,7 +149,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} []indexrepo.DataObject "Returns latest object data"
+// @Success 200 {object} []cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/objects/{tokenId} [get]
@@ -180,11 +168,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	indexKeys, err := h.indexService.GetIndexKeys(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.indexService.ListMetadataFromRaw(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.GetObjectsFromIndexs(fCtx.Context(), h.indexService, indexKeys, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromMetadata(fCtx.Context(), h.indexService, metaList, []string{h.cloudEventBucket, h.ephemeralBucket})
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -200,7 +188,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} indexrepo.DataObject "Returns latest object data"
+// @Success 200 {object} cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-object/{tokenId} [get]
@@ -218,11 +206,11 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	}
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
-	indexKey, err := h.indexService.GetLatestIndexKey(fCtx.Context(), opts)
+	metadata, err := h.indexService.GetLatestMetadataFromRaw(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.GetObjectFromIndex(fCtx.Context(), h.indexService, indexKey, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.GetCloudEventFromKey(fCtx.Context(), h.indexService, metadata.Key, []string{h.cloudEventBucket, h.ephemeralBucket})
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
