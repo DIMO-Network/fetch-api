@@ -24,6 +24,8 @@ var (
 	errTimeout  = errors.New("request exceeded or is estimated to exceed the maximum execution time")
 )
 
+type cloudReturn cloudevent.CloudEvent[indexrepo.ObjectInfo]
+
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
 	indexService     *indexrepo.Service
@@ -43,9 +45,9 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.RawSearchOptions {
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.SearchOptions {
 	encodedSubject := nameindexer.EncodeNFTDID(subject)
-	return &indexrepo.RawSearchOptions{
+	return &indexrepo.SearchOptions{
 		Subject:  &encodedSubject,
 		Type:     s.Type,
 		Source:   s.Source,
@@ -79,7 +81,7 @@ func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Cli
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} indexrepo.CloudEventMetadata "Returns the latest index key"
+// @Success 200 {object} cloudReturn "Returns the latest index key"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-index-key/{tokenId} [get]
@@ -98,7 +100,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metadata, err := h.indexService.GetLatestMetadataFromRaw(fCtx.Context(), opts)
+	metadata, err := h.indexService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -114,7 +116,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} []indexrepo.CloudEventMetadata "Returns list of index keys"
+// @Success 200 {object} []cloudReturn "Returns list of index keys"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/index-keys/{tokenId} [get]
@@ -133,7 +135,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metaList, err := h.indexService.ListMetadataFromRaw(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.indexService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -168,11 +170,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metaList, err := h.indexService.ListMetadataFromRaw(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.indexService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.ListCloudEventsFromMetadata(fCtx.Context(), h.indexService, metaList, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.indexService, metaList, []string{h.cloudEventBucket, h.ephemeralBucket})
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -206,11 +208,11 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	}
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
-	metadata, err := h.indexService.GetLatestMetadataFromRaw(fCtx.Context(), opts)
+	metadata, err := h.indexService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.GetCloudEventFromKey(fCtx.Context(), h.indexService, metadata.Key, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.indexService, metadata, []string{h.cloudEventBucket, h.ephemeralBucket})
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
