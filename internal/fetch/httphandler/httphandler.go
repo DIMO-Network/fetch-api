@@ -24,7 +24,7 @@ var (
 	errTimeout  = errors.New("request exceeded or is estimated to exceed the maximum execution time")
 )
 
-type cloudReturn cloudevent.CloudEvent[indexrepo.ObjectInfo]
+type cloudReturn cloudevent.CloudEvent[indexrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
 
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
