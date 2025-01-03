@@ -19,11 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	FetchService_GetLatestMetadata_FullMethodName       = "/grpc.FetchService/GetLatestMetadata"
-	FetchService_ListMetadata_FullMethodName            = "/grpc.FetchService/ListMetadata"
-	FetchService_GetLatestCloudEvent_FullMethodName     = "/grpc.FetchService/GetLatestCloudEvent"
-	FetchService_ListCloudEvents_FullMethodName         = "/grpc.FetchService/ListCloudEvents"
-	FetchService_ListCloudEventsFromKeys_FullMethodName = "/grpc.FetchService/ListCloudEventsFromKeys"
+	FetchService_GetLatestIndex_FullMethodName           = "/grpc.FetchService/GetLatestIndex"
+	FetchService_ListIndexes_FullMethodName              = "/grpc.FetchService/ListIndexes"
+	FetchService_GetLatestCloudEvent_FullMethodName      = "/grpc.FetchService/GetLatestCloudEvent"
+	FetchService_ListCloudEvents_FullMethodName          = "/grpc.FetchService/ListCloudEvents"
+	FetchService_ListCloudEventsFromIndex_FullMethodName = "/grpc.FetchService/ListCloudEventsFromIndex"
 )
 
 // FetchServiceClient is the client API for FetchService service.
@@ -32,16 +32,16 @@ const (
 //
 // FetchService defines the gRPC service for fetching DIMO objects
 type FetchServiceClient interface {
-	// GetLatestMetadatareturns the latest index key for the given options
-	GetLatestMetadata(ctx context.Context, in *GetLatestMetadataRequest, opts ...grpc.CallOption) (*GetLatestMetadataResponse, error)
-	// ListMetadata fetches and returns the list of cloud event metadata objects that match the specified options
-	ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error)
+	// GetLatestIndexreturns the latest index key for the given options
+	GetLatestIndex(ctx context.Context, in *GetLatestIndexRequest, opts ...grpc.CallOption) (*GetLatestIndexResponse, error)
+	// ListIndexes fetches and returns the list of cloud event index objects that match the specified options
+	ListIndexes(ctx context.Context, in *ListIndexesRequest, opts ...grpc.CallOption) (*ListIndexesResponse, error)
 	// GetLatestCloudEvent fetches and returns the latest object that matches the specified options
 	GetLatestCloudEvent(ctx context.Context, in *GetLatestCloudEventRequest, opts ...grpc.CallOption) (*GetLatestCloudEventResponse, error)
 	// ListCloudEvents fetches and returns the list of objects that match the specified options
 	ListCloudEvents(ctx context.Context, in *ListCloudEventsRequest, opts ...grpc.CallOption) (*ListCloudEventsResponse, error)
 	// ListCloudEventsFromKeys fetches and returns the list of objects that match the specified index key
-	ListCloudEventsFromKeys(ctx context.Context, in *ListCloudEventsFromKeysRequest, opts ...grpc.CallOption) (*ListCloudEventsFromKeysResponse, error)
+	ListCloudEventsFromIndex(ctx context.Context, in *ListCloudEventsFromKeysRequest, opts ...grpc.CallOption) (*ListCloudEventsFromKeysResponse, error)
 }
 
 type fetchServiceClient struct {
@@ -52,20 +52,20 @@ func NewFetchServiceClient(cc grpc.ClientConnInterface) FetchServiceClient {
 	return &fetchServiceClient{cc}
 }
 
-func (c *fetchServiceClient) GetLatestMetadata(ctx context.Context, in *GetLatestMetadataRequest, opts ...grpc.CallOption) (*GetLatestMetadataResponse, error) {
+func (c *fetchServiceClient) GetLatestIndex(ctx context.Context, in *GetLatestIndexRequest, opts ...grpc.CallOption) (*GetLatestIndexResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetLatestMetadataResponse)
-	err := c.cc.Invoke(ctx, FetchService_GetLatestMetadata_FullMethodName, in, out, cOpts...)
+	out := new(GetLatestIndexResponse)
+	err := c.cc.Invoke(ctx, FetchService_GetLatestIndex_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fetchServiceClient) ListMetadata(ctx context.Context, in *ListMetadataRequest, opts ...grpc.CallOption) (*ListMetadataResponse, error) {
+func (c *fetchServiceClient) ListIndexes(ctx context.Context, in *ListIndexesRequest, opts ...grpc.CallOption) (*ListIndexesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListMetadataResponse)
-	err := c.cc.Invoke(ctx, FetchService_ListMetadata_FullMethodName, in, out, cOpts...)
+	out := new(ListIndexesResponse)
+	err := c.cc.Invoke(ctx, FetchService_ListIndexes_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,10 +92,10 @@ func (c *fetchServiceClient) ListCloudEvents(ctx context.Context, in *ListCloudE
 	return out, nil
 }
 
-func (c *fetchServiceClient) ListCloudEventsFromKeys(ctx context.Context, in *ListCloudEventsFromKeysRequest, opts ...grpc.CallOption) (*ListCloudEventsFromKeysResponse, error) {
+func (c *fetchServiceClient) ListCloudEventsFromIndex(ctx context.Context, in *ListCloudEventsFromKeysRequest, opts ...grpc.CallOption) (*ListCloudEventsFromKeysResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListCloudEventsFromKeysResponse)
-	err := c.cc.Invoke(ctx, FetchService_ListCloudEventsFromKeys_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, FetchService_ListCloudEventsFromIndex_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,16 +108,16 @@ func (c *fetchServiceClient) ListCloudEventsFromKeys(ctx context.Context, in *Li
 //
 // FetchService defines the gRPC service for fetching DIMO objects
 type FetchServiceServer interface {
-	// GetLatestMetadatareturns the latest index key for the given options
-	GetLatestMetadata(context.Context, *GetLatestMetadataRequest) (*GetLatestMetadataResponse, error)
-	// ListMetadata fetches and returns the list of cloud event metadata objects that match the specified options
-	ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error)
+	// GetLatestIndexreturns the latest index key for the given options
+	GetLatestIndex(context.Context, *GetLatestIndexRequest) (*GetLatestIndexResponse, error)
+	// ListIndexes fetches and returns the list of cloud event index objects that match the specified options
+	ListIndexes(context.Context, *ListIndexesRequest) (*ListIndexesResponse, error)
 	// GetLatestCloudEvent fetches and returns the latest object that matches the specified options
 	GetLatestCloudEvent(context.Context, *GetLatestCloudEventRequest) (*GetLatestCloudEventResponse, error)
 	// ListCloudEvents fetches and returns the list of objects that match the specified options
 	ListCloudEvents(context.Context, *ListCloudEventsRequest) (*ListCloudEventsResponse, error)
 	// ListCloudEventsFromKeys fetches and returns the list of objects that match the specified index key
-	ListCloudEventsFromKeys(context.Context, *ListCloudEventsFromKeysRequest) (*ListCloudEventsFromKeysResponse, error)
+	ListCloudEventsFromIndex(context.Context, *ListCloudEventsFromKeysRequest) (*ListCloudEventsFromKeysResponse, error)
 	mustEmbedUnimplementedFetchServiceServer()
 }
 
@@ -128,11 +128,11 @@ type FetchServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedFetchServiceServer struct{}
 
-func (UnimplementedFetchServiceServer) GetLatestMetadata(context.Context, *GetLatestMetadataRequest) (*GetLatestMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetLatestMetadata not implemented")
+func (UnimplementedFetchServiceServer) GetLatestIndex(context.Context, *GetLatestIndexRequest) (*GetLatestIndexResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLatestIndex not implemented")
 }
-func (UnimplementedFetchServiceServer) ListMetadata(context.Context, *ListMetadataRequest) (*ListMetadataResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMetadata not implemented")
+func (UnimplementedFetchServiceServer) ListIndexes(context.Context, *ListIndexesRequest) (*ListIndexesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListIndexes not implemented")
 }
 func (UnimplementedFetchServiceServer) GetLatestCloudEvent(context.Context, *GetLatestCloudEventRequest) (*GetLatestCloudEventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLatestCloudEvent not implemented")
@@ -140,8 +140,8 @@ func (UnimplementedFetchServiceServer) GetLatestCloudEvent(context.Context, *Get
 func (UnimplementedFetchServiceServer) ListCloudEvents(context.Context, *ListCloudEventsRequest) (*ListCloudEventsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListCloudEvents not implemented")
 }
-func (UnimplementedFetchServiceServer) ListCloudEventsFromKeys(context.Context, *ListCloudEventsFromKeysRequest) (*ListCloudEventsFromKeysResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListCloudEventsFromKeys not implemented")
+func (UnimplementedFetchServiceServer) ListCloudEventsFromIndex(context.Context, *ListCloudEventsFromKeysRequest) (*ListCloudEventsFromKeysResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListCloudEventsFromIndex not implemented")
 }
 func (UnimplementedFetchServiceServer) mustEmbedUnimplementedFetchServiceServer() {}
 func (UnimplementedFetchServiceServer) testEmbeddedByValue()                      {}
@@ -164,38 +164,38 @@ func RegisterFetchServiceServer(s grpc.ServiceRegistrar, srv FetchServiceServer)
 	s.RegisterService(&FetchService_ServiceDesc, srv)
 }
 
-func _FetchService_GetLatestMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetLatestMetadataRequest)
+func _FetchService_GetLatestIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLatestIndexRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).GetLatestMetadata(ctx, in)
+		return srv.(FetchServiceServer).GetLatestIndex(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_GetLatestMetadata_FullMethodName,
+		FullMethod: FetchService_GetLatestIndex_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).GetLatestMetadata(ctx, req.(*GetLatestMetadataRequest))
+		return srv.(FetchServiceServer).GetLatestIndex(ctx, req.(*GetLatestIndexRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_ListMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMetadataRequest)
+func _FetchService_ListIndexes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListIndexesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).ListMetadata(ctx, in)
+		return srv.(FetchServiceServer).ListIndexes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_ListMetadata_FullMethodName,
+		FullMethod: FetchService_ListIndexes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).ListMetadata(ctx, req.(*ListMetadataRequest))
+		return srv.(FetchServiceServer).ListIndexes(ctx, req.(*ListIndexesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -236,20 +236,20 @@ func _FetchService_ListCloudEvents_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FetchService_ListCloudEventsFromKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _FetchService_ListCloudEventsFromIndex_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListCloudEventsFromKeysRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FetchServiceServer).ListCloudEventsFromKeys(ctx, in)
+		return srv.(FetchServiceServer).ListCloudEventsFromIndex(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: FetchService_ListCloudEventsFromKeys_FullMethodName,
+		FullMethod: FetchService_ListCloudEventsFromIndex_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FetchServiceServer).ListCloudEventsFromKeys(ctx, req.(*ListCloudEventsFromKeysRequest))
+		return srv.(FetchServiceServer).ListCloudEventsFromIndex(ctx, req.(*ListCloudEventsFromKeysRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -262,12 +262,12 @@ var FetchService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*FetchServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetLatestMetadata",
-			Handler:    _FetchService_GetLatestMetadata_Handler,
+			MethodName: "GetLatestIndex",
+			Handler:    _FetchService_GetLatestIndex_Handler,
 		},
 		{
-			MethodName: "ListMetadata",
-			Handler:    _FetchService_ListMetadata_Handler,
+			MethodName: "ListIndexes",
+			Handler:    _FetchService_ListIndexes_Handler,
 		},
 		{
 			MethodName: "GetLatestCloudEvent",
@@ -278,8 +278,8 @@ var FetchService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _FetchService_ListCloudEvents_Handler,
 		},
 		{
-			MethodName: "ListCloudEventsFromKeys",
-			Handler:    _FetchService_ListCloudEventsFromKeys_Handler,
+			MethodName: "ListCloudEventsFromIndex",
+			Handler:    _FetchService_ListCloudEventsFromIndex_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

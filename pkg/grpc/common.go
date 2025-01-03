@@ -16,6 +16,9 @@ func (c *CloudEvent) AsCloudEvent() cloudevent.CloudEvent[json.RawMessage] {
 
 // AsCloudEventHeader converts the CloudEventHeader to a cloudevent.CloudEventHeader.
 func (c *CloudEventHeader) AsCloudEventHeader() cloudevent.CloudEventHeader {
+	if c == nil {
+		return cloudevent.CloudEventHeader{}
+	}
 	extras := make(map[string]any, len(c.GetExtras()))
 	for k, v := range c.GetExtras() {
 		var val any

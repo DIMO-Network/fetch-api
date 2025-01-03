@@ -53,8 +53,17 @@ definitions:
           name.
         type: string
     type: object
-  indexrepo.CloudEventMetadata:
+  indexrepo.ObjectInfo:
     properties:
+      key:
+        type: string
+    type: object
+  internal_fetch_httphandler.cloudReturn:
+    properties:
+      data:
+        allOf:
+        - $ref: '#/definitions/indexrepo.ObjectInfo'
+        description: Data contains domain-specific information about the event.
       datacontenttype:
         description: |-
           DataContentType is an optional MIME type for the data field. We almost
@@ -72,8 +81,6 @@ definitions:
         description: |-
           ID is an identifier for the event. The combination of ID and Source must
           be unique.
-        type: string
-      key:
         type: string
       producer:
         description: Producer is a specific instance, process or device that creates
@@ -161,7 +168,7 @@ paths:
           description: Returns list of index keys
           schema:
             items:
-              $ref: '#/definitions/indexrepo.CloudEventMetadata'
+              $ref: '#/definitions/internal_fetch_httphandler.cloudReturn'
             type: array
         "400":
           description: Invalid request
@@ -214,7 +221,7 @@ paths:
         "200":
           description: Returns the latest index key
           schema:
-            $ref: '#/definitions/indexrepo.CloudEventMetadata'
+            $ref: '#/definitions/internal_fetch_httphandler.cloudReturn'
         "400":
           description: Invalid request
           schema:

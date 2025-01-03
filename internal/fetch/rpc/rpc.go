@@ -33,46 +33,50 @@ func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, cloudEv
 	}
 }
 
-// GetLatestMetadata translates the gRPC call to the indexrepo type and returns the latest metadata for the given options.
-func (s *Server) GetLatestMetadata(ctx context.Context, req *grpc.GetLatestMetadataRequest) (*grpc.GetLatestMetadataResponse, error) {
+// GetLatestIndex translates the gRPC call to the indexrepo type and returns the latest index for the given options.
+func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexRequest) (*grpc.GetLatestIndexResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metadata, err := s.indexService.GetLatestMetadataFromRaw(ctx, options)
+	index, err := s.indexService.GetLatestIndex(ctx, options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest index key: %w", err)
 	}
-	return &grpc.GetLatestMetadataResponse{
-		Metadata: &grpc.CloudEventMetadata{
-			Key:    metadata.Key,
-			Header: cloudEventHeaderToProto(&metadata.CloudEventHeader),
+	return &grpc.GetLatestIndexResponse{
+		Index: &grpc.CloudEventIndex{
+			Data: &grpc.ObjectInfo{
+				Key: index.Data.Key,
+			},
+			Header: cloudEventHeaderToProto(&index.CloudEventHeader),
 		},
 	}, nil
 }
 
-// ListMetadata translates the gRPC call to the indexrepo type and fetches index keys for the given options.
-func (s *Server) ListMetadata(ctx context.Context, req *grpc.ListMetadataRequest) (*grpc.ListMetadataResponse, error) {
+// ListIndex translates the gRPC call to the indexrepo type and fetches index keys for the given options.
+func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*grpc.ListIndexesResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metaDataObjs, err := s.indexService.ListMetadataFromRaw(ctx, int(req.GetLimit()), options)
+	indexObjs, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get index keys: %w", err)
 	}
-	metadataList := make([]*grpc.CloudEventMetadata, len(metaDataObjs))
-	for i := range metaDataObjs {
-		metadataList[i] = &grpc.CloudEventMetadata{
-			Key:    metaDataObjs[i].Key,
-			Header: cloudEventHeaderToProto(&metaDataObjs[i].CloudEventHeader),
+	indexList := make([]*grpc.CloudEventIndex, len(indexObjs))
+	for i := range indexObjs {
+		indexList[i] = &grpc.CloudEventIndex{
+			Data: &grpc.ObjectInfo{
+				Key: indexObjs[i].Data.Key,
+			},
+			Header: cloudEventHeaderToProto(&indexObjs[i].CloudEventHeader),
 		}
 	}
-	return &grpc.ListMetadataResponse{MetadataList: metadataList}, nil
+	return &grpc.ListIndexesResponse{Indexes: indexList}, nil
 }
 
 // ListCloudEvents translates the gRPC call to the indexrepo type and fetches data for the given options.
 func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsRequest) (*grpc.ListCloudEventsResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metaList, err := s.indexService.ListMetadataFromRaw(ctx, int(req.GetLimit()), options)
+	metaList, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	data, err := fetch.ListCloudEventsFromMetadata(ctx, s.indexService, metaList, []string{s.cloudEventBucket, s.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, []string{s.cloudEventBucket, s.ephemeralBucket})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
@@ -87,20 +91,30 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 // GetLatestCloudEvent translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
 func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestCloudEventRequest) (*grpc.GetLatestCloudEventResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metdata, err := s.indexService.GetLatestMetadataFromRaw(ctx, options)
+	metdata, err := s.indexService.GetLatestIndex(ctx, options)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
-	latestData, err := fetch.GetCloudEventFromKey(ctx, s.indexService, metdata.Key, []string{s.cloudEventBucket, s.ephemeralBucket})
+	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.indexService, metdata, []string{s.cloudEventBucket, s.ephemeralBucket})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
 	return &grpc.GetLatestCloudEventResponse{CloudEvent: cloudEventToProto(latestData)}, nil
 }
 
-// ListCloudEventsFromKeys translates the gRPC call to the indexrepo type and fetches data for the given options.
-func (s *Server) ListCloudEventsFromKeys(ctx context.Context, req *grpc.ListCloudEventsFromKeysRequest) (*grpc.ListCloudEventsFromKeysResponse, error) {
-	data, err := fetch.GetCloudEventsFromKeys(ctx, s.indexService, req.GetIndexKeys(), []string{s.cloudEventBucket, s.ephemeralBucket})
+// ListCloudEventsFromIndex translates the gRPC call to the indexrepo type and fetches data for the given index keys.
+func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListCloudEventsFromKeysRequest) (*grpc.ListCloudEventsFromKeysResponse, error) {
+	protoIndexList := req.GetIndexes()
+	indexes := make([]cloudevent.CloudEvent[indexrepo.ObjectInfo], len(protoIndexList))
+	for i, index := range protoIndexList {
+		indexes[i] = cloudevent.CloudEvent[indexrepo.ObjectInfo]{
+			CloudEventHeader: index.GetHeader().AsCloudEventHeader(),
+			Data: indexrepo.ObjectInfo{
+				Key: index.GetData().GetKey(),
+			},
+		}
+	}
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, indexes, []string{s.cloudEventBucket, s.ephemeralBucket})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
@@ -112,7 +126,7 @@ func (s *Server) ListCloudEventsFromKeys(ctx context.Context, req *grpc.ListClou
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
-func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.RawSearchOptions {
+func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.SearchOptions {
 	if protoOptions == nil {
 		return nil
 	}
@@ -135,7 +149,7 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.RawSear
 		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
 	}
 
-	return &indexrepo.RawSearchOptions{
+	return &indexrepo.SearchOptions{
 		After:        after,
 		Before:       before,
 		TimestampAsc: timestampAsc,
@@ -144,7 +158,7 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.RawSear
 		Subject:      getStringValue(protoOptions.GetSubject()),
 		Source:       getStringValue(protoOptions.GetSource()),
 		Producer:     getStringValue(protoOptions.GetProducer()),
-		Optional:     getStringValue(protoOptions.GetOptional()),
+		Extras:       getStringValue(protoOptions.GetExtras()),
 	}
 }
 

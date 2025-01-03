@@ -97,7 +97,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/indexrepo.CloudEventMetadata"
+                                "$ref": "#/definitions/internal_fetch_httphandler.cloudReturn"
                             }
                         }
                     },
@@ -178,7 +178,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns the latest index key",
                         "schema": {
-                            "$ref": "#/definitions/indexrepo.CloudEventMetadata"
+                            "$ref": "#/definitions/internal_fetch_httphandler.cloudReturn"
                         }
                     },
                     "400": {
@@ -419,9 +419,25 @@ const docTemplate = `{
                 }
             }
         },
-        "indexrepo.CloudEventMetadata": {
+        "indexrepo.ObjectInfo": {
             "type": "object",
             "properties": {
+                "key": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_fetch_httphandler.cloudReturn": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "Data contains domain-specific information about the event.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/indexrepo.ObjectInfo"
+                        }
+                    ]
+                },
                 "datacontenttype": {
                     "description": "DataContentType is an optional MIME type for the data field. We almost\nalways serialize to JSON and in that case this field is implicitly\n\"application/json\".",
                     "type": "string"
@@ -436,9 +452,6 @@ const docTemplate = `{
                 },
                 "id": {
                     "description": "ID is an identifier for the event. The combination of ID and Source must\nbe unique.",
-                    "type": "string"
-                },
-                "key": {
                     "type": "string"
                 },
                 "producer": {
