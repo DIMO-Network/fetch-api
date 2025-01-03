@@ -12,6 +12,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
+	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -74,6 +75,7 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 	options := translateSearchOptions(req.GetOptions())
 	metaList, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
+		log.Warn().Any("options", options).Any("req", req).Msg("failed to get objects")
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
 	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, []string{s.cloudEventBucket, s.ephemeralBucket})
