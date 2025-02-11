@@ -11,7 +11,7 @@ env:
   TOKEN_EXCHANGE_ISSUER_URL: https://auth-roles-rights.dimo.zone
   CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-prod
   EPHEMERAL_BUCKET: dimo-ingest-ephemeral-prod
-  VC_BUCKET: dimo-network-vc-dev
+  VC_BUCKET: dimo-network-vc-prod
   VEHICLE_NFT_ADDRESS: '0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF'
   CHAIN_ID: 137
 ingress:
