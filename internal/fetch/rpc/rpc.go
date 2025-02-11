@@ -20,16 +20,14 @@ import (
 type Server struct {
 	indexService *indexrepo.Service
 	grpc.UnimplementedFetchServiceServer
-	cloudEventBucket string
-	ephemeralBucket  string
+	buckets []string
 }
 
 // NewServer creates a new Server instance.
-func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, cloudEventBucket, ephemeralBucket string) *Server {
+func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, buckets []string) *Server {
 	return &Server{
-		indexService:     indexrepo.New(chConn, objGetter),
-		cloudEventBucket: cloudEventBucket,
-		ephemeralBucket:  ephemeralBucket,
+		indexService: indexrepo.New(chConn, objGetter),
+		buckets:      buckets,
 	}
 }
 
@@ -76,7 +74,7 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, []string{s.cloudEventBucket, s.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, s.buckets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
@@ -95,7 +93,7 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
-	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.indexService, metdata, []string{s.cloudEventBucket, s.ephemeralBucket})
+	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.indexService, metdata, s.buckets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get latest object: %w", err)
 	}
@@ -114,7 +112,7 @@ func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListClo
 			},
 		}
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, indexes, []string{s.cloudEventBucket, s.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, indexes, s.buckets)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get objects: %w", err)
 	}

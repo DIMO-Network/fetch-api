@@ -28,12 +28,11 @@ type cloudReturn cloudevent.CloudEvent[indexrepo.ObjectInfo] //nolint:unused // 
 
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
-	indexService     *indexrepo.Service
-	cloudEventBucket string
-	ephemeralBucket  string
-	vehicleAddr      common.Address
-	chainID          uint64
-	logger           *zerolog.Logger
+	indexService *indexrepo.Service
+	buckets      []string
+	vehicleAddr  common.Address
+	chainID      uint64
+	logger       *zerolog.Logger
 }
 
 type searchParams struct {
@@ -58,18 +57,16 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.Sea
 }
 
 // NewHandler creates a new Handler instance.
-func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client,
-	cloudEventBucket, ephemeralBucket string,
+func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 	vehicleAddr common.Address, chainID uint64,
 ) *Handler {
 	indexService := indexrepo.New(chConn, s3Client)
 	return &Handler{
-		indexService:     indexService,
-		cloudEventBucket: cloudEventBucket,
-		ephemeralBucket:  ephemeralBucket,
-		vehicleAddr:      vehicleAddr,
-		chainID:          chainID,
-		logger:           logger,
+		indexService: indexService,
+		buckets:      buckets,
+		vehicleAddr:  vehicleAddr,
+		chainID:      chainID,
+		logger:       logger,
 	}
 }
 
@@ -174,7 +171,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.indexService, metaList, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.indexService, metaList, h.buckets)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -212,7 +209,7 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.indexService, metadata, []string{h.cloudEventBucket, h.ephemeralBucket})
+	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.indexService, metadata, h.buckets)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}

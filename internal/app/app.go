@@ -77,7 +77,7 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 
 	s3Client := s3ClientFromSettings(settings)
 	vehHandler := httphandler.NewHandler(logger, chConn, s3Client,
-		settings.CloudEventBucket, settings.EphemeralBucket, settings.VehicleNFTAddress, chainId)
+		[]string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket}, settings.VehicleNFTAddress, chainId)
 	// File endpoints
 	vehicleGroup.Post("/latest-index-key/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestIndexKey)
 	vehicleGroup.Post("/index-keys/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetIndexKeys)
@@ -96,7 +96,7 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 
 	s3Client := s3ClientFromSettings(settings)
 
-	rpcServer := rpc.NewServer(chConn, s3Client, settings.CloudEventBucket, settings.EphemeralBucket)
+	rpcServer := rpc.NewServer(chConn, s3Client, []string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket})
 
 	grpcPanic := metrics.GRPCPanicker{Logger: logger}
 	server := grpc.NewServer(
