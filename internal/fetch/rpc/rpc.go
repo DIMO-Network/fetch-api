@@ -3,8 +3,9 @@ package rpc
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -12,6 +13,9 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -36,7 +40,10 @@ func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexReq
 	options := translateSearchOptions(req.GetOptions())
 	index, err := s.indexService.GetLatestIndex(ctx, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest index key: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get latest index: %v", err)
 	}
 	return &grpc.GetLatestIndexResponse{
 		Index: &grpc.CloudEventIndex{
@@ -53,7 +60,10 @@ func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*
 	options := translateSearchOptions(req.GetOptions())
 	indexObjs, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get index keys: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get index keys: %v", err)
 	}
 	indexList := make([]*grpc.CloudEventIndex, len(indexObjs))
 	for i := range indexObjs {
@@ -72,11 +82,14 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 	options := translateSearchOptions(req.GetOptions())
 	metaList, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get objects: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "no index keys Found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get index keys: %v", err)
 	}
 	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, s.buckets)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest object: %w", err)
+		return nil, status.Errorf(codes.Internal, "failed to get objects: %v", err)
 	}
 
 	events := make([]*grpc.CloudEvent, len(data))
@@ -91,11 +104,14 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 	options := translateSearchOptions(req.GetOptions())
 	metdata, err := s.indexService.GetLatestIndex(ctx, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest object: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get latest index: %v", err)
 	}
 	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.indexService, metdata, s.buckets)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get latest object: %w", err)
+		return nil, status.Errorf(codes.Internal, "failed to get latest object: %v", err)
 	}
 	return &grpc.GetLatestCloudEventResponse{CloudEvent: cloudEventToProto(latestData)}, nil
 }
@@ -114,7 +130,11 @@ func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListClo
 	}
 	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, indexes, s.buckets)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get objects: %w", err)
+		notFoundErr := &types.NoSuchKey{}
+		if errors.As(err, &notFoundErr) {
+			return nil, status.Errorf(codes.NotFound, "no objects found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "failed to get objects: %v", err)
 	}
 	dataObjects := make([]*grpc.CloudEvent, len(data))
 	for i, d := range data {
