@@ -18,7 +18,6 @@ const fetchers = 25
 
 // ListCloudEventsFromIndexes fetches a list of cloud events from the index service by trying to get them from each bucket in the list returning the first successful result.
 func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *indexrepo.Service, indexKeys []cloudevent.CloudEvent[indexrepo.ObjectInfo], buckets []string) ([]cloudevent.CloudEvent[json.RawMessage], error) {
-	dataObjects := make([]cloudevent.CloudEvent[json.RawMessage], len(indexKeys))
 	objectsByKeys := map[string]json.RawMessage{}
 	// mutex to protect concurrent access to the map
 	var mutex sync.RWMutex
@@ -26,13 +25,11 @@ func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *indexrepo.Service, 
 	group, errCtx := errgroup.WithContext(ctx)
 	group.SetLimit(fetchers)
 
-	for i, objectInfo := range indexKeys {
+	for _, objectInfo := range indexKeys {
 		// check if we already have this object before spawning a goroutine
 		mutex.Lock()
-		obj, alreadyFetched := objectsByKeys[objectInfo.Data.Key]
-		if alreadyFetched {
-			event := cloudevent.CloudEvent[json.RawMessage]{CloudEventHeader: objectInfo.CloudEventHeader, Data: obj}
-			dataObjects[i] = event
+		_, ok := objectsByKeys[objectInfo.Data.Key]
+		if ok {
 			mutex.Unlock()
 			continue
 		}
@@ -45,19 +42,23 @@ func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *indexrepo.Service, 
 			if err != nil {
 				return fmt.Errorf("failed to get object: %w", err)
 			}
-			// there is a chance that 2 fetchers will try to fetch the same object
 			mutex.Lock()
 			objectsByKeys[objectInfo.Data.Key] = obj.Data
-			dataObjects[i] = obj
 			mutex.Unlock()
 
 			return nil
 		})
 	}
-
 	// Wait for all goroutines to complete
 	if err := group.Wait(); err != nil {
 		return nil, err
+	}
+
+	// create a slice of cloud events
+	dataObjects := make([]cloudevent.CloudEvent[json.RawMessage], len(indexKeys))
+	for i, objectInfo := range indexKeys {
+		event := cloudevent.CloudEvent[json.RawMessage]{CloudEventHeader: objectInfo.CloudEventHeader, Data: objectsByKeys[objectInfo.Data.Key]}
+		dataObjects[i] = event
 	}
 
 	return dataObjects, nil
