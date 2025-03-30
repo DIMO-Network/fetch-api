@@ -3,7 +3,7 @@ package grpc
 import (
 	"encoding/json"
 
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/cloudevent"
 )
 
 // AsCloudEvent converts the CloudEvent to a cloudevent.CloudEvent[json.RawMessage].
