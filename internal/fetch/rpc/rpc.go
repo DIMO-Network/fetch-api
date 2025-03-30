@@ -22,7 +22,7 @@ import (
 
 // Server is used to implement grpc.IndexRepoServiceServer.
 type Server struct {
-	indexService *eventrepo.Service
+	eventService *eventrepo.Service
 	grpc.UnimplementedFetchServiceServer
 	buckets []string
 }
@@ -30,7 +30,7 @@ type Server struct {
 // NewServer creates a new Server instance.
 func NewServer(chConn clickhouse.Conn, objGetter eventrepo.ObjectGetter, buckets []string) *Server {
 	return &Server{
-		indexService: eventrepo.New(chConn, objGetter),
+		eventService: eventrepo.New(chConn, objGetter),
 		buckets:      buckets,
 	}
 }
@@ -38,7 +38,7 @@ func NewServer(chConn clickhouse.Conn, objGetter eventrepo.ObjectGetter, buckets
 // GetLatestIndex translates the gRPC call to the indexrepo type and returns the latest index for the given options.
 func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexRequest) (*grpc.GetLatestIndexResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	index, err := s.indexService.GetLatestIndex(ctx, options)
+	index, err := s.eventService.GetLatestIndex(ctx, options)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
@@ -58,7 +58,7 @@ func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexReq
 // ListIndex translates the gRPC call to the indexrepo type and fetches index keys for the given options.
 func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*grpc.ListIndexesResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	indexObjs, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
+	indexObjs, err := s.eventService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
@@ -80,14 +80,14 @@ func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*
 // ListCloudEvents translates the gRPC call to the indexrepo type and fetches data for the given options.
 func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsRequest) (*grpc.ListCloudEventsResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metaList, err := s.indexService.ListIndexes(ctx, int(req.GetLimit()), options)
+	metaList, err := s.eventService.ListIndexes(ctx, int(req.GetLimit()), options)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index keys Found: %v", err)
 		}
 		return nil, status.Errorf(codes.Internal, "failed to get index keys: %v", err)
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, metaList, s.buckets)
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.eventService, metaList, s.buckets)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get objects: %v", err)
 	}
@@ -102,14 +102,14 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 // GetLatestCloudEvent translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
 func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestCloudEventRequest) (*grpc.GetLatestCloudEventResponse, error) {
 	options := translateSearchOptions(req.GetOptions())
-	metdata, err := s.indexService.GetLatestIndex(ctx, options)
+	metdata, err := s.eventService.GetLatestIndex(ctx, options)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
 		}
 		return nil, status.Errorf(codes.Internal, "failed to get latest index: %v", err)
 	}
-	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.indexService, metdata, s.buckets)
+	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.eventService, metdata, s.buckets)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get latest object: %v", err)
 	}
@@ -119,16 +119,16 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 // ListCloudEventsFromIndex translates the gRPC call to the indexrepo type and fetches data for the given index keys.
 func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListCloudEventsFromKeysRequest) (*grpc.ListCloudEventsFromKeysResponse, error) {
 	protoIndexList := req.GetIndexes()
-	indexes := make([]cloudevent.CloudEvent[eventrepo.ObjectInfo], len(protoIndexList))
+	events := make([]cloudevent.CloudEvent[eventrepo.ObjectInfo], len(protoIndexList))
 	for i, index := range protoIndexList {
-		indexes[i] = cloudevent.CloudEvent[eventrepo.ObjectInfo]{
+		events[i] = cloudevent.CloudEvent[eventrepo.ObjectInfo]{
 			CloudEventHeader: index.GetHeader().AsCloudEventHeader(),
 			Data: eventrepo.ObjectInfo{
 				Key: index.GetData().GetKey(),
 			},
 		}
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.indexService, indexes, s.buckets)
+	data, err := fetch.ListCloudEventsFromIndexes(ctx, s.eventService, events, s.buckets)
 	if err != nil {
 		notFoundErr := &types.NoSuchKey{}
 		if errors.As(err, &notFoundErr) {

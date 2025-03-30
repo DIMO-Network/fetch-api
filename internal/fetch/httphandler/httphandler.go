@@ -27,7 +27,7 @@ type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo] //nolint:unused // 
 
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
-	indexService *eventrepo.Service
+	eventService *eventrepo.Service
 	buckets      []string
 	vehicleAddr  common.Address
 	chainID      uint64
@@ -61,7 +61,7 @@ func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Cli
 ) *Handler {
 	indexService := eventrepo.New(chConn, s3Client)
 	return &Handler{
-		indexService: indexService,
+		eventService: indexService,
 		buckets:      buckets,
 		vehicleAddr:  vehicleAddr,
 		chainID:      chainID,
@@ -96,7 +96,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metadata, err := h.indexService.GetLatestIndex(fCtx.Context(), opts)
+	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -131,7 +131,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metaList, err := h.indexService.ListIndexes(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -166,11 +166,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
 
-	metaList, err := h.indexService.ListIndexes(fCtx.Context(), params.Limit, opts)
+	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.indexService, metaList, h.buckets)
+	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.eventService, metaList, h.buckets)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
@@ -204,11 +204,11 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	}
 
 	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
-	metadata, err := h.indexService.GetLatestIndex(fCtx.Context(), opts)
+	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
-	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.indexService, metadata, h.buckets)
+	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.eventService, metadata, h.buckets)
 	if err != nil {
 		return handleDBError(err, h.logger)
 	}
