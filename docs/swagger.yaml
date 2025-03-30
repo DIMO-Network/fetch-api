@@ -53,7 +53,7 @@ definitions:
           name.
         type: string
     type: object
-  indexrepo.ObjectInfo:
+  eventrepo.ObjectInfo:
     properties:
       key:
         type: string
@@ -62,7 +62,7 @@ definitions:
     properties:
       data:
         allOf:
-        - $ref: '#/definitions/indexrepo.ObjectInfo'
+        - $ref: '#/definitions/eventrepo.ObjectInfo'
         description: Data contains domain-specific information about the event.
       datacontenttype:
         description: |-

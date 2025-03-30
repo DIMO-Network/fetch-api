@@ -419,7 +419,7 @@ const docTemplate = `{
                 }
             }
         },
-        "indexrepo.ObjectInfo": {
+        "eventrepo.ObjectInfo": {
             "type": "object",
             "properties": {
                 "key": {
@@ -434,7 +434,7 @@ const docTemplate = `{
                     "description": "Data contains domain-specific information about the event.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/indexrepo.ObjectInfo"
+                            "$ref": "#/definitions/eventrepo.ObjectInfo"
                         }
                     ]
                 },
