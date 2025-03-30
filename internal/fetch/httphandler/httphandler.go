@@ -9,10 +9,9 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
-	"github.com/DIMO-Network/nameindexer"
-	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
@@ -24,11 +23,11 @@ var (
 	errTimeout  = errors.New("request exceeded or is estimated to exceed the maximum execution time")
 )
 
-type cloudReturn cloudevent.CloudEvent[indexrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
+type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
 
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
-	indexService *indexrepo.Service
+	indexService *eventrepo.Service
 	buckets      []string
 	vehicleAddr  common.Address
 	chainID      uint64
@@ -44,9 +43,9 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.SearchOptions {
-	encodedSubject := nameindexer.EncodeNFTDID(subject)
-	return &indexrepo.SearchOptions{
+func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *eventrepo.SearchOptions {
+	encodedSubject := subject.String()
+	return &eventrepo.SearchOptions{
 		Subject:  &encodedSubject,
 		Type:     s.Type,
 		Source:   s.Source,
@@ -60,7 +59,7 @@ func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *indexrepo.Sea
 func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 	vehicleAddr common.Address, chainID uint64,
 ) *Handler {
-	indexService := indexrepo.New(chConn, s3Client)
+	indexService := eventrepo.New(chConn, s3Client)
 	return &Handler{
 		indexService: indexService,
 		buckets:      buckets,

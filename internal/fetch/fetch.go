@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
-	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
+	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"golang.org/x/sync/errgroup"
 )
@@ -17,7 +17,7 @@ import (
 const fetchers = 25
 
 // ListCloudEventsFromIndexes fetches a list of cloud events from the index service by trying to get them from each bucket in the list returning the first successful result.
-func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *indexrepo.Service, indexKeys []cloudevent.CloudEvent[indexrepo.ObjectInfo], buckets []string) ([]cloudevent.CloudEvent[json.RawMessage], error) {
+func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *eventrepo.Service, indexKeys []cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) ([]cloudevent.CloudEvent[json.RawMessage], error) {
 	objectsByKeys := map[string]json.RawMessage{}
 	// mutex to protect concurrent access to the map
 	var mutex sync.RWMutex
@@ -65,7 +65,7 @@ func ListCloudEventsFromIndexes(ctx context.Context, idxSvc *indexrepo.Service, 
 }
 
 // GetCloudEventFromKey gets an object from the index service by trying to get it from each bucket in the list returning the first successful result.
-func GetCloudEventFromIndex(ctx context.Context, idxSvc *indexrepo.Service, indexKeys cloudevent.CloudEvent[indexrepo.ObjectInfo], buckets []string) (cloudevent.CloudEvent[json.RawMessage], error) {
+func GetCloudEventFromIndex(ctx context.Context, idxSvc *eventrepo.Service, indexKeys cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) (cloudevent.CloudEvent[json.RawMessage], error) {
 	var obj cloudevent.CloudEvent[json.RawMessage]
 	var err error
 	// Try to get the object from each bucket in the list

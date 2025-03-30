@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
-	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/indexrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -22,15 +22,15 @@ import (
 
 // Server is used to implement grpc.IndexRepoServiceServer.
 type Server struct {
-	indexService *indexrepo.Service
+	indexService *eventrepo.Service
 	grpc.UnimplementedFetchServiceServer
 	buckets []string
 }
 
 // NewServer creates a new Server instance.
-func NewServer(chConn clickhouse.Conn, objGetter indexrepo.ObjectGetter, buckets []string) *Server {
+func NewServer(chConn clickhouse.Conn, objGetter eventrepo.ObjectGetter, buckets []string) *Server {
 	return &Server{
-		indexService: indexrepo.New(chConn, objGetter),
+		indexService: eventrepo.New(chConn, objGetter),
 		buckets:      buckets,
 	}
 }
@@ -119,11 +119,11 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 // ListCloudEventsFromIndex translates the gRPC call to the indexrepo type and fetches data for the given index keys.
 func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListCloudEventsFromKeysRequest) (*grpc.ListCloudEventsFromKeysResponse, error) {
 	protoIndexList := req.GetIndexes()
-	indexes := make([]cloudevent.CloudEvent[indexrepo.ObjectInfo], len(protoIndexList))
+	indexes := make([]cloudevent.CloudEvent[eventrepo.ObjectInfo], len(protoIndexList))
 	for i, index := range protoIndexList {
-		indexes[i] = cloudevent.CloudEvent[indexrepo.ObjectInfo]{
+		indexes[i] = cloudevent.CloudEvent[eventrepo.ObjectInfo]{
 			CloudEventHeader: index.GetHeader().AsCloudEventHeader(),
-			Data: indexrepo.ObjectInfo{
+			Data: eventrepo.ObjectInfo{
 				Key: index.GetData().GetKey(),
 			},
 		}
@@ -144,7 +144,7 @@ func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListClo
 }
 
 // translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
-func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.SearchOptions {
+func translateSearchOptions(protoOptions *grpc.SearchOptions) *eventrepo.SearchOptions {
 	if protoOptions == nil {
 		return nil
 	}
@@ -167,7 +167,7 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) *indexrepo.SearchO
 		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
 	}
 
-	return &indexrepo.SearchOptions{
+	return &eventrepo.SearchOptions{
 		After:        after,
 		Before:       before,
 		TimestampAsc: timestampAsc,
