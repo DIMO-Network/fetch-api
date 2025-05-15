@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.34.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
-	github.com/DIMO-Network/cloudevent v0.0.5-0.20250514184900-f8c602c72300
+	github.com/DIMO-Network/cloudevent v0.1.0
 	github.com/DIMO-Network/shared v0.12.7
 	github.com/aws/aws-sdk-go-v2 v1.36.3
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.48
