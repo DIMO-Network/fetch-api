@@ -55,6 +55,11 @@
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "limit",
                         "in": "query"
@@ -138,6 +143,11 @@
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "limit",
                         "in": "query"
@@ -218,6 +228,11 @@
                         "in": "query"
                     },
                     {
+                        "type": "string",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "limit",
                         "in": "query"
@@ -295,6 +310,11 @@
                     {
                         "type": "string",
                         "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "id",
                         "in": "query"
                     },
                     {
