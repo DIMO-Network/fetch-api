@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -43,7 +44,7 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.NFTDID) *eventrepo.SearchOptions {
+func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *eventrepo.SearchOptions {
 	encodedSubject := subject.String()
 	return &eventrepo.SearchOptions{
 		Subject:  &encodedSubject,
@@ -94,7 +95,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
 	}
 
-	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
@@ -129,7 +130,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
 	}
 
-	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
@@ -164,7 +165,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
 	}
 
-	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
@@ -203,7 +204,7 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
 	}
 
-	opts := params.toSearchOptions(cloudevent.NFTDID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: uint32(uTokenID)})
+	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err, h.logger)
