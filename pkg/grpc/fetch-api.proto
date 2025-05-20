@@ -55,6 +55,9 @@ message SearchOptions {
   
   // exta values from the cloud event header this is a JSON string.
   google.protobuf.StringValue extras = 10;
+
+  // ID of the event to filter.
+  google.protobuf.StringValue id = 11;
 }
 
 message CloudEventIndex {

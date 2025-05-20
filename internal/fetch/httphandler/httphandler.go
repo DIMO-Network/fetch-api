@@ -36,6 +36,7 @@ type Handler struct {
 }
 
 type searchParams struct {
+	ID       *string   `query:"id"`
 	Type     *string   `query:"type"`
 	Source   *string   `query:"source"`
 	Producer *string   `query:"producer"`
@@ -47,6 +48,7 @@ type searchParams struct {
 func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *eventrepo.SearchOptions {
 	encodedSubject := subject.String()
 	return &eventrepo.SearchOptions{
+		ID:       s.ID,
 		Subject:  &encodedSubject,
 		Type:     s.Type,
 		Source:   s.Source,

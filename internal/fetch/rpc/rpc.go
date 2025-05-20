@@ -177,6 +177,7 @@ func translateSearchOptions(protoOptions *grpc.SearchOptions) *eventrepo.SearchO
 		Source:       getStringValue(protoOptions.GetSource()),
 		Producer:     getStringValue(protoOptions.GetProducer()),
 		Extras:       getStringValue(protoOptions.GetExtras()),
+		ID:           getStringValue(protoOptions.GetId()),
 	}
 }
 
