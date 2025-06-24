@@ -417,6 +417,10 @@ const docTemplate = `{
                     "description": "Producer is a specific instance, process or device that creates the data structure describing the CloudEvent.",
                     "type": "string"
                 },
+                "signature": {
+                    "description": "Signature hold the signature of the a cloudevent's data field.",
+                    "type": "string"
+                },
                 "source": {
                     "description": "Source is the context in which the event happened. In a distributed system it might consist of multiple Producers.",
                     "type": "string"
@@ -476,6 +480,10 @@ const docTemplate = `{
                 },
                 "producer": {
                     "description": "Producer is a specific instance, process or device that creates the data structure describing the CloudEvent.",
+                    "type": "string"
+                },
+                "signature": {
+                    "description": "Signature hold the signature of the a cloudevent's data field.",
                     "type": "string"
                 },
                 "source": {
