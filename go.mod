@@ -12,7 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.79.4
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/gofiber/contrib/jwt v1.0.10
-	github.com/gofiber/fiber/v2 v2.52.7
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/gofiber/swagger v1.1.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
