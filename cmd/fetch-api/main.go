@@ -12,7 +12,7 @@ import (
 	_ "github.com/DIMO-Network/fetch-api/docs"
 	"github.com/DIMO-Network/fetch-api/internal/app"
 	"github.com/DIMO-Network/fetch-api/internal/config"
-	"github.com/DIMO-Network/shared"
+	"github.com/DIMO-Network/shared/pkg/settings"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -31,7 +31,7 @@ func main() {
 	// create a flag for the settings file
 	settingsFile := flag.String("settings", "settings.yaml", "settings file")
 	flag.Parse()
-	settings, err := shared.LoadConfig[config.Settings](*settingsFile)
+	settings, err := settings.LoadConfig[config.Settings](*settingsFile)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't load settings.")
 	}
