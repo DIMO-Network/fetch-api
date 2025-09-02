@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - v*
+env:
+  APP_NAME: fetch-api
 
 jobs:
   build_test:
@@ -11,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,14 +35,16 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          build-args: |
+            APP_NAME=${{ env.APP_NAME }}
           push: true
           platforms: linux/amd64
-          tags: dimozone/fetch-api:${{steps.tag.outputs.tag}}
+          tags: dimozone/${{ env.APP_NAME }}:${{steps.tag.outputs.tag}}
 
       - name: Update Image Version in the related HelmChart values.yaml
         uses: fjogeleit/yaml-update-action@v0.16.1
         with:
-          valueFile: "charts/fetch-api/values-prod.yaml"
+          valueFile: "charts/${{ env.APP_NAME }}/values-prod.yaml"
           propertyPath: "image.tag"
           value: ${{steps.tag.outputs.tag}}
           branch: main

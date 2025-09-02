@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -13,15 +14,14 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
+	"github.com/DIMO-Network/server-garage/pkg/richerrors"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
-	"github.com/rs/zerolog"
 )
 
-var (
-	errInternal = errors.New("internal error")
-	errTimeout  = errors.New("request exceeded or is estimated to exceed the maximum execution time")
+const (
+	errTimeout = "request exceeded or is estimated to exceed the maximum execution time"
 )
 
 type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
@@ -32,7 +32,6 @@ type Handler struct {
 	buckets      []string
 	vehicleAddr  common.Address
 	chainID      uint64
-	logger       *zerolog.Logger
 }
 
 type searchParams struct {
@@ -59,7 +58,7 @@ func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *eventrepo.
 }
 
 // NewHandler creates a new Handler instance.
-func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
+func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 	vehicleAddr common.Address, chainID uint64,
 ) *Handler {
 	indexService := eventrepo.New(chConn, s3Client)
@@ -68,7 +67,6 @@ func NewHandler(logger *zerolog.Logger, chConn clickhouse.Conn, s3Client *s3.Cli
 		buckets:      buckets,
 		vehicleAddr:  vehicleAddr,
 		chainID:      chainID,
-		logger:       logger,
 	}
 }
 
@@ -101,7 +99,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 
 	return fCtx.JSON(metadata)
@@ -136,7 +134,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 
 	return fCtx.JSON(metaList)
@@ -171,11 +169,11 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 	data, err := fetch.ListCloudEventsFromIndexes(fCtx.Context(), h.eventService, metaList, h.buckets)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 
 	return fCtx.JSON(data)
@@ -209,21 +207,27 @@ func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 	data, err := fetch.GetCloudEventFromIndex(fCtx.Context(), h.eventService, metadata, h.buckets)
 	if err != nil {
-		return handleDBError(err, h.logger)
+		return handleDBError(err)
 	}
 	return fCtx.JSON(data)
 }
 
 // handleDBError logs the error and returns a generic error message.
-func handleDBError(err error, log *zerolog.Logger) error {
+func handleDBError(err error) error {
 	if errors.Is(err, context.DeadlineExceeded) {
-		log.Error().Err(err).Msg("failed to query db")
-		return errTimeout
+		return richerrors.Error{
+			Code:        http.StatusRequestTimeout,
+			ExternalMsg: errTimeout,
+			Err:         err,
+		}
 	}
-	log.Error().Err(err).Msg("failed to query db")
-	return errInternal
+	return richerrors.Error{
+		Code:        http.StatusInternalServerError,
+		ExternalMsg: "Failed to query db",
+		Err:         err,
+	}
 }
