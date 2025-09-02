@@ -1,17 +1,16 @@
 package app
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
 	"github.com/DIMO-Network/fetch-api/pkg/auth"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/DIMO-Network/server-garage/pkg/fibercommon"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
 	"github.com/DIMO-Network/shared/pkg/middleware/privilegetoken"
 	"github.com/DIMO-Network/shared/pkg/privileges"
@@ -30,18 +29,17 @@ import (
 )
 
 // CreateWebServer creates a new web server with the given logger and settings.
-func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.App, error) {
+func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	chainId, err := strconv.ParseUint(settings.ChainID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
 	}
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return ErrorHandler(c, err, logger)
-		},
+		ErrorHandler:          fibercommon.ErrorHandler,
 		DisableStartupMessage: true,
 	})
+	app.Use(fibercommon.ContextLoggerMiddleware)
 
 	jwtAuth := jwtware.New(jwtware.Config{
 		JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
@@ -76,7 +74,7 @@ func CreateWebServer(logger *zerolog.Logger, settings *config.Settings) (*fiber.
 	}
 
 	s3Client := s3ClientFromSettings(settings)
-	vehHandler := httphandler.NewHandler(logger, chConn, s3Client,
+	vehHandler := httphandler.NewHandler(chConn, s3Client,
 		[]string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket}, settings.VehicleNFTAddress, chainId)
 	// File endpoints
 	vehicleGroup.Post("/latest-index-key/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestIndexKey)
@@ -111,33 +109,6 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 	fetchgrpc.RegisterFetchServiceServer(server, rpcServer)
 
 	return server, nil
-}
-
-// ErrorHandler custom handler to log recovered errors using our logger and return json instead of string
-func ErrorHandler(ctx *fiber.Ctx, err error, logger *zerolog.Logger) error {
-	code := fiber.StatusInternalServerError // Default 500 statuscode
-	message := "Internal error."
-
-	var e *fiber.Error
-	if errors.As(err, &e) {
-		code = e.Code
-		message = e.Message
-	}
-
-	// don't log not found errors
-	if code != fiber.StatusNotFound {
-		logger.Err(err).Int("httpStatusCode", code).
-			Str("httpPath", strings.TrimPrefix(ctx.Path(), "/")).
-			Str("httpMethod", ctx.Method()).
-			Msg("caught an error from http request")
-	}
-
-	return ctx.Status(code).JSON(codeResp{Code: code, Message: message})
-}
-
-type codeResp struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
 }
 
 // HealthCheck godoc
