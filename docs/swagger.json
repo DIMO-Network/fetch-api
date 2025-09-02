@@ -424,6 +424,13 @@
                     "description": "Subject is an optional field identifying the subject of the event within\nthe context of the event producer. In practice, we always set this.",
                     "type": "string"
                 },
+                "tags": {
+                    "description": "Tags are a list of tags that can be used to filter events.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "time": {
                     "description": "Time is an optional field giving the time at which the event occurred. In\npractice, we always set this.",
                     "type": "string"
@@ -434,7 +441,7 @@
                 }
             }
         },
-        "eventrepo.ObjectInfo": {
+        "github_com_DIMO-Network_fetch-api_pkg_eventrepo.ObjectInfo": {
             "type": "object",
             "properties": {
                 "key": {
@@ -449,7 +456,7 @@
                     "description": "Data contains domain-specific information about the event.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/eventrepo.ObjectInfo"
+                            "$ref": "#/definitions/github_com_DIMO-Network_fetch-api_pkg_eventrepo.ObjectInfo"
                         }
                     ]
                 },
@@ -488,6 +495,13 @@
                 "subject": {
                     "description": "Subject is an optional field identifying the subject of the event within\nthe context of the event producer. In practice, we always set this.",
                     "type": "string"
+                },
+                "tags": {
+                    "description": "Tags are a list of tags that can be used to filter events.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "time": {
                     "description": "Time is an optional field giving the time at which the event occurred. In\npractice, we always set this.",

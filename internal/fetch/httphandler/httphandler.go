@@ -1,4 +1,4 @@
-// Packagge httphandler provides the HTTP handler for the fetch service.
+// Package httphandler provides the HTTP handler for the fetch service.
 package httphandler
 
 import (
@@ -12,12 +12,15 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
+	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/server-garage/pkg/richerrors"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
+	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 const (
@@ -44,17 +47,29 @@ type searchParams struct {
 	Limit    int       `query:"limit"`
 }
 
-func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *eventrepo.SearchOptions {
-	encodedSubject := subject.String()
-	return &eventrepo.SearchOptions{
-		ID:       s.ID,
-		Subject:  &encodedSubject,
-		Type:     s.Type,
-		Source:   s.Source,
-		Producer: s.Producer,
-		Before:   s.Before,
-		After:    s.After,
+func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *grpc.SearchOptions {
+	opts := &grpc.SearchOptions{}
+	if s.ID != nil {
+		opts.Id = &wrapperspb.StringValue{Value: *s.ID}
 	}
+	opts.Subject = &wrapperspb.StringValue{Value: subject.String()}
+
+	if s.Type != nil {
+		opts.Type = &wrapperspb.StringValue{Value: *s.Type}
+	}
+	if s.Source != nil {
+		opts.Source = &wrapperspb.StringValue{Value: *s.Source}
+	}
+	if s.Producer != nil {
+		opts.Producer = &wrapperspb.StringValue{Value: *s.Producer}
+	}
+	if !s.Before.IsZero() {
+		opts.Before = &timestamppb.Timestamp{Seconds: s.Before.Unix()}
+	}
+	if !s.After.IsZero() {
+		opts.After = &timestamppb.Timestamp{Seconds: s.After.Unix()}
+	}
+	return opts
 }
 
 // NewHandler creates a new Handler instance.

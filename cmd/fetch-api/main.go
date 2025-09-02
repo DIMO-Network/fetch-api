@@ -26,13 +26,17 @@ import (
 func main() {
 	settingsFile := flag.String("env", ".env", "env file")
 	flag.Parse()
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
+
 	logger := logging.GetAndSetDefaultLogger("fetch-api")
+
 	settings, err := env.LoadSettings[config.Settings](*settingsFile)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't load settings.")
 	}
+
 	webServer, err := app.CreateWebServer(&settings)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create web server.")
@@ -41,6 +45,7 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create RPC server.")
 	}
+
 	group, gCtx := errgroup.WithContext(ctx)
 
 	monApp := monserver.NewMonitoringServer(&logger, settings.EnablePprof)
