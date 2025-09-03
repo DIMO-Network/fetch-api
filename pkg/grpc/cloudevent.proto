@@ -55,5 +55,8 @@ message CloudEventHeader {
 
   // Extras contains any additional fields that are not part of the CloudEvent excluding the data field.
   map<string, bytes> extras = 11;
+
+  // Tags are a list of tags that can be used to filter the events.
+  repeated string tags = 12;
 }
 

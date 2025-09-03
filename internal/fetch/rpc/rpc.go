@@ -6,18 +6,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 // Server is used to implement grpc.IndexRepoServiceServer.
@@ -37,8 +35,15 @@ func NewServer(chConn clickhouse.Conn, objGetter eventrepo.ObjectGetter, buckets
 
 // GetLatestIndex translates the gRPC call to the indexrepo type and returns the latest index for the given options.
 func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexRequest) (*grpc.GetLatestIndexResponse, error) {
-	options := translateSearchOptions(req.GetOptions())
-	index, err := s.eventService.GetLatestIndex(ctx, options)
+	var index cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var err error
+
+	if req.GetAdvancedOptions() != nil {
+		index, err = s.eventService.GetLatestIndexAdvanced(ctx, req.GetAdvancedOptions())
+	} else {
+		index, err = s.eventService.GetLatestIndex(ctx, req.GetOptions())
+	}
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
@@ -55,10 +60,17 @@ func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexReq
 	}, nil
 }
 
-// ListIndex translates the gRPC call to the indexrepo type and fetches index keys for the given options.
-func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*grpc.ListIndexesResponse, error) {
-	options := translateSearchOptions(req.GetOptions())
-	indexObjs, err := s.eventService.ListIndexes(ctx, int(req.GetLimit()), options)
+// ListIndexes translates the gRPC call to the indexrepo type and fetches index keys for the given options.
+func (s *Server) ListIndexes(ctx context.Context, req *grpc.ListIndexesRequest) (*grpc.ListIndexesResponse, error) {
+	var indexObjs []cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var err error
+
+	if req.GetAdvancedOptions() != nil {
+		indexObjs, err = s.eventService.ListIndexesAdvanced(ctx, int(req.GetLimit()), req.GetAdvancedOptions())
+	} else {
+		indexObjs, err = s.eventService.ListIndexes(ctx, int(req.GetLimit()), req.GetOptions())
+	}
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
@@ -79,8 +91,15 @@ func (s *Server) ListIndex(ctx context.Context, req *grpc.ListIndexesRequest) (*
 
 // ListCloudEvents translates the gRPC call to the indexrepo type and fetches data for the given options.
 func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsRequest) (*grpc.ListCloudEventsResponse, error) {
-	options := translateSearchOptions(req.GetOptions())
-	metaList, err := s.eventService.ListIndexes(ctx, int(req.GetLimit()), options)
+	var metaList []cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var err error
+
+	if req.GetAdvancedOptions() != nil {
+		metaList, err = s.eventService.ListIndexesAdvanced(ctx, int(req.GetLimit()), req.GetAdvancedOptions())
+	} else {
+		metaList, err = s.eventService.ListIndexes(ctx, int(req.GetLimit()), req.GetOptions())
+	}
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index keys Found: %v", err)
@@ -101,8 +120,15 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 
 // GetLatestCloudEvent translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
 func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestCloudEventRequest) (*grpc.GetLatestCloudEventResponse, error) {
-	options := translateSearchOptions(req.GetOptions())
-	metdata, err := s.eventService.GetLatestIndex(ctx, options)
+	var metdata cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var err error
+
+	if req.GetAdvancedOptions() != nil {
+		metdata, err = s.eventService.GetLatestIndexAdvanced(ctx, req.GetAdvancedOptions())
+	} else {
+		metdata, err = s.eventService.GetLatestIndex(ctx, req.GetOptions())
+	}
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, status.Errorf(codes.NotFound, "no index key Found: %v", err)
@@ -141,53 +167,6 @@ func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListClo
 		dataObjects[i] = cloudEventToProto(d)
 	}
 	return &grpc.ListCloudEventsFromKeysResponse{CloudEvents: dataObjects}, nil
-}
-
-// translateProtoToSearchOptions translates a SearchOptions proto message to the Go SearchOptions type.
-func translateSearchOptions(protoOptions *grpc.SearchOptions) *eventrepo.SearchOptions {
-	if protoOptions == nil {
-		return nil
-	}
-
-	// Converting after timestamp from proto to Go time
-	var after time.Time
-	if protoOptions.GetAfter() != nil {
-		after = protoOptions.GetAfter().AsTime()
-	}
-
-	// Converting before timestamp from proto to Go time
-	var before time.Time
-	if protoOptions.GetBefore() != nil {
-		before = protoOptions.GetBefore().AsTime()
-	}
-
-	// Converting boolean value for timestamp ascending
-	var timestampAsc bool
-	if protoOptions.GetTimestampAsc() != nil {
-		timestampAsc = protoOptions.GetTimestampAsc().GetValue()
-	}
-
-	return &eventrepo.SearchOptions{
-		After:        after,
-		Before:       before,
-		TimestampAsc: timestampAsc,
-		Type:         getStringValue(protoOptions.GetType()),
-		DataVersion:  getStringValue(protoOptions.GetDataVersion()),
-		Subject:      getStringValue(protoOptions.GetSubject()),
-		Source:       getStringValue(protoOptions.GetSource()),
-		Producer:     getStringValue(protoOptions.GetProducer()),
-		Extras:       getStringValue(protoOptions.GetExtras()),
-		ID:           getStringValue(protoOptions.GetId()),
-	}
-}
-
-// getStringValue extracts the value from a wrappersgrpc.StringValue, returning an empty string if nil.
-func getStringValue(protoStr *wrapperspb.StringValue) *string {
-	if protoStr == nil {
-		return nil
-	}
-	val := protoStr.GetValue()
-	return &val
 }
 
 func cloudEventHeaderToProto(event *cloudevent.CloudEventHeader) *grpc.CloudEventHeader {

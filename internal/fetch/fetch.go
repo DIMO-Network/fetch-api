@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/eventrepo"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"golang.org/x/sync/errgroup"
 )
