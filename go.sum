@@ -14,8 +14,8 @@ github.com/DATA-DOG/go-sqlmock v1.4.1 h1:ThlnYciV1iM/V0OSF/dtkqWb6xo5qITT1TJBG1M
 github.com/DATA-DOG/go-sqlmock v1.4.1/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/DIMO-Network/clickhouse-infra v0.0.5 h1:zY1STwb9+vovpYXdjaeakE29pgZPIJLogJA+h3+IrbM=
 github.com/DIMO-Network/clickhouse-infra v0.0.5/go.mod h1:XS80lhSJNWBWGgZ+m4j7++zFj1wAXfmtV2gJfhGlabQ=
-github.com/DIMO-Network/cloudevent v0.1.4-0.20250829175417-ea1e179182a9 h1:YMYwpWsWU6zJDqdbW9oc1zX10y2WECPYDj1WsuhNkqc=
-github.com/DIMO-Network/cloudevent v0.1.4-0.20250829175417-ea1e179182a9/go.mod h1:Aaqfcg9FQod0CbsbPIz+8Ykr0udL0jNpO8AABPqEMaQ=
+github.com/DIMO-Network/cloudevent v0.1.4 h1:c6Sq4CyHt05V8OtnEXekUCRGfVuR1pFkJevfiKt1sYM=
+github.com/DIMO-Network/cloudevent v0.1.4/go.mod h1:Q2QpMEDYJ+VX0lz9SK2EUFxkuddV1XeF4aQ8LfegB68=
 github.com/DIMO-Network/server-garage v0.0.4 h1:K0wnQ2vJAtyK8lbINxKneVyqELORAu4Ut1ePZ3yb8cI=
 github.com/DIMO-Network/server-garage v0.0.4/go.mod h1:bdj0wKTjozjjD2w7Htk/rnzOv+jH+iBrhCuXOP/H00s=
 github.com/DIMO-Network/shared v1.0.7 h1:LfSgsqJ6R7EUyfo2GTfuhrCpoDcweJqe7eVOa4j7Xbo=
@@ -306,8 +306,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOfJA=
-github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/swaggo/files/v2 v2.0.2 h1:Bq4tgS/yxLB/3nwOMcul5oLEUKa877Ykgz3CJMVbQKU=
 github.com/swaggo/files/v2 v2.0.2/go.mod h1:TVqetIzZsO9OhHX1Am9sRf9LdrFZqoK49N37KON/jr0=
 github.com/swaggo/swag v1.16.6 h1:qBNcx53ZaX+M5dxVyTrgQ0PJ/ACK+NzhwcbieTt+9yI=

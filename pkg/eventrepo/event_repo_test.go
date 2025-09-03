@@ -11,12 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
-	chconfig "github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
-	"github.com/DIMO-Network/clickhouse-infra/pkg/container"
 	"github.com/DIMO-Network/cloudevent"
 	chindexer "github.com/DIMO-Network/cloudevent/pkg/clickhouse"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/migrations"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -31,42 +27,9 @@ import (
 
 var dataType = "small"
 
-// setupClickHouseContainer starts a ClickHouse container for testing and returns the connection.
-func setupClickHouseContainer(t *testing.T) *container.Container {
-	ctx := context.Background()
-	settings := chconfig.Settings{
-		User:     "default",
-		Database: "dimo",
-	}
-
-	chContainer, err := container.CreateClickHouseContainer(ctx, settings)
-	require.NoError(t, err)
-
-	chDB, err := chContainer.GetClickhouseAsDB()
-	require.NoError(t, err)
-
-	// Ensure we terminate the container at the end
-	t.Cleanup(func() {
-		chContainer.Terminate(ctx)
-	})
-
-	err = migrations.RunGoose(ctx, []string{"up"}, chDB)
-	require.NoError(t, err)
-
-	return chContainer
-}
-
-// insertTestData inserts test data into ClickHouse.
-func insertTestData(t *testing.T, ctx context.Context, conn clickhouse.Conn, index *cloudevent.CloudEventHeader) string {
-	values := chindexer.CloudEventToSlice(index)
-
-	err := conn.Exec(ctx, chindexer.InsertStmt, values...)
-	require.NoError(t, err)
-	return values[len(values)-1].(string)
-}
-
 // TestGetLatestIndexKey tests the GetLatestIndexKey function.
 func TestGetLatestIndexKey(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
 	// Insert test data
@@ -151,6 +114,7 @@ func TestGetLatestIndexKey(t *testing.T) {
 
 // TestGetDataFromIndex tests the GetDataFromIndex function.
 func TestGetDataFromIndex(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 	contractAddr := randAddress()
 	device1TokenID := big.NewInt(1234567890)
@@ -227,6 +191,7 @@ func TestGetDataFromIndex(t *testing.T) {
 }
 
 func TestStoreObject(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
 	conn, err := chContainer.GetClickHouseAsConn()
@@ -271,6 +236,7 @@ func TestStoreObject(t *testing.T) {
 
 // TestGetData tests the GetData function with different SearchOptions combinations.
 func TestGetData(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
 	// Insert test data
@@ -342,6 +308,7 @@ func TestGetData(t *testing.T) {
 		{
 			name: "data within time range",
 			opts: &grpc.SearchOptions{
+				Subject:     &wrapperspb.StringValue{Value: eventDID.String()},
 				DataVersion: &wrapperspb.StringValue{Value: dataType},
 				After:       &timestamppb.Timestamp{Seconds: now.Add(-3 * time.Hour).Unix()},
 				Before:      &timestamppb.Timestamp{Seconds: now.Add(-1 * time.Minute).Unix()},
@@ -351,15 +318,11 @@ func TestGetData(t *testing.T) {
 		{
 			name: "data with type filter",
 			opts: &grpc.SearchOptions{
+				Subject:     &wrapperspb.StringValue{Value: eventDID.String()},
 				DataVersion: &wrapperspb.StringValue{Value: dataType},
 				Type:        &wrapperspb.StringValue{Value: cloudevent.TypeStatus},
 			},
 			expectedIndexKeys: []string{indexKey4, indexKey2, indexKey1},
-		},
-		{
-			name:              "data with nil options",
-			opts:              nil,
-			expectedIndexKeys: []string{indexKey4, indexKey3, indexKey2, indexKey1},
 		},
 	}
 
@@ -399,6 +362,7 @@ func TestGetData(t *testing.T) {
 
 // TestGetEventWithAllHeaderFields tests retrieving events with all header fields properly populated
 func TestGetEventWithAllHeaderFields(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
 	conn, err := chContainer.GetClickHouseAsConn()
@@ -533,6 +497,7 @@ func ref[T any](x T) *T {
 
 // TestListIndexesAdvanced tests the ListIndexesAdvanced function with various advanced filter options.
 func TestListIndexesAdvanced(t *testing.T) {
+	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
 	// Insert test data
@@ -540,18 +505,18 @@ func TestListIndexesAdvanced(t *testing.T) {
 	require.NoError(t, err)
 	contractAddr := randAddress()
 	device1TokenID := big.NewInt(1234567890)
-	device2TokenID := big.NewInt(976543210)
 	ctx := context.Background()
 	now := time.Now()
+	subject1 := cloudevent.ERC721DID{
+		ChainID:         153,
+		ContractAddress: contractAddr,
+		TokenID:         device1TokenID,
+	}.String()
 
 	// Create test events with different characteristics for filtering
 	eventIdx1 := &cloudevent.CloudEventHeader{
-		ID: "event-source1-producer1",
-		Subject: cloudevent.ERC721DID{
-			ChainID:         153,
-			ContractAddress: contractAddr,
-			TokenID:         device1TokenID,
-		}.String(),
+		ID:          "event-source1-producer1",
+		Subject:     subject1,
 		Type:        cloudevent.TypeStatus,
 		Source:      "source-1",
 		Producer:    "producer-1",
@@ -561,12 +526,8 @@ func TestListIndexesAdvanced(t *testing.T) {
 	}
 
 	eventIdx2 := &cloudevent.CloudEventHeader{
-		ID: "event-source2-producer2",
-		Subject: cloudevent.ERC721DID{
-			ChainID:         153,
-			ContractAddress: contractAddr,
-			TokenID:         device1TokenID,
-		}.String(),
+		ID:          "event-source2-producer2",
+		Subject:     subject1,
 		Type:        cloudevent.TypeFingerprint,
 		Source:      "source-2",
 		Producer:    "producer-2",
@@ -576,12 +537,8 @@ func TestListIndexesAdvanced(t *testing.T) {
 	}
 
 	eventIdx3 := &cloudevent.CloudEventHeader{
-		ID: "event-source1-producer3",
-		Subject: cloudevent.ERC721DID{
-			ChainID:         153,
-			ContractAddress: contractAddr,
-			TokenID:         device2TokenID,
-		}.String(),
+		ID:          "event-source1-producer3",
+		Subject:     subject1,
 		Type:        cloudevent.TypeStatus,
 		Source:      "source-1",
 		Producer:    "producer-3",
@@ -592,12 +549,8 @@ func TestListIndexesAdvanced(t *testing.T) {
 
 	// Add an event with different tags for testing ArrayFilterOption
 	eventIdx4 := &cloudevent.CloudEventHeader{
-		ID: "event-source3-producer4",
-		Subject: cloudevent.ERC721DID{
-			ChainID:         153,
-			ContractAddress: contractAddr,
-			TokenID:         device1TokenID,
-		}.String(),
+		ID:          "event-source3-producer4",
+		Subject:     subject1,
 		Type:        cloudevent.TypeStatus,
 		Source:      "source-3",
 		Producer:    "producer-4",
@@ -623,6 +576,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by single type status events",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{cloudevent.TypeStatus},
 				},
@@ -632,6 +588,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by multiple types with OR logic",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{cloudevent.TypeStatus, cloudevent.TypeFingerprint},
 				},
@@ -641,6 +600,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by type with negation",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{cloudevent.TypeFingerprint},
 					Negate: true,
@@ -651,6 +613,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by source: multiple results",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Source: &grpc.StringFilterOption{
 					HasAny: []string{"source-1"},
 				},
@@ -660,6 +625,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "combine multiple filters (AND logic)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{cloudevent.TypeStatus},
 				},
@@ -672,6 +640,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "OR logic within StringFilterOption",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{cloudevent.TypeAttestation},
 					Or: &grpc.StringFilterOption{
@@ -685,6 +656,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "no matching records",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Type: &grpc.StringFilterOption{
 					HasAny: []string{"non-existent-type"},
 				},
@@ -695,6 +669,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by tags: has any (telemetry)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAny: []string{"telemetry"},
 				},
@@ -704,6 +681,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by tags: has all (vehicle AND status)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAll: []string{"vehicle", "status"},
 				},
@@ -713,6 +693,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by tags: has any with multiple values",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAny: []string{"security", "realtime"},
 				},
@@ -722,6 +705,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "filter by tags: negated has_any",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAny: []string{"vehicle"},
 					Negate: true,
@@ -732,6 +718,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "complex tags filter: has_any OR has_all combination",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAny: []string{"fingerprint"},
 					Or: &grpc.ArrayFilterOption{
@@ -744,6 +733,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "complex tags filter: has_all with OR chain",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAll: []string{"vehicle", "telemetry"},
 					Or: &grpc.ArrayFilterOption{
@@ -756,6 +748,9 @@ func TestListIndexesAdvanced(t *testing.T) {
 		{
 			name: "complex negated tags with multiple conditions",
 			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					HasAny: []string{subject1},
+				},
 				Tags: &grpc.ArrayFilterOption{
 					HasAny: []string{"fingerprint", "telemetry"},
 					Negate: true, // Does NOT have fingerprint or telemetry
@@ -770,6 +765,7 @@ func TestListIndexesAdvanced(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			results, err := indexService.ListIndexesAdvanced(t.Context(), 10, tt.advancedOpts)
 			if tt.expectedError {
 				require.Error(t, err, "Expected error but got none")

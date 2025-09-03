@@ -5,7 +5,7 @@ go 1.25
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.40.1
 	github.com/DIMO-Network/clickhouse-infra v0.0.5
-	github.com/DIMO-Network/cloudevent v0.1.4-0.20250829175417-ea1e179182a9
+	github.com/DIMO-Network/cloudevent v0.1.4
 	github.com/DIMO-Network/server-garage v0.0.4
 	github.com/DIMO-Network/shared v1.0.7
 	github.com/aws/aws-sdk-go-v2 v1.38.0
@@ -20,7 +20,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/rs/zerolog v1.34.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/swaggo/swag v1.16.6
 	github.com/volatiletech/sqlboiler/v4 v4.19.1
 	go.uber.org/mock v0.6.0

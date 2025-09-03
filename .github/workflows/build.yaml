@@ -73,7 +73,7 @@ jobs:
           path: bin/
       - name: Set bin as executable
         run: chmod +x bin/*
-      - run: go mod download
+      - run: go mod tidy
       - name: Run generate
         run: make generate
       - name: Porcelain
