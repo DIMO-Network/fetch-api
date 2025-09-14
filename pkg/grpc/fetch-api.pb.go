@@ -296,8 +296,8 @@ type ArrayFilterOption struct {
 	HasAny []string `protobuf:"bytes,1,rep,name=has_any,json=hasAny,proto3" json:"has_any,omitempty"`
 	// Match if the field has all of these values.
 	HasAll []string `protobuf:"bytes,2,rep,name=has_all,json=hasAll,proto3" json:"has_all,omitempty"`
-	// Negate all matches in this filter.
-	Negate bool `protobuf:"varint,3,opt,name=negate,proto3" json:"negate,omitempty"`
+	// Additional filter condition to combine with this one using NOT logic.
+	Not *ArrayFilterOption `protobuf:"bytes,3,opt,name=not,proto3" json:"not,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
 	Or            *ArrayFilterOption `protobuf:"bytes,4,opt,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -348,11 +348,11 @@ func (x *ArrayFilterOption) GetHasAll() []string {
 	return nil
 }
 
-func (x *ArrayFilterOption) GetNegate() bool {
+func (x *ArrayFilterOption) GetNot() *ArrayFilterOption {
 	if x != nil {
-		return x.Negate
+		return x.Not
 	}
-	return false
+	return nil
 }
 
 func (x *ArrayFilterOption) GetOr() *ArrayFilterOption {
@@ -366,8 +366,8 @@ type StringFilterOption struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Match if the field has any of these values (OR logic)
 	HasAny []string `protobuf:"bytes,1,rep,name=has_any,json=hasAny,proto3" json:"has_any,omitempty"`
-	// Negate all matches in this filter.
-	Negate bool `protobuf:"varint,2,opt,name=negate,proto3" json:"negate,omitempty"`
+	// Additional filter condition to combine with this one using NOT logic.
+	Not *StringFilterOption `protobuf:"bytes,2,opt,name=not,proto3" json:"not,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
 	Or            *StringFilterOption `protobuf:"bytes,3,opt,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -411,11 +411,11 @@ func (x *StringFilterOption) GetHasAny() []string {
 	return nil
 }
 
-func (x *StringFilterOption) GetNegate() bool {
+func (x *StringFilterOption) GetNot() *StringFilterOption {
 	if x != nil {
-		return x.Negate
+		return x.Not
 	}
-	return false
+	return nil
 }
 
 func (x *StringFilterOption) GetOr() *StringFilterOption {
@@ -1065,15 +1065,15 @@ const file_pkg_grpc_fetch_api_proto_rawDesc = "" +
 	"\x06extras\x18\n" +
 	" \x01(\v2\x18.grpc.StringFilterOptionR\x06extras\x12(\n" +
 	"\x02id\x18\v \x01(\v2\x18.grpc.StringFilterOptionR\x02id\x12+\n" +
-	"\x04tags\x18\f \x01(\v2\x17.grpc.ArrayFilterOptionR\x04tags\"\x86\x01\n" +
+	"\x04tags\x18\f \x01(\v2\x17.grpc.ArrayFilterOptionR\x04tags\"\x99\x01\n" +
 	"\x11ArrayFilterOption\x12\x17\n" +
 	"\ahas_any\x18\x01 \x03(\tR\x06hasAny\x12\x17\n" +
-	"\ahas_all\x18\x02 \x03(\tR\x06hasAll\x12\x16\n" +
-	"\x06negate\x18\x03 \x01(\bR\x06negate\x12'\n" +
-	"\x02or\x18\x04 \x01(\v2\x17.grpc.ArrayFilterOptionR\x02or\"o\n" +
+	"\ahas_all\x18\x02 \x03(\tR\x06hasAll\x12)\n" +
+	"\x03not\x18\x03 \x01(\v2\x17.grpc.ArrayFilterOptionR\x03not\x12'\n" +
+	"\x02or\x18\x04 \x01(\v2\x17.grpc.ArrayFilterOptionR\x02or\"\x83\x01\n" +
 	"\x12StringFilterOption\x12\x17\n" +
-	"\ahas_any\x18\x01 \x03(\tR\x06hasAny\x12\x16\n" +
-	"\x06negate\x18\x02 \x01(\bR\x06negate\x12(\n" +
+	"\ahas_any\x18\x01 \x03(\tR\x06hasAny\x12*\n" +
+	"\x03not\x18\x02 \x01(\v2\x18.grpc.StringFilterOptionR\x03not\x12(\n" +
 	"\x02or\x18\x03 \x01(\v2\x18.grpc.StringFilterOptionR\x02or\"m\n" +
 	"\x0fCloudEventIndex\x124\n" +
 	"\x06header\x18\x01 \x01(\v2\x1c.cloudevent.CloudEventHeaderR\x06header\x12$\n" +
@@ -1173,39 +1173,41 @@ var file_pkg_grpc_fetch_api_proto_depIdxs = []int32{
 	3,  // 18: grpc.AdvancedSearchOptions.extras:type_name -> grpc.StringFilterOption
 	3,  // 19: grpc.AdvancedSearchOptions.id:type_name -> grpc.StringFilterOption
 	2,  // 20: grpc.AdvancedSearchOptions.tags:type_name -> grpc.ArrayFilterOption
-	2,  // 21: grpc.ArrayFilterOption.or:type_name -> grpc.ArrayFilterOption
-	3,  // 22: grpc.StringFilterOption.or:type_name -> grpc.StringFilterOption
-	19, // 23: grpc.CloudEventIndex.header:type_name -> cloudevent.CloudEventHeader
-	5,  // 24: grpc.CloudEventIndex.data:type_name -> grpc.ObjectInfo
-	0,  // 25: grpc.GetLatestIndexRequest.options:type_name -> grpc.SearchOptions
-	1,  // 26: grpc.GetLatestIndexRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
-	4,  // 27: grpc.GetLatestIndexResponse.index:type_name -> grpc.CloudEventIndex
-	0,  // 28: grpc.ListIndexesRequest.options:type_name -> grpc.SearchOptions
-	1,  // 29: grpc.ListIndexesRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
-	4,  // 30: grpc.ListIndexesResponse.indexes:type_name -> grpc.CloudEventIndex
-	0,  // 31: grpc.GetLatestCloudEventRequest.options:type_name -> grpc.SearchOptions
-	1,  // 32: grpc.GetLatestCloudEventRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
-	20, // 33: grpc.GetLatestCloudEventResponse.cloud_event:type_name -> cloudevent.CloudEvent
-	0,  // 34: grpc.ListCloudEventsRequest.options:type_name -> grpc.SearchOptions
-	1,  // 35: grpc.ListCloudEventsRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
-	20, // 36: grpc.ListCloudEventsResponse.cloud_events:type_name -> cloudevent.CloudEvent
-	4,  // 37: grpc.ListCloudEventsFromKeysRequest.indexes:type_name -> grpc.CloudEventIndex
-	20, // 38: grpc.ListCloudEventsFromKeysResponse.cloud_events:type_name -> cloudevent.CloudEvent
-	6,  // 39: grpc.FetchService.GetLatestIndex:input_type -> grpc.GetLatestIndexRequest
-	8,  // 40: grpc.FetchService.ListIndexes:input_type -> grpc.ListIndexesRequest
-	10, // 41: grpc.FetchService.GetLatestCloudEvent:input_type -> grpc.GetLatestCloudEventRequest
-	12, // 42: grpc.FetchService.ListCloudEvents:input_type -> grpc.ListCloudEventsRequest
-	14, // 43: grpc.FetchService.ListCloudEventsFromIndex:input_type -> grpc.ListCloudEventsFromKeysRequest
-	7,  // 44: grpc.FetchService.GetLatestIndex:output_type -> grpc.GetLatestIndexResponse
-	9,  // 45: grpc.FetchService.ListIndexes:output_type -> grpc.ListIndexesResponse
-	11, // 46: grpc.FetchService.GetLatestCloudEvent:output_type -> grpc.GetLatestCloudEventResponse
-	13, // 47: grpc.FetchService.ListCloudEvents:output_type -> grpc.ListCloudEventsResponse
-	15, // 48: grpc.FetchService.ListCloudEventsFromIndex:output_type -> grpc.ListCloudEventsFromKeysResponse
-	44, // [44:49] is the sub-list for method output_type
-	39, // [39:44] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	2,  // 21: grpc.ArrayFilterOption.not:type_name -> grpc.ArrayFilterOption
+	2,  // 22: grpc.ArrayFilterOption.or:type_name -> grpc.ArrayFilterOption
+	3,  // 23: grpc.StringFilterOption.not:type_name -> grpc.StringFilterOption
+	3,  // 24: grpc.StringFilterOption.or:type_name -> grpc.StringFilterOption
+	19, // 25: grpc.CloudEventIndex.header:type_name -> cloudevent.CloudEventHeader
+	5,  // 26: grpc.CloudEventIndex.data:type_name -> grpc.ObjectInfo
+	0,  // 27: grpc.GetLatestIndexRequest.options:type_name -> grpc.SearchOptions
+	1,  // 28: grpc.GetLatestIndexRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
+	4,  // 29: grpc.GetLatestIndexResponse.index:type_name -> grpc.CloudEventIndex
+	0,  // 30: grpc.ListIndexesRequest.options:type_name -> grpc.SearchOptions
+	1,  // 31: grpc.ListIndexesRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
+	4,  // 32: grpc.ListIndexesResponse.indexes:type_name -> grpc.CloudEventIndex
+	0,  // 33: grpc.GetLatestCloudEventRequest.options:type_name -> grpc.SearchOptions
+	1,  // 34: grpc.GetLatestCloudEventRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
+	20, // 35: grpc.GetLatestCloudEventResponse.cloud_event:type_name -> cloudevent.CloudEvent
+	0,  // 36: grpc.ListCloudEventsRequest.options:type_name -> grpc.SearchOptions
+	1,  // 37: grpc.ListCloudEventsRequest.advanced_options:type_name -> grpc.AdvancedSearchOptions
+	20, // 38: grpc.ListCloudEventsResponse.cloud_events:type_name -> cloudevent.CloudEvent
+	4,  // 39: grpc.ListCloudEventsFromKeysRequest.indexes:type_name -> grpc.CloudEventIndex
+	20, // 40: grpc.ListCloudEventsFromKeysResponse.cloud_events:type_name -> cloudevent.CloudEvent
+	6,  // 41: grpc.FetchService.GetLatestIndex:input_type -> grpc.GetLatestIndexRequest
+	8,  // 42: grpc.FetchService.ListIndexes:input_type -> grpc.ListIndexesRequest
+	10, // 43: grpc.FetchService.GetLatestCloudEvent:input_type -> grpc.GetLatestCloudEventRequest
+	12, // 44: grpc.FetchService.ListCloudEvents:input_type -> grpc.ListCloudEventsRequest
+	14, // 45: grpc.FetchService.ListCloudEventsFromIndex:input_type -> grpc.ListCloudEventsFromKeysRequest
+	7,  // 46: grpc.FetchService.GetLatestIndex:output_type -> grpc.GetLatestIndexResponse
+	9,  // 47: grpc.FetchService.ListIndexes:output_type -> grpc.ListIndexesResponse
+	11, // 48: grpc.FetchService.GetLatestCloudEvent:output_type -> grpc.GetLatestCloudEventResponse
+	13, // 49: grpc.FetchService.ListCloudEvents:output_type -> grpc.ListCloudEventsResponse
+	15, // 50: grpc.FetchService.ListCloudEventsFromIndex:output_type -> grpc.ListCloudEventsFromKeysResponse
+	46, // [46:51] is the sub-list for method output_type
+	41, // [41:46] is the sub-list for method input_type
+	41, // [41:41] is the sub-list for extension type_name
+	41, // [41:41] is the sub-list for extension extendee
+	0,  // [0:41] is the sub-list for field type_name
 }
 
 func init() { file_pkg_grpc_fetch_api_proto_init() }
