@@ -322,37 +322,37 @@ func convertSearchOptionsToAdvanced(opts *grpc.SearchOptions) *grpc.AdvancedSear
 	// Convert each field to StringFilterOption with has_any logic
 	if opts.GetType() != nil {
 		advanced.Type = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetType().GetValue()},
+			In: []string{opts.GetType().GetValue()},
 		}
 	}
 	if opts.GetDataVersion() != nil {
 		advanced.DataVersion = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetDataVersion().GetValue()},
+			In: []string{opts.GetDataVersion().GetValue()},
 		}
 	}
 	if opts.GetSubject() != nil {
 		advanced.Subject = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetSubject().GetValue()},
+			In: []string{opts.GetSubject().GetValue()},
 		}
 	}
 	if opts.GetSource() != nil {
 		advanced.Source = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetSource().GetValue()},
+			In: []string{opts.GetSource().GetValue()},
 		}
 	}
 	if opts.GetProducer() != nil {
 		advanced.Producer = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetProducer().GetValue()},
+			In: []string{opts.GetProducer().GetValue()},
 		}
 	}
 	if opts.GetExtras() != nil {
 		advanced.Extras = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetExtras().GetValue()},
+			In: []string{opts.GetExtras().GetValue()},
 		}
 	}
 	if opts.GetId() != nil {
 		advanced.Id = &grpc.StringFilterOption{
-			HasAny: []string{opts.GetId().GetValue()},
+			In: []string{opts.GetId().GetValue()},
 		}
 	}
 
@@ -375,92 +375,84 @@ func AdvancedSearchOptionsToQueryMod(opts *grpc.AdvancedSearchOptions) []qm.Quer
 
 	// Handle advanced filtering for each field
 	if opts.GetType() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetType(), chindexer.TypeColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetType(), chindexer.TypeColumn)...))
 	}
 
 	if opts.GetDataVersion() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetDataVersion(), chindexer.DataVersionColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetDataVersion(), chindexer.DataVersionColumn)...))
 	}
 
 	if opts.GetSubject() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetSubject(), chindexer.SubjectColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetSubject(), chindexer.SubjectColumn)...))
 	}
 
 	if opts.GetSource() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetSource(), chindexer.SourceColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetSource(), chindexer.SourceColumn)...))
 	}
 
 	if opts.GetProducer() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetProducer(), chindexer.ProducerColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetProducer(), chindexer.ProducerColumn)...))
 	}
 
 	if opts.GetExtras() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetExtras(), chindexer.ExtrasColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetExtras(), chindexer.ExtrasColumn)...))
 	}
 
 	if opts.GetId() != nil {
-		mods = append(mods, qm.Expr(stringFilterMods(opts.GetId(), chindexer.IDColumn, false)...))
+		mods = append(mods, qm.Expr(stringFilterMods(opts.GetId(), chindexer.IDColumn)...))
 	}
 
 	if opts.GetTags() != nil {
-		mods = append(mods, qm.Expr(arrayFilterMods(opts.GetTags(), tagsColumn, false)...))
+		mods = append(mods, qm.Expr(arrayFilterMods(opts.GetTags(), tagsColumn)...))
 	}
 
 	return mods
 }
 
 // stringFilterMods converts a StringFilterOption to query modifications.
-func stringFilterMods(filter *grpc.StringFilterOption, columnName string, negate bool) []qm.QueryMod {
+func stringFilterMods(filter *grpc.StringFilterOption, columnName string) []qm.QueryMod {
 	var mods []qm.QueryMod
 	if filter == nil {
 		return nil
 	}
-	var negateClause string
-	if negate {
-		negateClause = " NOT"
-	}
 
 	// Process has_any (OR logic)
-	if len(filter.GetHasAny()) > 0 {
-		mods = append(mods, qm.Where(columnName+negateClause+" IN (?)", filter.GetHasAny()))
+	if len(filter.GetIn()) > 0 {
+		mods = append(mods, qm.Where(columnName+" IN (?)", filter.GetIn()))
 	}
-	if filter.GetNot() != nil {
-		orFilter := &grpc.StringFilterOption{Or: filter.GetNot()}
-		notMods := stringFilterMods(orFilter, columnName, !negate)
-		mods = append(mods, notMods...)
+	if len(filter.GetNotIn()) > 0 {
+		mods = append(mods, qm.Where(columnName+" NOT IN (?)", filter.GetNotIn()))
 	}
 	if filter.GetOr() != nil {
-		orMods := stringFilterMods(filter.GetOr(), columnName, negate)
+		orMods := stringFilterMods(filter.GetOr(), columnName)
 		mods = append(mods, qm.Or2(qm.Expr(orMods...)))
 	}
 	return mods
 }
 
 // arrayFilterMods converts an ArrayFilterOption to query modifications.
-func arrayFilterMods(filter *grpc.ArrayFilterOption, columnName string, negate bool) []qm.QueryMod {
+func arrayFilterMods(filter *grpc.ArrayFilterOption, columnName string) []qm.QueryMod {
 	var mods []qm.QueryMod
 	if filter == nil {
 		return mods
 	}
-	var negateClause string
-	if negate {
-		negateClause = "NOT "
-	}
 
-	if len(filter.GetHasAny()) > 0 {
-		mods = append(mods, qm.Where(negateClause+"hasAny("+columnName+", ?)", filter.GetHasAny()))
+	if len(filter.GetContainsAny()) > 0 {
+		mods = append(mods, qm.Where("hasAny("+columnName+", ?)", filter.GetContainsAny()))
 	}
-	if len(filter.GetHasAll()) > 0 {
-		mods = append(mods, qm.Where(negateClause+"hasAll("+columnName+", ?)", filter.GetHasAll()))
+	if len(filter.GetContainsAll()) > 0 {
+		mods = append(mods, qm.Where("hasAll("+columnName+", ?)", filter.GetContainsAll()))
 	}
-	if filter.GetNot() != nil {
-		orFilter := &grpc.ArrayFilterOption{Or: filter.GetNot()}
-		newMods := arrayFilterMods(orFilter, columnName, !negate)
-		mods = append(mods, newMods...)
+	if len(filter.GetNotContainsAny()) > 0 {
+		mods = append(mods, qm.Where("NOT hasAny("+columnName+", ?)", filter.GetNotContainsAny()))
+	}
+	if len(filter.GetNotContainsAll()) > 0 {
+		mods = append(mods, qm.Where("NOT hasAll("+columnName+", ?)", filter.GetNotContainsAll()))
 	}
 	// Process OR condition recursively
 	if filter.GetOr() != nil {
-		orMods := arrayFilterMods(filter.GetOr(), columnName, negate)
+		var orMods []qm.QueryMod
+		orMods = arrayFilterMods(filter.GetOr(), columnName)
 		mods = append(mods, qm.Or2(qm.Expr(orMods...)))
 	}
 

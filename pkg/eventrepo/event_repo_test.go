@@ -577,10 +577,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by single type status events",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					HasAny: []string{cloudevent.TypeStatus},
+					In: []string{cloudevent.TypeStatus},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
@@ -589,10 +589,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by multiple types with OR logic",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					HasAny: []string{cloudevent.TypeStatus, cloudevent.TypeFingerprint},
+					In: []string{cloudevent.TypeStatus, cloudevent.TypeFingerprint},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeStatusSource1Producer3, keyTypeFingerprintSource2Producer2, keyTypeStatusSource1Producer1},
@@ -601,12 +601,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by type with negation",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					Not: &grpc.StringFilterOption{
-						HasAny: []string{cloudevent.TypeFingerprint},
-					},
+					NotIn: []string{cloudevent.TypeFingerprint},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
@@ -615,10 +613,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by source: multiple results",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Source: &grpc.StringFilterOption{
-					HasAny: []string{"source-1"},
+					In: []string{"source-1"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
@@ -627,13 +625,13 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "combine multiple filters (AND logic)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					HasAny: []string{cloudevent.TypeStatus},
+					In: []string{cloudevent.TypeStatus},
 				},
 				Source: &grpc.StringFilterOption{
-					HasAny: []string{"source-1"},
+					In: []string{"source-1"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
@@ -642,14 +640,12 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "OR logic within StringFilterOption",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					HasAny: []string{cloudevent.TypeAttestation},
+					In: []string{cloudevent.TypeAttestation},
 					Or: &grpc.StringFilterOption{
-						Not: &grpc.StringFilterOption{
-							HasAny: []string{cloudevent.TypeStatus},
-						},
+						NotIn: []string{cloudevent.TypeStatus},
 					},
 				},
 			},
@@ -659,10 +655,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "no matching records",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Type: &grpc.StringFilterOption{
-					HasAny: []string{"non-existent-type"},
+					In: []string{"non-existent-type"},
 				},
 			},
 			expectedIndexKeys: []string{},
@@ -672,10 +668,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by tags: has any (telemetry)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					HasAny: []string{"telemetry"},
+					ContainsAny: []string{"telemetry"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeStatusSource1Producer3},
@@ -684,10 +680,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by tags: has all (vehicle AND status)",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					HasAll: []string{"vehicle", "status"},
+					ContainsAll: []string{"vehicle", "status"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
@@ -696,10 +692,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by tags: has any with multiple values",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					HasAny: []string{"security", "realtime"},
+					ContainsAny: []string{"security", "realtime"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeFingerprintSource2Producer2},
@@ -708,12 +704,10 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "filter by tags: negated has_any",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					Not: &grpc.ArrayFilterOption{
-						HasAny: []string{"vehicle"},
-					},
+					NotContainsAny: []string{"vehicle"},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource3Producer4, keyTypeFingerprintSource2Producer2},
@@ -722,12 +716,12 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "complex tags filter: has_any OR has_all combination",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					HasAny: []string{"fingerprint"},
+					ContainsAny: []string{"fingerprint"},
 					Or: &grpc.ArrayFilterOption{
-						HasAll: []string{"telemetry", "realtime"},
+						ContainsAll: []string{"telemetry", "realtime"},
 					},
 				},
 			},
@@ -737,12 +731,12 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "complex tags filter: has_all with OR chain",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					HasAll: []string{"vehicle", "telemetry"},
+					ContainsAll: []string{"vehicle", "telemetry"},
 					Or: &grpc.ArrayFilterOption{
-						HasAny: []string{"security"},
+						ContainsAny: []string{"security"},
 					},
 				},
 			},
@@ -752,24 +746,37 @@ func TestListIndexesAdvanced(t *testing.T) {
 			name: "complex negated tags with multiple conditions",
 			advancedOpts: &grpc.AdvancedSearchOptions{
 				Subject: &grpc.StringFilterOption{
-					HasAny: []string{subject1},
+					In: []string{subject1},
 				},
 				Tags: &grpc.ArrayFilterOption{
-					Not: &grpc.ArrayFilterOption{
-						HasAny: []string{"fingerprint", "telemetry"},
-					},
+					NotContainsAny: []string{"fingerprint", "telemetry"},
 					Or: &grpc.ArrayFilterOption{
-						HasAll: []string{"telemetry", "status"},
+						ContainsAll: []string{"telemetry", "status"},
 					},
 				},
 			},
 			expectedIndexKeys: []string{keyTypeStatusSource1Producer3, keyTypeStatusSource1Producer1},
 		},
+		{
+			name: "complex negated tags with or override",
+			advancedOpts: &grpc.AdvancedSearchOptions{
+				Subject: &grpc.StringFilterOption{
+					In: []string{subject1},
+				},
+				Tags: &grpc.ArrayFilterOption{
+					ContainsAll:    []string{"vehicle", "telemetry"},
+					NotContainsAny: []string{"fingerprint", "telemetry", "security"},
+					Or: &grpc.ArrayFilterOption{
+						ContainsAll: []string{"telemetry", "status"},
+					},
+				},
+			},
+			expectedIndexKeys: []string{keyTypeStatusSource1Producer3},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 			results, err := indexService.ListIndexesAdvanced(t.Context(), 10, tt.advancedOpts)
 			if tt.expectedError {
 				require.Error(t, err, "Expected error but got none")
