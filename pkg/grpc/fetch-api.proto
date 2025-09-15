@@ -101,25 +101,31 @@ message AdvancedSearchOptions {
 // every thing is implicitly ANDed together.
 message ArrayFilterOption {
   // Match if the field has any of these values.
-  repeated string has_any = 1;
-  
+  repeated string contains_any = 1;
+
   // Match if the field has all of these values.
-  repeated string has_all = 2;
-  
-  // Negate all matches in this filter.
-  bool negate = 3;
-  
+  repeated string contains_all = 2;
+
+  // Match if the field does not have any of these values.
+  repeated string not_contains_any = 3;
+
+  // Match if the field does not have all of these values.
+  repeated string not_contains_all = 4;
+
   // Additional filter condition to combine with this one using OR logic.
-  ArrayFilterOption or = 4;
+  repeated ArrayFilterOption or = 5;
+
 }
 
 message StringFilterOption {
-  // Match if the field has any of these values (OR logic)
-  repeated string has_any = 1;
-  // Negate all matches in this filter.
-  bool negate = 2;
+  // Match if the field is in the list of values.
+  repeated string in = 1;
+
+  // Match if the field is not in the list of values.
+  repeated string not_in = 2;
+
   // Additional filter condition to combine with this one using OR logic.
-  StringFilterOption or = 3;
+  repeated StringFilterOption or = 3;
 }
 
 message CloudEventIndex {

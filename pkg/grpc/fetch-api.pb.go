@@ -293,13 +293,15 @@ func (x *AdvancedSearchOptions) GetTags() *ArrayFilterOption {
 type ArrayFilterOption struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Match if the field has any of these values.
-	HasAny []string `protobuf:"bytes,1,rep,name=has_any,json=hasAny,proto3" json:"has_any,omitempty"`
+	ContainsAny []string `protobuf:"bytes,1,rep,name=contains_any,json=containsAny,proto3" json:"contains_any,omitempty"`
 	// Match if the field has all of these values.
-	HasAll []string `protobuf:"bytes,2,rep,name=has_all,json=hasAll,proto3" json:"has_all,omitempty"`
-	// Negate all matches in this filter.
-	Negate bool `protobuf:"varint,3,opt,name=negate,proto3" json:"negate,omitempty"`
+	ContainsAll []string `protobuf:"bytes,2,rep,name=contains_all,json=containsAll,proto3" json:"contains_all,omitempty"`
+	// Match if the field does not have any of these values.
+	NotContainsAny []string `protobuf:"bytes,3,rep,name=not_contains_any,json=notContainsAny,proto3" json:"not_contains_any,omitempty"`
+	// Match if the field does not have all of these values.
+	NotContainsAll []string `protobuf:"bytes,4,rep,name=not_contains_all,json=notContainsAll,proto3" json:"not_contains_all,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
-	Or            *ArrayFilterOption `protobuf:"bytes,4,opt,name=or,proto3" json:"or,omitempty"`
+	Or            []*ArrayFilterOption `protobuf:"bytes,5,rep,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -334,28 +336,35 @@ func (*ArrayFilterOption) Descriptor() ([]byte, []int) {
 	return file_pkg_grpc_fetch_api_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ArrayFilterOption) GetHasAny() []string {
+func (x *ArrayFilterOption) GetContainsAny() []string {
 	if x != nil {
-		return x.HasAny
+		return x.ContainsAny
 	}
 	return nil
 }
 
-func (x *ArrayFilterOption) GetHasAll() []string {
+func (x *ArrayFilterOption) GetContainsAll() []string {
 	if x != nil {
-		return x.HasAll
+		return x.ContainsAll
 	}
 	return nil
 }
 
-func (x *ArrayFilterOption) GetNegate() bool {
+func (x *ArrayFilterOption) GetNotContainsAny() []string {
 	if x != nil {
-		return x.Negate
+		return x.NotContainsAny
 	}
-	return false
+	return nil
 }
 
-func (x *ArrayFilterOption) GetOr() *ArrayFilterOption {
+func (x *ArrayFilterOption) GetNotContainsAll() []string {
+	if x != nil {
+		return x.NotContainsAll
+	}
+	return nil
+}
+
+func (x *ArrayFilterOption) GetOr() []*ArrayFilterOption {
 	if x != nil {
 		return x.Or
 	}
@@ -364,12 +373,12 @@ func (x *ArrayFilterOption) GetOr() *ArrayFilterOption {
 
 type StringFilterOption struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Match if the field has any of these values (OR logic)
-	HasAny []string `protobuf:"bytes,1,rep,name=has_any,json=hasAny,proto3" json:"has_any,omitempty"`
-	// Negate all matches in this filter.
-	Negate bool `protobuf:"varint,2,opt,name=negate,proto3" json:"negate,omitempty"`
+	// Match if the field is in the list of values.
+	In []string `protobuf:"bytes,1,rep,name=in,proto3" json:"in,omitempty"`
+	// Match if the field is not in the list of values.
+	NotIn []string `protobuf:"bytes,2,rep,name=not_in,json=notIn,proto3" json:"not_in,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
-	Or            *StringFilterOption `protobuf:"bytes,3,opt,name=or,proto3" json:"or,omitempty"`
+	Or            []*StringFilterOption `protobuf:"bytes,3,rep,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -404,21 +413,21 @@ func (*StringFilterOption) Descriptor() ([]byte, []int) {
 	return file_pkg_grpc_fetch_api_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *StringFilterOption) GetHasAny() []string {
+func (x *StringFilterOption) GetIn() []string {
 	if x != nil {
-		return x.HasAny
+		return x.In
 	}
 	return nil
 }
 
-func (x *StringFilterOption) GetNegate() bool {
+func (x *StringFilterOption) GetNotIn() []string {
 	if x != nil {
-		return x.Negate
+		return x.NotIn
 	}
-	return false
+	return nil
 }
 
-func (x *StringFilterOption) GetOr() *StringFilterOption {
+func (x *StringFilterOption) GetOr() []*StringFilterOption {
 	if x != nil {
 		return x.Or
 	}
@@ -1065,16 +1074,17 @@ const file_pkg_grpc_fetch_api_proto_rawDesc = "" +
 	"\x06extras\x18\n" +
 	" \x01(\v2\x18.grpc.StringFilterOptionR\x06extras\x12(\n" +
 	"\x02id\x18\v \x01(\v2\x18.grpc.StringFilterOptionR\x02id\x12+\n" +
-	"\x04tags\x18\f \x01(\v2\x17.grpc.ArrayFilterOptionR\x04tags\"\x86\x01\n" +
-	"\x11ArrayFilterOption\x12\x17\n" +
-	"\ahas_any\x18\x01 \x03(\tR\x06hasAny\x12\x17\n" +
-	"\ahas_all\x18\x02 \x03(\tR\x06hasAll\x12\x16\n" +
-	"\x06negate\x18\x03 \x01(\bR\x06negate\x12'\n" +
-	"\x02or\x18\x04 \x01(\v2\x17.grpc.ArrayFilterOptionR\x02or\"o\n" +
-	"\x12StringFilterOption\x12\x17\n" +
-	"\ahas_any\x18\x01 \x03(\tR\x06hasAny\x12\x16\n" +
-	"\x06negate\x18\x02 \x01(\bR\x06negate\x12(\n" +
-	"\x02or\x18\x03 \x01(\v2\x18.grpc.StringFilterOptionR\x02or\"m\n" +
+	"\x04tags\x18\f \x01(\v2\x17.grpc.ArrayFilterOptionR\x04tags\"\xd6\x01\n" +
+	"\x11ArrayFilterOption\x12!\n" +
+	"\fcontains_any\x18\x01 \x03(\tR\vcontainsAny\x12!\n" +
+	"\fcontains_all\x18\x02 \x03(\tR\vcontainsAll\x12(\n" +
+	"\x10not_contains_any\x18\x03 \x03(\tR\x0enotContainsAny\x12(\n" +
+	"\x10not_contains_all\x18\x04 \x03(\tR\x0enotContainsAll\x12'\n" +
+	"\x02or\x18\x05 \x03(\v2\x17.grpc.ArrayFilterOptionR\x02or\"e\n" +
+	"\x12StringFilterOption\x12\x0e\n" +
+	"\x02in\x18\x01 \x03(\tR\x02in\x12\x15\n" +
+	"\x06not_in\x18\x02 \x03(\tR\x05notIn\x12(\n" +
+	"\x02or\x18\x03 \x03(\v2\x18.grpc.StringFilterOptionR\x02or\"m\n" +
 	"\x0fCloudEventIndex\x124\n" +
 	"\x06header\x18\x01 \x01(\v2\x1c.cloudevent.CloudEventHeaderR\x06header\x12$\n" +
 	"\x04data\x18\x02 \x01(\v2\x10.grpc.ObjectInfoR\x04data\"\x1e\n" +
