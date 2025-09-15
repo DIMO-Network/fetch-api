@@ -423,9 +423,15 @@ func stringFilterMods(filter *grpc.StringFilterOption, columnName string) []qm.Q
 	if len(filter.GetNotIn()) > 0 {
 		mods = append(mods, qm.Where(columnName+" NOT IN (?)", filter.GetNotIn()))
 	}
-	if filter.GetOr() != nil {
-		orMods := stringFilterMods(filter.GetOr(), columnName)
-		mods = append(mods, qm.Or2(qm.Expr(orMods...)))
+	for _, cond := range filter.GetOr() {
+		clauseMods := stringFilterMods(cond, columnName)
+		if len(clauseMods) != 0 {
+			mods = append(mods, qm.Or2(qm.Expr(clauseMods...)))
+		}
+	}
+
+	if len(filter.GetOr()) != 0 {
+		mods = []qm.QueryMod{qm.Expr(mods...)}
 	}
 	return mods
 }
@@ -450,10 +456,14 @@ func arrayFilterMods(filter *grpc.ArrayFilterOption, columnName string) []qm.Que
 		mods = append(mods, qm.Where("NOT hasAll("+columnName+", ?)", filter.GetNotContainsAll()))
 	}
 	// Process OR condition recursively
-	if filter.GetOr() != nil {
-		var orMods []qm.QueryMod
-		orMods = arrayFilterMods(filter.GetOr(), columnName)
-		mods = append(mods, qm.Or2(qm.Expr(orMods...)))
+	for _, cond := range filter.GetOr() {
+		clauseMods := arrayFilterMods(cond, columnName)
+		if len(clauseMods) != 0 {
+			mods = append(mods, qm.Or2(qm.Expr(clauseMods...)))
+		}
+	}
+	if len(filter.GetOr()) != 0 {
+		mods = []qm.QueryMod{qm.Expr(mods...)}
 	}
 
 	return mods

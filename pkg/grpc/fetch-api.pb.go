@@ -301,7 +301,7 @@ type ArrayFilterOption struct {
 	// Match if the field does not have all of these values.
 	NotContainsAll []string `protobuf:"bytes,4,rep,name=not_contains_all,json=notContainsAll,proto3" json:"not_contains_all,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
-	Or            *ArrayFilterOption `protobuf:"bytes,5,opt,name=or,proto3" json:"or,omitempty"`
+	Or            []*ArrayFilterOption `protobuf:"bytes,5,rep,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -364,7 +364,7 @@ func (x *ArrayFilterOption) GetNotContainsAll() []string {
 	return nil
 }
 
-func (x *ArrayFilterOption) GetOr() *ArrayFilterOption {
+func (x *ArrayFilterOption) GetOr() []*ArrayFilterOption {
 	if x != nil {
 		return x.Or
 	}
@@ -378,7 +378,7 @@ type StringFilterOption struct {
 	// Match if the field is not in the list of values.
 	NotIn []string `protobuf:"bytes,2,rep,name=not_in,json=notIn,proto3" json:"not_in,omitempty"`
 	// Additional filter condition to combine with this one using OR logic.
-	Or            *StringFilterOption `protobuf:"bytes,3,opt,name=or,proto3" json:"or,omitempty"`
+	Or            []*StringFilterOption `protobuf:"bytes,3,rep,name=or,proto3" json:"or,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,7 +427,7 @@ func (x *StringFilterOption) GetNotIn() []string {
 	return nil
 }
 
-func (x *StringFilterOption) GetOr() *StringFilterOption {
+func (x *StringFilterOption) GetOr() []*StringFilterOption {
 	if x != nil {
 		return x.Or
 	}
@@ -1080,11 +1080,11 @@ const file_pkg_grpc_fetch_api_proto_rawDesc = "" +
 	"\fcontains_all\x18\x02 \x03(\tR\vcontainsAll\x12(\n" +
 	"\x10not_contains_any\x18\x03 \x03(\tR\x0enotContainsAny\x12(\n" +
 	"\x10not_contains_all\x18\x04 \x03(\tR\x0enotContainsAll\x12'\n" +
-	"\x02or\x18\x05 \x01(\v2\x17.grpc.ArrayFilterOptionR\x02or\"e\n" +
+	"\x02or\x18\x05 \x03(\v2\x17.grpc.ArrayFilterOptionR\x02or\"e\n" +
 	"\x12StringFilterOption\x12\x0e\n" +
 	"\x02in\x18\x01 \x03(\tR\x02in\x12\x15\n" +
 	"\x06not_in\x18\x02 \x03(\tR\x05notIn\x12(\n" +
-	"\x02or\x18\x03 \x01(\v2\x18.grpc.StringFilterOptionR\x02or\"m\n" +
+	"\x02or\x18\x03 \x03(\v2\x18.grpc.StringFilterOptionR\x02or\"m\n" +
 	"\x0fCloudEventIndex\x124\n" +
 	"\x06header\x18\x01 \x01(\v2\x1c.cloudevent.CloudEventHeaderR\x06header\x12$\n" +
 	"\x04data\x18\x02 \x01(\v2\x10.grpc.ObjectInfoR\x04data\"\x1e\n" +

@@ -113,7 +113,7 @@ message ArrayFilterOption {
   repeated string not_contains_all = 4;
 
   // Additional filter condition to combine with this one using OR logic.
-  ArrayFilterOption or = 5;
+  repeated ArrayFilterOption or = 5;
 
 }
 
@@ -125,7 +125,7 @@ message StringFilterOption {
   repeated string not_in = 2;
 
   // Additional filter condition to combine with this one using OR logic.
-  StringFilterOption or = 3;
+  repeated StringFilterOption or = 3;
 }
 
 message CloudEventIndex {
