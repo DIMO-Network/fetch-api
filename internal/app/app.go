@@ -8,13 +8,11 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
-	"github.com/DIMO-Network/fetch-api/pkg/auth"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/server-garage/pkg/fibercommon"
+	"github.com/DIMO-Network/server-garage/pkg/fibercommon/jwtmiddleware"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
-	"github.com/DIMO-Network/shared/pkg/middleware/privilegetoken"
-	"github.com/DIMO-Network/shared/pkg/privileges"
-	jwtware "github.com/gofiber/contrib/jwt"
+	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -41,10 +39,7 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	})
 	app.Use(fibercommon.ContextLoggerMiddleware)
 
-	jwtAuth := jwtware.New(jwtware.Config{
-		JWKSetURLs: []string{settings.TokenExchangeJWTKeySetURL},
-		Claims:     &privilegetoken.Token{},
-	})
+	jwtAuth := jwtmiddleware.NewJWTMiddleware(settings.TokenExchangeJWTKeySetURL)
 
 	app.Use(recover.New(recover.Config{
 		Next:              nil,
@@ -66,8 +61,6 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	v1 := app.Group("/v1")
 	vehicleGroup := v1.Group("/vehicle")
 
-	vehiclePriv := auth.AllOf(settings.VehicleNFTAddress, "tokenId", []privileges.Privilege{privileges.Privilege(7)})
-
 	chConn, err := chClientFromSettings(settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
@@ -76,11 +69,14 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	s3Client := s3ClientFromSettings(settings)
 	vehHandler := httphandler.NewHandler(chConn, s3Client,
 		[]string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket}, settings.VehicleNFTAddress, chainId)
+
+	vehicleMiddleware := jwtmiddleware.AllOfPermissions(settings.VehicleNFTAddress, httphandler.TokenIDParam, []string{tokenclaims.PermissionGetRawData})
+
 	// File endpoints
-	vehicleGroup.Post("/latest-index-key/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetLatestIndexKey)
-	vehicleGroup.Post("/index-keys/:tokenId", vehiclePriv, jwtAuth, vehHandler.GetIndexKeys)
-	vehicleGroup.Post("/objects/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetObjects)
-	vehicleGroup.Post("/latest-object/:tokenId", jwtAuth, vehiclePriv, vehHandler.GetLatestObject)
+	vehicleGroup.Post("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
+	vehicleGroup.Post("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
+	vehicleGroup.Post("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
+	vehicleGroup.Post("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
 
 	return app, nil
 }

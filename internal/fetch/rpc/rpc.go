@@ -4,7 +4,6 @@ package rpc
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -15,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Server is used to implement grpc.IndexRepoServiceServer.
@@ -55,7 +53,7 @@ func (s *Server) GetLatestIndex(ctx context.Context, req *grpc.GetLatestIndexReq
 			Data: &grpc.ObjectInfo{
 				Key: index.Data.Key,
 			},
-			Header: cloudEventHeaderToProto(&index.CloudEventHeader),
+			Header: grpc.CloudEventHeaderToProto(&index.CloudEventHeader),
 		},
 	}, nil
 }
@@ -83,7 +81,7 @@ func (s *Server) ListIndexes(ctx context.Context, req *grpc.ListIndexesRequest) 
 			Data: &grpc.ObjectInfo{
 				Key: indexObjs[i].Data.Key,
 			},
-			Header: cloudEventHeaderToProto(&indexObjs[i].CloudEventHeader),
+			Header: grpc.CloudEventHeaderToProto(&indexObjs[i].CloudEventHeader),
 		}
 	}
 	return &grpc.ListIndexesResponse{Indexes: indexList}, nil
@@ -113,7 +111,7 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 
 	events := make([]*grpc.CloudEvent, len(data))
 	for i, d := range data {
-		events[i] = cloudEventToProto(d)
+		events[i] = grpc.CloudEventToProto(d)
 	}
 	return &grpc.ListCloudEventsResponse{CloudEvents: events}, nil
 }
@@ -139,7 +137,7 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get latest object: %v", err)
 	}
-	return &grpc.GetLatestCloudEventResponse{CloudEvent: cloudEventToProto(latestData)}, nil
+	return &grpc.GetLatestCloudEventResponse{CloudEvent: grpc.CloudEventToProto(latestData)}, nil
 }
 
 // ListCloudEventsFromIndex translates the gRPC call to the indexrepo type and fetches data for the given index keys.
@@ -164,51 +162,7 @@ func (s *Server) ListCloudEventsFromIndex(ctx context.Context, req *grpc.ListClo
 	}
 	dataObjects := make([]*grpc.CloudEvent, len(data))
 	for i, d := range data {
-		dataObjects[i] = cloudEventToProto(d)
+		dataObjects[i] = grpc.CloudEventToProto(d)
 	}
 	return &grpc.ListCloudEventsFromKeysResponse{CloudEvents: dataObjects}, nil
-}
-
-func cloudEventHeaderToProto(event *cloudevent.CloudEventHeader) *grpc.CloudEventHeader {
-	if event == nil {
-		return nil
-	}
-	extras := make(map[string][]byte)
-	for k, v := range event.Extras {
-		v, err := json.Marshal(v)
-		if err != nil {
-			// Skip the extra if it can't be marshaled
-			continue
-		}
-		extras[k] = v
-	}
-	return &grpc.CloudEventHeader{
-		Id:              event.ID,
-		Source:          event.Source,
-		Producer:        event.Producer,
-		Subject:         event.Subject,
-		SpecVersion:     event.SpecVersion,
-		Time:            timestamppb.New(event.Time),
-		Type:            event.Type,
-		DataContentType: event.DataContentType,
-		DataSchema:      event.DataSchema,
-		DataVersion:     event.DataVersion,
-		Extras:          extras,
-	}
-}
-
-func cloudEventToProto(event cloudevent.CloudEvent[json.RawMessage]) *grpc.CloudEvent {
-	extras := make(map[string][]byte)
-	for k, v := range event.Extras {
-		v, err := json.Marshal(v)
-		if err != nil {
-			// Skip the extra if it can't be marshaled
-			continue
-		}
-		extras[k] = v
-	}
-	return &grpc.CloudEvent{
-		Header: cloudEventHeaderToProto(&event.CloudEventHeader),
-		Data:   event.Data,
-	}
 }

@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	errTimeout = "request exceeded or is estimated to exceed the maximum execution time"
+	TokenIDParam = "tokenId"
+	errTimeout   = "request exceeded or is estimated to exceed the maximum execution time"
 )
 
 type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
@@ -98,7 +99,7 @@ func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-index-key/{tokenId} [get]
 func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params("tokenId")
+	tokenID := fCtx.Params(TokenIDParam)
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
@@ -133,7 +134,7 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/index-keys/{tokenId} [get]
 func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params("tokenId")
+	tokenID := fCtx.Params(TokenIDParam)
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
@@ -168,7 +169,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/objects/{tokenId} [get]
 func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params("tokenId")
+	tokenID := fCtx.Params(TokenIDParam)
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
@@ -207,7 +208,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-object/{tokenId} [get]
 func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params("tokenId")
+	tokenID := fCtx.Params(TokenIDParam)
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
