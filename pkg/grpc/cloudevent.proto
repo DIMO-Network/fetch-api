@@ -56,7 +56,10 @@ message CloudEventHeader {
   // Extras contains any additional fields that are not part of the CloudEvent excluding the data field.
   map<string, bytes> extras = 11;
 
+  // Signature hold the signature of the a cloudevent's data field.
+  string signature = 12;
+
   // Tags are a list of tags that can be used to filter the events.
-  repeated string tags = 12;
+  repeated string tags = 13;
 }
 

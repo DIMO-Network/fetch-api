@@ -39,5 +39,7 @@ func (c *CloudEventHeader) AsCloudEventHeader() cloudevent.CloudEventHeader {
 		DataSchema:      c.GetDataSchema(),
 		DataVersion:     c.GetDataVersion(),
 		Extras:          extras,
+		Signature:       c.GetSignature(),
+		Tags:            c.GetTags(),
 	}
 }
