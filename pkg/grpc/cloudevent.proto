@@ -58,5 +58,8 @@ message CloudEventHeader {
 
   // Tags are a list of tags that can be used to filter the events.
   repeated string tags = 12;
+
+  // Signature hold the signature of the a cloudevent's data field.
+  string signature = 13;
 }
 
