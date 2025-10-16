@@ -8,6 +8,7 @@ require (
 	github.com/DIMO-Network/cloudevent v0.1.4
 	github.com/DIMO-Network/server-garage v0.0.7
 	github.com/DIMO-Network/shared v1.0.7
+	github.com/DIMO-Network/token-exchange-api v0.3.7
 	github.com/aws/aws-sdk-go-v2 v1.38.3
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.10
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.87.3
@@ -32,7 +33,6 @@ require (
 	dario.cat/mergo v1.0.1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/ClickHouse/ch-go v0.67.0 // indirect
-	github.com/DIMO-Network/token-exchange-api v0.3.7 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
