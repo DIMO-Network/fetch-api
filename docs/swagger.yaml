@@ -6,6 +6,8 @@ definitions:
         items:
           type: integer
         type: array
+      data_base64:
+        type: string
       datacontenttype:
         description: |-
           DataContentType is an optional MIME type for the data field. We almost
@@ -72,6 +74,8 @@ definitions:
         allOf:
         - $ref: '#/definitions/github_com_DIMO-Network_fetch-api_pkg_eventrepo.ObjectInfo'
         description: Data contains domain-specific information about the event.
+      data_base64:
+        type: string
       datacontenttype:
         description: |-
           DataContentType is an optional MIME type for the data field. We almost

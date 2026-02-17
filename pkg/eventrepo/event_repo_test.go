@@ -164,7 +164,8 @@ func TestGetDataFromIndex(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockS3Client := NewMockObjectGetter(ctrl)
-	content := []byte(`{"vin": "1HGCM82633A123456"}`)
+	// Stored object is full CloudEvent JSON (cloudevent unmarshaler expects envelope with "data").
+	content := []byte(`{"data":{"vin": "1HGCM82633A123456"}}`)
 	mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).Return(&s3.GetObjectOutput{
 		Body:          io.NopCloser(bytes.NewReader(content)),
 		ContentLength: ref(int64(len(content))),
@@ -337,11 +338,12 @@ func TestGetData(t *testing.T) {
 				mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 					require.Equal(t, *params.Key, indexKey)
 					quotedKey := `"` + indexKey + `"`
-					// content := []byte(`{"data":` + quotedKey + `}`)
 					expectedContent = append(expectedContent, []byte(quotedKey))
+					// Stored object is full CloudEvent JSON with "data" field.
+					body := []byte(`{"data":` + quotedKey + `}`)
 					return &s3.GetObjectOutput{
-						Body:          io.NopCloser(bytes.NewReader([]byte(quotedKey))),
-						ContentLength: ref(int64(len(quotedKey))),
+						Body:          io.NopCloser(bytes.NewReader(body)),
+						ContentLength: ref(int64(len(body))),
 					}, nil
 				})
 			}
@@ -418,19 +420,21 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockS3Client := NewMockObjectGetter(ctrl)
 	eventData := []byte(`{"status": "online", "lastSeen": "2023-01-01T12:00:00Z"}`)
+	// Stored object is full CloudEvent JSON (cloudevent unmarshaler expects envelope with "data").
+	eventDataEnvelope := []byte(`{"data":` + string(eventData) + `}`)
 
 	// Create service
 	indexService := eventrepo.New(conn, mockS3Client)
 
 	// Test retrieving the event
-	t.Run("retrieve event with full headers", func(t *testing.T) {
+		t.Run("retrieve event with full headers", func(t *testing.T) {
 		mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 			func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 				// Verify the correct key was requested
 				require.Equal(t, indexKey, *params.Key)
 				return &s3.GetObjectOutput{
-					Body:          io.NopCloser(bytes.NewReader(eventData)),
-					ContentLength: ref(int64(len(eventData))),
+					Body:          io.NopCloser(bytes.NewReader(eventDataEnvelope)),
+					ContentLength: ref(int64(len(eventDataEnvelope))),
 				}, nil
 			},
 		)
@@ -472,8 +476,8 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 				// Verify the correct key was requested
 				require.Equal(t, indexKey2, *params.Key)
 				return &s3.GetObjectOutput{
-					Body:          io.NopCloser(bytes.NewReader(eventData)),
-					ContentLength: ref(int64(len(eventData))),
+					Body:          io.NopCloser(bytes.NewReader(eventDataEnvelope)),
+					ContentLength: ref(int64(len(eventDataEnvelope))),
 				}, nil
 			},
 		)

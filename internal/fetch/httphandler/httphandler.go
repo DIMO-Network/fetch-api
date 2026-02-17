@@ -28,7 +28,10 @@ const (
 	errTimeout   = "request exceeded or is estimated to exceed the maximum execution time"
 )
 
-type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo] //nolint:unused // Used in OpenAPI docs
+// cloudReturn is used by swag for OpenAPI response types (see @Success annotations).
+type cloudReturn cloudevent.CloudEvent[eventrepo.ObjectInfo]
+
+var _ = (*cloudReturn)(nil) // ensure type is used for staticcheck
 
 // Handler is the HTTP handler for the fetch service.
 type Handler struct {
@@ -164,7 +167,7 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} []cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
+// @Success 200 {object} []cloudevent.RawEvent "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/objects/{tokenId} [get]
@@ -203,7 +206,7 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Produce json
 // @Param params query searchParams false "Search parameters"
 // @Param tokenId path string true "Token ID"
-// @Success 200 {object} cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
+// @Success 200 {object} cloudevent.RawEvent "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-object/{tokenId} [get]

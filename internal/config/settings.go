@@ -18,7 +18,6 @@ type Settings struct {
 	ChainID                   string         `env:"CHAIN_ID"`
 	CloudEventBucket          string         `env:"CLOUDEVENT_BUCKET"`
 	EphemeralBucket           string         `env:"EPHEMERAL_BUCKET"`
-	VCBucket                  string         `env:"VC_BUCKET"`
 	S3AWSRegion               string         `env:"S3_AWS_REGION"`
 	S3AWSAccessKeyID          string         `env:"S3_AWS_ACCESS_KEY_ID"`
 	S3AWSSecretAccessKey      string         `env:"S3_AWS_SECRET_ACCESS_KEY"`

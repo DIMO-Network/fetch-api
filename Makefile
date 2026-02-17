@@ -1,4 +1,4 @@
-.PHONY: clean run build install dep test lint format docker
+.PHONY: clean run build install dep test lint format docker gqlgen podman
 
 SHELL := /bin/bash
 PATHINSTBIN = $(abspath ./bin)
@@ -20,7 +20,7 @@ VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
 # Dependency versions
 GOLANGCI_VERSION   = latest
-PROTOC_VERSION             = 28.3
+PROTOC_VERSION             = 33.4
 PROTOC_GEN_GO_VERSION      = $(shell go list -m -f '{{.Version}}' google.golang.org/protobuf)
 PROTOC_GEN_GO_GRPC_VERSION = v1.5.1
 
@@ -56,8 +56,25 @@ lint: ## run linter
 	@PATH=$$PATH golangci-lint run --timeout 10m
 
 docker: dep ## build docker image
-	@docker build -f ./Dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
+	@docker build --build-arg APP_NAME=$(BIN_NAME) -f ./Dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
 	@docker tag dimozone/$(BIN_NAME):$(VER_CUT) dimozone/$(BIN_NAME):latest
+
+# Build multi-arch (amd64 + arm64) and push with a random tag. Does not trigger GitHub workflows.
+# Requires: docker buildx, docker login. Run from repo root.
+docker-push-multiarch:
+	$(eval TAG := dev-$(shell openssl rand -hex 6))
+	@echo "Building and pushing dimozone/$(BIN_NAME):$(TAG) (linux/amd64, linux/arm64)"
+	@docker buildx build --build-arg APP_NAME=$(BIN_NAME) --platform linux/amd64,linux/arm64 -f ./Dockerfile --push -t dimozone/$(BIN_NAME):$(TAG) .
+	@echo "Pushed dimozone/$(BIN_NAME):$(TAG)"
+
+# Same as docker-push-multiarch but using podman (manifest list + manifest push --all).
+podman-push-multiarch:
+	$(eval TAG := dev-$(shell openssl rand -hex 6))
+	$(eval IMAGE := dimozone/$(BIN_NAME):$(TAG))
+	@echo "Building and pushing $(IMAGE) (linux/amd64, linux/arm64)"
+	@podman build --build-arg APP_NAME=$(BIN_NAME) --platform linux/amd64,linux/arm64 --manifest $(IMAGE) -f ./Dockerfile .
+	@podman manifest push --all $(IMAGE) docker://$(IMAGE)
+	@echo "Pushed $(IMAGE)"
 
 tools-golangci-lint: ## install golangci-lint
 	@mkdir -p $(PATHINSTBIN)
@@ -80,7 +97,10 @@ endif
 
 make tools: tools-golangci-lint tools-protoc ## install all tools
 
-generate: generate-swagger generate-go generate-grpc ## run all file generation for the project
+gqlgen: ## Generate gqlgen code.
+	@go tool gqlgen generate
+
+generate: gqlgen generate-swagger generate-go generate-grpc ## run all file generation for the project
 
 generate-swagger: ## generate swagger documentation
 	@go tool swag -version

@@ -1,0 +1,69 @@
+"""
+A point in time, encoded per RFC-3339. Typically in UTC.
+"""
+scalar Time
+
+"""
+Arbitrary JSON payload (e.g. cloud event data).
+"""
+scalar JSON @specifiedBy(url: "https://ibm.github.io/graphql-specs/custom-scalars/json.html")
+
+"""
+The root query type for the Fetch API GraphQL schema.
+"""
+type Query {
+  """
+  Latest cloud event index matching filters.
+  """
+  latestIndex(tokenId: Int!, filter: CloudEventFilter): CloudEventIndex!
+
+  """
+  List cloud event indexes matching filters.
+  """
+  indexes(tokenId: Int!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!
+
+  """
+  Latest full cloud event as JSON.
+  """
+  latestCloudEvent(tokenId: Int!, filter: CloudEventFilter): JSON!
+
+  """
+  List full cloud events as JSON.
+  """
+  cloudEvents(tokenId: Int!, limit: Int = 10, filter: CloudEventFilter): [JSON!]!
+}
+
+"""
+CloudEvents header fields per the CloudEvents v1.0 spec.
+"""
+type CloudEventHeader {
+  id: String!
+  source: String!
+  producer: String!
+  specversion: String!
+  subject: String!
+  time: Time!
+  type: String!
+  datacontenttype: String
+  dataschema: String
+  dataversion: String
+  signature: String
+  tags: [String!]
+}
+
+"""
+Cloud event index entry: typed header + storage key.
+"""
+type CloudEventIndex {
+  header: CloudEventHeader!
+  indexKey: String!
+}
+
+input CloudEventFilter {
+  id: String
+  type: String
+  source: String
+  producer: String
+  before: Time
+  after: Time
+}

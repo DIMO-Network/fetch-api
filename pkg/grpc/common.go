@@ -7,9 +7,9 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// AsCloudEvent converts the CloudEvent to a cloudevent.CloudEvent[json.RawMessage].
-func (c *CloudEvent) AsCloudEvent() cloudevent.CloudEvent[json.RawMessage] {
-	return cloudevent.CloudEvent[json.RawMessage]{
+// AsRawCloudEvent converts the CloudEvent to a cloudevent.RawEvent.
+func (c *CloudEvent) AsRawCloudEvent() cloudevent.RawEvent {
+	return cloudevent.RawEvent{
 		CloudEventHeader: c.GetHeader().AsCloudEventHeader(),
 		Data:             c.GetData(),
 	}
@@ -76,8 +76,8 @@ func CloudEventHeaderToProto(event *cloudevent.CloudEventHeader) *CloudEventHead
 	}
 }
 
-// CloudEventToProto converts a cloudevent.CloudEvent[json.RawMessage] to a grpc.CloudEvent.
-func CloudEventToProto(event cloudevent.CloudEvent[json.RawMessage]) *CloudEvent {
+// CloudEventToProto converts a cloudevent.RawEvent to a grpc.CloudEvent.
+func CloudEventToProto(event cloudevent.RawEvent) *CloudEvent {
 	return &CloudEvent{
 		Header: CloudEventHeaderToProto(&event.CloudEventHeader),
 		Data:   event.Data,

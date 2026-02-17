@@ -397,6 +397,9 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "data_base64": {
+                    "type": "string"
+                },
                 "datacontenttype": {
                     "description": "DataContentType is an optional MIME type for the data field. We almost\nalways serialize to JSON and in that case this field is implicitly\n\"application/json\".",
                     "type": "string"
@@ -468,6 +471,9 @@ const docTemplate = `{
                             "$ref": "#/definitions/github_com_DIMO-Network_fetch-api_pkg_eventrepo.ObjectInfo"
                         }
                     ]
+                },
+                "data_base64": {
+                    "type": "string"
                 },
                 "datacontenttype": {
                     "description": "DataContentType is an optional MIME type for the data field. We almost\nalways serialize to JSON and in that case this field is implicitly\n\"application/json\".",

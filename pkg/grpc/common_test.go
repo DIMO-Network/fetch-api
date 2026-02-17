@@ -25,21 +25,21 @@ const (
 func TestCloudEventProtoRoundTrip(t *testing.T) {
 	t.Parallel()
 
-	// Create a random CloudEvent by filling all fields with random data
-	originalEvent := cloudevent.CloudEvent[json.RawMessage]{
+	// Create a random RawCloudEvent by filling all fields with random data
+	originalEvent := cloudevent.RawEvent{
 		CloudEventHeader: fillRandomCloudEventHeader(t),
 		Data:             json.RawMessage(`{"random": "test data"}`),
 	}
 
-	// Convert CloudEvent to Proto
+	// Convert RawCloudEvent to Proto
 	protoEvent := CloudEventToProto(originalEvent)
 
 	// Verify Proto was created
 	require.NotNil(t, protoEvent)
 	require.NotNil(t, protoEvent.GetHeader())
 
-	// Convert back from Proto to CloudEvent
-	convertedEvent := protoEvent.AsCloudEvent()
+	// Convert back from Proto to RawCloudEvent
+	convertedEvent := protoEvent.AsRawCloudEvent()
 
 	// Verify the data is preserved through round-trip conversion using deep equals
 	require.Empty(t, cmp.Diff(originalEvent.CloudEventHeader, convertedEvent.CloudEventHeader))
@@ -70,7 +70,7 @@ func TestCloudEventHeaderProtoRoundTrip(t *testing.T) {
 func TestCloudEventProtoWithNilHeader(t *testing.T) {
 	t.Parallel()
 
-	originalEvent := cloudevent.CloudEvent[json.RawMessage]{
+	originalEvent := cloudevent.RawEvent{
 		CloudEventHeader: cloudevent.CloudEventHeader{},
 		Data:             json.RawMessage(`{"test": "data"}`),
 	}
@@ -78,7 +78,7 @@ func TestCloudEventProtoWithNilHeader(t *testing.T) {
 	protoEvent := CloudEventToProto(originalEvent)
 	require.NotNil(t, protoEvent)
 
-	convertedEvent := protoEvent.AsCloudEvent()
+	convertedEvent := protoEvent.AsRawCloudEvent()
 	require.Equal(t, originalEvent.Data, convertedEvent.Data)
 }
 
