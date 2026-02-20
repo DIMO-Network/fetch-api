@@ -92,11 +92,17 @@ func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param params query searchParams false "Search parameters"
-// @Param tokenId path string true "Token ID"
+// @Param tokenId path integer true "Token ID"
+// @Param id query string false "Event ID"
+// @Param type query string false "Event type"
+// @Param source query string false "Event source"
+// @Param producer query string false "Event producer"
+// @Param before query string false "Upper time bound (RFC3339)"
+// @Param after query string false "Lower time bound (RFC3339)"
 // @Success 200 {object} cloudReturn "Returns the latest index key"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /v1/vehicle/latest-index-key/{tokenId} [get]
 func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params(TokenIDParam)
@@ -127,11 +133,18 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param params query searchParams false "Search parameters"
-// @Param tokenId path string true "Token ID"
+// @Param tokenId path integer true "Token ID"
+// @Param id query string false "Event ID"
+// @Param type query string false "Event type"
+// @Param source query string false "Event source"
+// @Param producer query string false "Event producer"
+// @Param before query string false "Upper time bound (RFC3339)"
+// @Param after query string false "Lower time bound (RFC3339)"
+// @Param limit query integer false "Maximum number of results"
 // @Success 200 {object} []cloudReturn "Returns list of index keys"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /v1/vehicle/index-keys/{tokenId} [get]
 func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params(TokenIDParam)
@@ -162,11 +175,18 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param params query searchParams false "Search parameters"
-// @Param tokenId path string true "Token ID"
+// @Param tokenId path integer true "Token ID"
+// @Param id query string false "Event ID"
+// @Param type query string false "Event type"
+// @Param source query string false "Event source"
+// @Param producer query string false "Event producer"
+// @Param before query string false "Upper time bound (RFC3339)"
+// @Param after query string false "Lower time bound (RFC3339)"
+// @Param limit query integer false "Maximum number of results"
 // @Success 200 {object} []cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /v1/vehicle/objects/{tokenId} [get]
 func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params(TokenIDParam)
@@ -201,11 +221,17 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Tags objects
 // @Accept json
 // @Produce json
-// @Param params query searchParams false "Search parameters"
-// @Param tokenId path string true "Token ID"
+// @Param tokenId path integer true "Token ID"
+// @Param id query string false "Event ID"
+// @Param type query string false "Event type"
+// @Param source query string false "Event source"
+// @Param producer query string false "Event producer"
+// @Param before query string false "Upper time bound (RFC3339)"
+// @Param after query string false "Lower time bound (RFC3339)"
 // @Success 200 {object} cloudevent.CloudEvent[json.RawMessage] "Returns latest object data"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 500 {object} map[string]string "Server error"
+// @Security BearerAuth
 // @Router /v1/vehicle/latest-object/{tokenId} [get]
 func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
 	tokenID := fCtx.Params(TokenIDParam)

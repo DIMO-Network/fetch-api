@@ -73,10 +73,10 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	vehicleMiddleware := jwtmiddleware.AllOfPermissions(settings.VehicleNFTAddress, httphandler.TokenIDParam, []string{tokenclaims.PermissionGetRawData})
 
 	// File endpoints
-	vehicleGroup.Post("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
-	vehicleGroup.Post("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
-	vehicleGroup.Post("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
-	vehicleGroup.Post("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
+	vehicleGroup.Get("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
+	vehicleGroup.Get("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
+	vehicleGroup.Get("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
+	vehicleGroup.Get("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
 
 	return app, nil
 }

@@ -41,6 +41,11 @@ const docTemplate = `{
         },
         "/v1/vehicle/index-keys/{tokenId}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves a list of index keys that match the provided search options",
                 "consumes": [
                     "application/json"
@@ -54,33 +59,15 @@ const docTemplate = `{
                 "summary": "Get multiple index keys based on search criteria",
                 "parameters": [
                     {
-                        "type": "string",
-                        "name": "after",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "before",
-                        "in": "query"
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "producer",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "source",
                         "in": "query"
                     },
                     {
@@ -90,10 +77,31 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token ID",
-                        "name": "tokenId",
-                        "in": "path",
-                        "required": true
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upper time bound (RFC3339)",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Lower time bound (RFC3339)",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -129,6 +137,11 @@ const docTemplate = `{
         },
         "/v1/vehicle/latest-index-key/{tokenId}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves the most recent index key that matches the provided search options",
                 "consumes": [
                     "application/json"
@@ -142,33 +155,15 @@ const docTemplate = `{
                 "summary": "Get the latest index key based on search criteria",
                 "parameters": [
                     {
-                        "type": "string",
-                        "name": "after",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "before",
-                        "in": "query"
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "producer",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "source",
                         "in": "query"
                     },
                     {
@@ -178,10 +173,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token ID",
-                        "name": "tokenId",
-                        "in": "path",
-                        "required": true
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upper time bound (RFC3339)",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Lower time bound (RFC3339)",
+                        "name": "after",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -214,6 +224,11 @@ const docTemplate = `{
         },
         "/v1/vehicle/latest-object/{tokenId}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves the content of the most recent object that matches the provided search options",
                 "consumes": [
                     "application/json"
@@ -227,33 +242,15 @@ const docTemplate = `{
                 "summary": "Get the latest object based on search criteria",
                 "parameters": [
                     {
-                        "type": "string",
-                        "name": "after",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "before",
-                        "in": "query"
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "producer",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "source",
                         "in": "query"
                     },
                     {
@@ -263,10 +260,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token ID",
-                        "name": "tokenId",
-                        "in": "path",
-                        "required": true
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upper time bound (RFC3339)",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Lower time bound (RFC3339)",
+                        "name": "after",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -299,6 +311,11 @@ const docTemplate = `{
         },
         "/v1/vehicle/objects/{tokenId}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieves the content of multiple objects that match the provided search options",
                 "consumes": [
                     "application/json"
@@ -312,33 +329,15 @@ const docTemplate = `{
                 "summary": "Get multiple objects based on search criteria",
                 "parameters": [
                     {
-                        "type": "string",
-                        "name": "after",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "before",
-                        "in": "query"
+                        "type": "integer",
+                        "description": "Token ID",
+                        "name": "tokenId",
+                        "in": "path",
+                        "required": true
                     },
                     {
                         "type": "string",
                         "name": "id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "producer",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "source",
                         "in": "query"
                     },
                     {
@@ -348,10 +347,31 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Token ID",
-                        "name": "tokenId",
-                        "in": "path",
-                        "required": true
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "producer",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Upper time bound (RFC3339)",
+                        "name": "before",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Lower time bound (RFC3339)",
+                        "name": "after",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Maximum number of results",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {

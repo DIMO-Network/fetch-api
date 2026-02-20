@@ -154,32 +154,35 @@ paths:
       - application/json
       description: Retrieves a list of index keys that match the provided search options
       parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: integer
       - in: query
         name: id
         type: string
       - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
+        name: type
         type: string
       - in: query
         name: source
         type: string
       - in: query
-        name: type
+        name: producer
         type: string
-      - description: Token ID
-        in: path
-        name: tokenId
-        required: true
+      - description: Upper time bound (RFC3339)
+        in: query
+        name: before
         type: string
+      - description: Lower time bound (RFC3339)
+        in: query
+        name: after
+        type: string
+      - description: Maximum number of results
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -201,6 +204,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get multiple index keys based on search criteria
       tags:
       - objects
@@ -211,31 +216,30 @@ paths:
       description: Retrieves the most recent index key that matches the provided search
         options
       parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: integer
       - in: query
         name: id
         type: string
       - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
+        name: type
         type: string
       - in: query
         name: source
         type: string
       - in: query
-        name: type
+        name: producer
         type: string
-      - description: Token ID
-        in: path
-        name: tokenId
-        required: true
+      - description: Upper time bound (RFC3339)
+        in: query
+        name: before
+        type: string
+      - description: Lower time bound (RFC3339)
+        in: query
+        name: after
         type: string
       produces:
       - application/json
@@ -256,6 +260,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get the latest index key based on search criteria
       tags:
       - objects
@@ -266,31 +272,30 @@ paths:
       description: Retrieves the content of the most recent object that matches the
         provided search options
       parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: integer
       - in: query
         name: id
         type: string
       - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
+        name: type
         type: string
       - in: query
         name: source
         type: string
       - in: query
-        name: type
+        name: producer
         type: string
-      - description: Token ID
-        in: path
-        name: tokenId
-        required: true
+      - description: Upper time bound (RFC3339)
+        in: query
+        name: before
+        type: string
+      - description: Lower time bound (RFC3339)
+        in: query
+        name: after
         type: string
       produces:
       - application/json
@@ -311,6 +316,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get the latest object based on search criteria
       tags:
       - objects
@@ -321,32 +328,35 @@ paths:
       description: Retrieves the content of multiple objects that match the provided
         search options
       parameters:
-      - in: query
-        name: after
-        type: string
-      - in: query
-        name: before
-        type: string
+      - description: Token ID
+        in: path
+        name: tokenId
+        required: true
+        type: integer
       - in: query
         name: id
         type: string
       - in: query
-        name: limit
-        type: integer
-      - in: query
-        name: producer
+        name: type
         type: string
       - in: query
         name: source
         type: string
       - in: query
-        name: type
+        name: producer
         type: string
-      - description: Token ID
-        in: path
-        name: tokenId
-        required: true
+      - description: Upper time bound (RFC3339)
+        in: query
+        name: before
         type: string
+      - description: Lower time bound (RFC3339)
+        in: query
+        name: after
+        type: string
+      - description: Maximum number of results
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -368,6 +378,8 @@ paths:
             additionalProperties:
               type: string
             type: object
+      security:
+      - BearerAuth: []
       summary: Get multiple objects based on search criteria
       tags:
       - objects
