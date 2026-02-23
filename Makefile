@@ -90,6 +90,9 @@ generate-go:## run go generate
 	@go generate ./...
 
 generate-grpc: ## generate grpc files
+	@mkdir -p $(PATHINSTBIN)
+	go build -o $(PATHINSTBIN)/protoc-gen-go google.golang.org/protobuf/cmd/protoc-gen-go
+	go build -o $(PATHINSTBIN)/protoc-gen-go-grpc google.golang.org/grpc/cmd/protoc-gen-go-grpc
 	@PATH=$$PATH protoc --version
 	@PATH=$$PATH protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
