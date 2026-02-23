@@ -23,6 +23,6 @@ type CloudEventIndex struct {
 	IndexKey string                       `json:"indexKey"`
 }
 
-// The root query type for the Fetch API GraphQL schema.
+// The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
 type Query struct {
 }

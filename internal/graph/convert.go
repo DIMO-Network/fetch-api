@@ -1,13 +1,10 @@
 package graph
 
 import (
-	"math/big"
-
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
-	"github.com/ethereum/go-ethereum/common"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -54,14 +51,6 @@ func resolveLimit(limit *int) int {
 		return *limit
 	}
 	return defaultLimit
-}
-
-func subjectFromTokenID(vehicleAddr common.Address, chainID uint64, tokenID int) cloudevent.ERC721DID {
-	return cloudevent.ERC721DID{
-		ChainID:         chainID,
-		ContractAddress: vehicleAddr,
-		TokenID:         big.NewInt(int64(tokenID)),
-	}
 }
 
 // indexToModel converts a CloudEvent index entry to the GraphQL model,

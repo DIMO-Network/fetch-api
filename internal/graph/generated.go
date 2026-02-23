@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -70,18 +69,18 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		CloudEvents      func(childComplexity int, tokenID int, limit *int, filter *model.CloudEventFilter) int
-		Indexes          func(childComplexity int, tokenID int, limit *int, filter *model.CloudEventFilter) int
-		LatestCloudEvent func(childComplexity int, tokenID int, filter *model.CloudEventFilter) int
-		LatestIndex      func(childComplexity int, tokenID int, filter *model.CloudEventFilter) int
+		CloudEvents      func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
+		Indexes          func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
+		LatestCloudEvent func(childComplexity int, did string, filter *model.CloudEventFilter) int
+		LatestIndex      func(childComplexity int, did string, filter *model.CloudEventFilter) int
 	}
 }
 
 type QueryResolver interface {
-	LatestIndex(ctx context.Context, tokenID int, filter *model.CloudEventFilter) (*model.CloudEventIndex, error)
-	Indexes(ctx context.Context, tokenID int, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error)
-	LatestCloudEvent(ctx context.Context, tokenID int, filter *model.CloudEventFilter) (*cloudevent.CloudEvent[json.RawMessage], error)
-	CloudEvents(ctx context.Context, tokenID int, limit *int, filter *model.CloudEventFilter) ([]*cloudevent.CloudEvent[json.RawMessage], error)
+	LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error)
+	Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error)
+	LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*cloudevent.CloudEvent[json.RawMessage], error)
+	CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*cloudevent.CloudEvent[json.RawMessage], error)
 }
 
 type executableSchema struct {
@@ -199,7 +198,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.CloudEvents(childComplexity, args["tokenId"].(int), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
+		return e.complexity.Query.CloudEvents(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.indexes":
 		if e.complexity.Query.Indexes == nil {
 			break
@@ -210,7 +209,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Indexes(childComplexity, args["tokenId"].(int), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
+		return e.complexity.Query.Indexes(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.latestCloudEvent":
 		if e.complexity.Query.LatestCloudEvent == nil {
 			break
@@ -221,7 +220,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.LatestCloudEvent(childComplexity, args["tokenId"].(int), args["filter"].(*model.CloudEventFilter)), true
+		return e.complexity.Query.LatestCloudEvent(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.latestIndex":
 		if e.complexity.Query.LatestIndex == nil {
 			break
@@ -232,7 +231,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.LatestIndex(childComplexity, args["tokenId"].(int), args["filter"].(*model.CloudEventFilter)), true
+		return e.complexity.Query.LatestIndex(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 
 	}
 	return 0, false
@@ -331,33 +330,33 @@ A point in time, encoded per RFC-3339. Typically in UTC.
 scalar Time
 
 """
-Arbitrary JSON payload (e.g. cloud event data).
+Full CloudEvent with JSON data (header + data payload).
 """
-scalar JSON @specifiedBy(url: "https://ibm.github.io/graphql-specs/custom-scalars/json.html")
+scalar RawEvent
 
 """
-The root query type for the Fetch API GraphQL schema.
+The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
 """
 type Query {
   """
   Latest cloud event index matching filters.
   """
-  latestIndex(tokenId: Int!, filter: CloudEventFilter): CloudEventIndex!
+  latestIndex(did: String!, filter: CloudEventFilter): CloudEventIndex!
 
   """
   List cloud event indexes matching filters.
   """
-  indexes(tokenId: Int!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!
+  indexes(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!
 
   """
-  Latest full cloud event as JSON.
+  Latest full cloud event.
   """
-  latestCloudEvent(tokenId: Int!, filter: CloudEventFilter): JSON!
+  latestCloudEvent(did: String!, filter: CloudEventFilter): RawEvent!
 
   """
-  List full cloud events as JSON.
+  List full cloud events.
   """
-  cloudEvents(tokenId: Int!, limit: Int = 10, filter: CloudEventFilter): [JSON!]!
+  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [RawEvent!]!
 }
 
 """
@@ -416,11 +415,11 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_cloudEvents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tokenId", ec.unmarshalNInt2int)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["tokenId"] = arg0
+	args["did"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
@@ -437,11 +436,11 @@ func (ec *executionContext) field_Query_cloudEvents_args(ctx context.Context, ra
 func (ec *executionContext) field_Query_indexes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tokenId", ec.unmarshalNInt2int)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["tokenId"] = arg0
+	args["did"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
@@ -458,11 +457,11 @@ func (ec *executionContext) field_Query_indexes_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_latestCloudEvent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tokenId", ec.unmarshalNInt2int)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["tokenId"] = arg0
+	args["did"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCloudEventFilter2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventFilter)
 	if err != nil {
 		return nil, err
@@ -474,11 +473,11 @@ func (ec *executionContext) field_Query_latestCloudEvent_args(ctx context.Contex
 func (ec *executionContext) field_Query_latestIndex_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tokenId", ec.unmarshalNInt2int)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["tokenId"] = arg0
+	args["did"] = arg0
 	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCloudEventFilter2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventFilter)
 	if err != nil {
 		return nil, err
@@ -979,7 +978,7 @@ func (ec *executionContext) _Query_latestIndex(ctx context.Context, field graphq
 		ec.fieldContext_Query_latestIndex,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().LatestIndex(ctx, fc.Args["tokenId"].(int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.resolvers.Query().LatestIndex(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex,
@@ -1026,7 +1025,7 @@ func (ec *executionContext) _Query_indexes(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_indexes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Indexes(ctx, fc.Args["tokenId"].(int), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.resolvers.Query().Indexes(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEventIndex2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndexᚄ,
@@ -1073,10 +1072,10 @@ func (ec *executionContext) _Query_latestCloudEvent(ctx context.Context, field g
 		ec.fieldContext_Query_latestCloudEvent,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().LatestCloudEvent(ctx, fc.Args["tokenId"].(int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.resolvers.Query().LatestCloudEvent(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
-		ec.marshalNJSON2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent,
+		ec.marshalNRawEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent,
 		true,
 		true,
 	)
@@ -1089,7 +1088,7 @@ func (ec *executionContext) fieldContext_Query_latestCloudEvent(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSON does not have child fields")
+			return nil, errors.New("field of type RawEvent does not have child fields")
 		},
 	}
 	defer func() {
@@ -1114,10 +1113,10 @@ func (ec *executionContext) _Query_cloudEvents(ctx context.Context, field graphq
 		ec.fieldContext_Query_cloudEvents,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CloudEvents(ctx, fc.Args["tokenId"].(int), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.resolvers.Query().CloudEvents(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
-		ec.marshalNJSON2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ,
+		ec.marshalNRawEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ,
 		true,
 		true,
 	)
@@ -1130,7 +1129,7 @@ func (ec *executionContext) fieldContext_Query_cloudEvents(ctx context.Context, 
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type JSON does not have child fields")
+			return nil, errors.New("field of type RawEvent does not have child fields")
 		},
 	}
 	defer func() {
@@ -3451,60 +3450,23 @@ func (ec *executionContext) marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNet
 	return ec._CloudEventIndex(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
+func (ec *executionContext) unmarshalNRawEvent2githubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, v any) (cloudevent.CloudEvent[json.RawMessage], error) {
+	res, err := ec.unmarshalInputRawEvent(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalInt(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+func (ec *executionContext) marshalNRawEvent2githubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, sel ast.SelectionSet, v cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
+	return ec._RawEvent(ctx, sel, &v)
 }
 
-func (ec *executionContext) unmarshalInputJSON(ctx context.Context, v any) (cloudevent.RawEvent, error) {
-	var ev cloudevent.RawEvent
-	b, err := json.Marshal(v)
-	if err != nil {
-		return ev, err
-	}
-	err = json.Unmarshal(b, &ev)
-	return ev, err
-}
-
-func (ec *executionContext) _JSON(ctx context.Context, sel ast.SelectionSet, v *cloudevent.RawEvent) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	data, err := json.Marshal(v)
-	if err != nil {
-		return graphql.Null
-	}
-	return graphql.WriterFunc(func(w io.Writer) { _, _ = w.Write(data) })
-}
-
-func (ec *executionContext) unmarshalNJSON2githubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, v any) (cloudevent.CloudEvent[json.RawMessage], error) {
-	res, err := ec.unmarshalInputJSON(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNJSON2githubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, sel ast.SelectionSet, v cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
-	return ec._JSON(ctx, sel, (*cloudevent.RawEvent)(&v))
-}
-
-func (ec *executionContext) unmarshalNJSON2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ(ctx context.Context, v any) ([]*cloudevent.CloudEvent[json.RawMessage], error) {
+func (ec *executionContext) unmarshalNRawEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ(ctx context.Context, v any) ([]*cloudevent.CloudEvent[json.RawMessage], error) {
 	var vSlice []any
 	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*cloudevent.CloudEvent[json.RawMessage], len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNJSON2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNRawEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -3512,10 +3474,10 @@ func (ec *executionContext) unmarshalNJSON2ᚕᚖgithubᚗcomᚋDIMOᚑNetwork�
 	return res, nil
 }
 
-func (ec *executionContext) marshalNJSON2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
+func (ec *executionContext) marshalNRawEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalNJSON2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx, sel, v[i])
+		ret[i] = ec.marshalNRawEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx, sel, v[i])
 	}
 
 	for _, e := range ret {
@@ -3527,19 +3489,19 @@ func (ec *executionContext) marshalNJSON2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋc
 	return ret
 }
 
-func (ec *executionContext) unmarshalNJSON2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, v any) (*cloudevent.CloudEvent[json.RawMessage], error) {
-	res, err := ec.unmarshalInputJSON(ctx, v)
+func (ec *executionContext) unmarshalNRawEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, v any) (*cloudevent.CloudEvent[json.RawMessage], error) {
+	res, err := ec.unmarshalInputRawEvent(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNJSON2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, sel ast.SelectionSet, v *cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
+func (ec *executionContext) marshalNRawEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEvent(ctx context.Context, sel ast.SelectionSet, v *cloudevent.CloudEvent[json.RawMessage]) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._JSON(ctx, sel, (*cloudevent.RawEvent)(v))
+	return ec._RawEvent(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

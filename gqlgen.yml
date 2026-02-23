@@ -22,7 +22,7 @@ resolver:
 models:
   Time:
     model: github.com/99designs/gqlgen/graphql.Time
-  JSON:
+  RawEvent:
     model: github.com/DIMO-Network/cloudevent.RawEvent
   CloudEventHeader:
     model: github.com/DIMO-Network/cloudevent.CloudEventHeader

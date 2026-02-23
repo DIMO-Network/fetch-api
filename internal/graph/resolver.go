@@ -29,15 +29,35 @@ type Resolver struct {
 	ChainID      uint64
 }
 
-// CheckVehicleRawData returns an error if the context does not have claims or the token
-// does not have GetRawData permission for the given vehicle tokenID.
-// requireVehicleOpts validates access and converts the filter into search options.
-// Placed here (not in resolvers) so gqlgen regeneration doesn't discard it.
-func (r *queryResolver) requireVehicleOpts(ctx context.Context, tokenID int, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
-	if err := CheckVehicleRawData(ctx, r.VehicleAddr, tokenID); err != nil {
+// CheckVehicleRawDataByDID returns an error if the context does not have claims or the token
+// does not have GetRawData permission for the given vehicle DID, or if the DID is invalid.
+func CheckVehicleRawDataByDID(ctx context.Context, did string) error {
+	if _, err := cloudevent.DecodeERC721DID(did); err != nil {
+		return fmt.Errorf("invalid DID: %w", err)
+	}
+	tok, _ := ctx.Value(ClaimsContextKey{}).(*tokenclaims.Token)
+	if tok == nil {
+		return fmt.Errorf("unauthorized: no token claims")
+	}
+	if tok.Asset != did {
+		return fmt.Errorf("unauthorized: token does not have access to this vehicle")
+	}
+	if !slices.Contains(tok.Permissions, tokenclaims.PermissionGetRawData) {
+		return fmt.Errorf("unauthorized: missing GetRawData privilege")
+	}
+	return nil
+}
+
+// requireVehicleOptsByDID validates access by DID and returns search options for the vehicle.
+func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
+	if err := CheckVehicleRawDataByDID(ctx, did); err != nil {
 		return nil, err
 	}
-	return filterToSearchOptions(filter, subjectFromTokenID(r.VehicleAddr, r.ChainID, tokenID)), nil
+	subject, err := cloudevent.DecodeERC721DID(did)
+	if err != nil {
+		return nil, fmt.Errorf("invalid DID: %w", err)
+	}
+	return filterToSearchOptions(filter, subject), nil
 }
 
 // CheckVehicleRawData returns an error if the context does not have claims or the token

@@ -17,8 +17,8 @@ import (
 )
 
 // LatestIndex is the resolver for the latestIndex field.
-func (r *queryResolver) LatestIndex(ctx context.Context, tokenID int, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
-	opts, err := r.requireVehicleOpts(ctx, tokenID, filter)
+func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
+	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func (r *queryResolver) LatestIndex(ctx context.Context, tokenID int, filter *mo
 }
 
 // Indexes is the resolver for the indexes field.
-func (r *queryResolver) Indexes(ctx context.Context, tokenID int, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error) {
-	opts, err := r.requireVehicleOpts(ctx, tokenID, filter)
+func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error) {
+	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func (r *queryResolver) Indexes(ctx context.Context, tokenID int, limit *int, fi
 }
 
 // LatestCloudEvent is the resolver for the latestCloudEvent field.
-func (r *queryResolver) LatestCloudEvent(ctx context.Context, tokenID int, filter *model.CloudEventFilter) (*cloudevent.CloudEvent[json.RawMessage], error) {
-	opts, err := r.requireVehicleOpts(ctx, tokenID, filter)
+func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*cloudevent.CloudEvent[json.RawMessage], error) {
+	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, tokenID int, filte
 }
 
 // CloudEvents is the resolver for the cloudEvents field.
-func (r *queryResolver) CloudEvents(ctx context.Context, tokenID int, limit *int, filter *model.CloudEventFilter) ([]*cloudevent.CloudEvent[json.RawMessage], error) {
-	opts, err := r.requireVehicleOpts(ctx, tokenID, filter)
+func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*cloudevent.CloudEvent[json.RawMessage], error) {
+	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
