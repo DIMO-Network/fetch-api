@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	"github.com/apache/arrow-go/v18/arrow/memory"
-	"github.com/apache/arrow-go/v18/parquet/file"
 	"github.com/apache/arrow-go/v18/parquet/pqarrow"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -117,15 +116,7 @@ func (r *Reader) ReadData(ctx context.Context, bucket string, ref IndexKeyRef) (
 		return nil, fmt.Errorf("failed to read parquet file body: %w", err)
 	}
 
-	// Open the Parquet file from the in-memory buffer.
-	// bytes.Reader satisfies parquet.ReaderAtSeeker (io.ReaderAt + io.ReadSeeker).
-	pqReader, err := file.NewParquetReader(bytes.NewReader(rawData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to open parquet reader: %w", err)
-	}
-	defer func() { _ = pqReader.Close() }()
-
-	// Read the entire file as an Arrow table.
+	// Read the entire file as an Arrow table (single pass).
 	tbl, err := pqarrow.ReadTable(ctx, bytes.NewReader(rawData), nil, pqarrow.ArrowReadProperties{}, memory.DefaultAllocator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read arrow table: %w", err)

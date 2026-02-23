@@ -1,4 +1,4 @@
-// Package eventrepo contains service code for gettting and managing cloudevent objects.
+// Package eventrepo contains service code for getting and managing cloudevent objects.
 package eventrepo
 
 import (

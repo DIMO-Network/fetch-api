@@ -427,7 +427,7 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 	indexService := eventrepo.New(conn, mockS3Client)
 
 	// Test retrieving the event
-		t.Run("retrieve event with full headers", func(t *testing.T) {
+	t.Run("retrieve event with full headers", func(t *testing.T) {
 		mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
 			func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 				// Verify the correct key was requested

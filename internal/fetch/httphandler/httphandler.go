@@ -89,6 +89,21 @@ func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 	}
 }
 
+// parseTokenAndParams parses tokenId path param and query params; returns opts and any error.
+func (h *Handler) parseTokenAndParams(fCtx *fiber.Ctx) (*grpc.SearchOptions, *searchParams, error) {
+	tokenID := fCtx.Params(TokenIDParam)
+	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
+	if err != nil {
+		return nil, nil, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
+	}
+	var params searchParams
+	if err = fCtx.QueryParser(&params); err != nil {
+		return nil, nil, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
+	}
+	subject := cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))}
+	return params.toSearchOptions(subject), &params, nil
+}
+
 // GetLatestIndexKey handles requests for the latest index key
 // @Summary Get the latest index key based on search criteria
 // @Description Retrieves the most recent index key that matches the provided search options
@@ -102,25 +117,14 @@ func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-index-key/{tokenId} [get]
 func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params(TokenIDParam)
-	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
+	opts, _, err := h.parseTokenAndParams(fCtx)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
+		return err
 	}
-
-	var params searchParams
-	err = fCtx.QueryParser(&params)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
-	}
-
-	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
-
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err)
 	}
-
 	return fCtx.JSON(metadata)
 }
 
@@ -137,25 +141,14 @@ func (h *Handler) GetLatestIndexKey(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/index-keys/{tokenId} [get]
 func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params(TokenIDParam)
-	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
+	opts, params, err := h.parseTokenAndParams(fCtx)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
+		return err
 	}
-
-	var params searchParams
-	err = fCtx.QueryParser(&params)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
-	}
-
-	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
-
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err)
 	}
-
 	return fCtx.JSON(metaList)
 }
 
@@ -172,20 +165,10 @@ func (h *Handler) GetIndexKeys(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/objects/{tokenId} [get]
 func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params(TokenIDParam)
-	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
+	opts, params, err := h.parseTokenAndParams(fCtx)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
+		return err
 	}
-
-	var params searchParams
-	err = fCtx.QueryParser(&params)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
-	}
-
-	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
-
 	metaList, err := h.eventService.ListIndexes(fCtx.Context(), params.Limit, opts)
 	if err != nil {
 		return handleDBError(err)
@@ -194,7 +177,6 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 	if err != nil {
 		return handleDBError(err)
 	}
-
 	return fCtx.JSON(data)
 }
 
@@ -211,19 +193,10 @@ func (h *Handler) GetObjects(fCtx *fiber.Ctx) error {
 // @Failure 500 {object} map[string]string "Server error"
 // @Router /v1/vehicle/latest-object/{tokenId} [get]
 func (h *Handler) GetLatestObject(fCtx *fiber.Ctx) error {
-	tokenID := fCtx.Params(TokenIDParam)
-	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
+	opts, _, err := h.parseTokenAndParams(fCtx)
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse token ID: %v", err))
+		return err
 	}
-
-	var params searchParams
-	err = fCtx.QueryParser(&params)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
-	}
-
-	opts := params.toSearchOptions(cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))})
 	metadata, err := h.eventService.GetLatestIndex(fCtx.Context(), opts)
 	if err != nil {
 		return handleDBError(err)
