@@ -159,16 +159,20 @@ paths:
         name: tokenId
         required: true
         type: integer
-      - in: query
+      - description: Event ID
+        in: query
         name: id
         type: string
-      - in: query
+      - description: Event type
+        in: query
         name: type
         type: string
-      - in: query
+      - description: Event source
+        in: query
         name: source
         type: string
-      - in: query
+      - description: Event producer
+        in: query
         name: producer
         type: string
       - description: Upper time bound (RFC3339)
@@ -221,16 +225,20 @@ paths:
         name: tokenId
         required: true
         type: integer
-      - in: query
+      - description: Event ID
+        in: query
         name: id
         type: string
-      - in: query
+      - description: Event type
+        in: query
         name: type
         type: string
-      - in: query
+      - description: Event source
+        in: query
         name: source
         type: string
-      - in: query
+      - description: Event producer
+        in: query
         name: producer
         type: string
       - description: Upper time bound (RFC3339)
@@ -277,16 +285,20 @@ paths:
         name: tokenId
         required: true
         type: integer
-      - in: query
+      - description: Event ID
+        in: query
         name: id
         type: string
-      - in: query
+      - description: Event type
+        in: query
         name: type
         type: string
-      - in: query
+      - description: Event source
+        in: query
         name: source
         type: string
-      - in: query
+      - description: Event producer
+        in: query
         name: producer
         type: string
       - description: Upper time bound (RFC3339)
@@ -333,16 +345,20 @@ paths:
         name: tokenId
         required: true
         type: integer
-      - in: query
+      - description: Event ID
+        in: query
         name: id
         type: string
-      - in: query
+      - description: Event type
+        in: query
         name: type
         type: string
-      - in: query
+      - description: Event source
+        in: query
         name: source
         type: string
-      - in: query
+      - description: Event producer
+        in: query
         name: producer
         type: string
       - description: Upper time bound (RFC3339)

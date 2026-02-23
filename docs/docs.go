@@ -67,21 +67,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Event ID",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event type",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event source",
                         "name": "source",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event producer",
                         "name": "producer",
                         "in": "query"
                     },
@@ -163,21 +167,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Event ID",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event type",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event source",
                         "name": "source",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event producer",
                         "name": "producer",
                         "in": "query"
                     },
@@ -250,21 +258,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Event ID",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event type",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event source",
                         "name": "source",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event producer",
                         "name": "producer",
                         "in": "query"
                     },
@@ -337,21 +349,25 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "description": "Event ID",
                         "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event type",
                         "name": "type",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event source",
                         "name": "source",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "description": "Event producer",
                         "name": "producer",
                         "in": "query"
                     },
