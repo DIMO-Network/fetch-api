@@ -76,12 +76,7 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	s3Client := s3ClientFromSettings(settings)
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
 
-	// GraphQL endpoint
-	gqlSrv := newGraphQLHandler(settings, chConn, s3Client, buckets, chainId)
-	app.Post("/query", jwtAuth, graphQLHandler(gqlSrv))
-	app.Get("/query", jwtAuth, graphQLHandler(gqlSrv))
-
-	// API v1 routes
+	// API v1 routes (register first, same order as main)
 	v1 := app.Group("/v1")
 	vehicleGroup := v1.Group("/vehicle")
 
@@ -89,11 +84,15 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 
 	vehicleMiddleware := jwtmiddleware.AllOfPermissions(settings.VehicleNFTAddress, httphandler.TokenIDParam, []string{tokenclaims.PermissionGetRawData})
 
-	// File endpoints
 	vehicleGroup.Post("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
 	vehicleGroup.Post("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
 	vehicleGroup.Post("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
 	vehicleGroup.Post("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
+
+	// GraphQL endpoint (added after vehicle routes)
+	gqlSrv := newGraphQLHandler(settings, chConn, s3Client, buckets, chainId)
+	app.Post("/query", jwtAuth, graphQLHandler(gqlSrv))
+	app.Get("/query", jwtAuth, graphQLHandler(gqlSrv))
 
 	return app, nil
 }
