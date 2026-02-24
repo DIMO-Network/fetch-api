@@ -43,7 +43,7 @@ const defaultLimit = 10
 // Preallocated empty slices for list resolvers to avoid allocating on sql.ErrNoRows.
 var (
 	emptyCloudEventIndexList = []*model.CloudEventIndex{}
-	emptyCloudEventList      = []*cloudevent.RawEvent{}
+	emptyCloudEventList      = []*CloudEventWrapper{}
 )
 
 func resolveLimit(limit *int) int {

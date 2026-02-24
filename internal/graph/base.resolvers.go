@@ -8,13 +8,37 @@ package graph
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
 )
+
+// Header is the resolver for the header field. Returns a pointer into the wrapped event; no copy.
+func (r *cloudEventResolver) Header(ctx context.Context, obj *CloudEventWrapper) (*cloudevent.CloudEventHeader, error) {
+	if obj == nil || obj.Raw == nil {
+		return nil, nil
+	}
+	return &obj.Raw.CloudEventHeader, nil
+}
+
+// Data is the resolver for the data field. Allocates only when this field is requested.
+func (r *cloudEventResolver) Data(ctx context.Context, obj *CloudEventWrapper) (*string, error) {
+	if obj == nil || obj.Raw == nil || len(obj.Raw.Data) == 0 {
+		return nil, nil
+	}
+	s := string(obj.Raw.Data)
+	return &s, nil
+}
+
+// DataBase64 is the resolver for the dataBase64 field. Returns pointer into wrapped event when present.
+func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrapper) (*string, error) {
+	if obj == nil || obj.Raw == nil || obj.Raw.DataBase64 == "" {
+		return nil, nil
+	}
+	return &obj.Raw.DataBase64, nil
+}
 
 // LatestIndex is the resolver for the latestIndex field.
 func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
@@ -50,7 +74,7 @@ func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, fil
 }
 
 // LatestCloudEvent is the resolver for the latestCloudEvent field.
-func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*cloudevent.CloudEvent[json.RawMessage], error) {
+func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*CloudEventWrapper, error) {
 	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
@@ -63,11 +87,11 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
-	return &ce, nil
+	return &CloudEventWrapper{Raw: &ce}, nil
 }
 
 // CloudEvents is the resolver for the cloudEvents field.
-func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*cloudevent.CloudEvent[json.RawMessage], error) {
+func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*CloudEventWrapper, error) {
 	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
@@ -83,14 +107,18 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 	if err != nil {
 		return nil, err
 	}
-	out := make([]*cloudevent.RawEvent, len(events))
+	out := make([]*CloudEventWrapper, len(events))
 	for i := range events {
-		out[i] = &events[i]
+		out[i] = &CloudEventWrapper{Raw: &events[i]}
 	}
 	return out, nil
 }
 
+// CloudEvent returns CloudEventResolver implementation.
+func (r *Resolver) CloudEvent() CloudEventResolver { return &cloudEventResolver{r} }
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type cloudEventResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

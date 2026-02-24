@@ -100,11 +100,7 @@ make tools: tools-golangci-lint tools-protoc ## install all tools
 gqlgen: ## Generate gqlgen code.
 	@go tool gqlgen generate
 
-generate: gqlgen generate-swagger generate-go generate-grpc ## run all file generation for the project
-
-generate-swagger: ## generate swagger documentation
-	@go tool swag -version
-	go tool swag init -g cmd/${BIN_NAME}/main.go --parseDependency --parseInternal
+generate: gqlgen generate-go generate-grpc ## run all file generation for the project
 
 generate-go:## run go generate
 	@go generate ./...

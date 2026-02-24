@@ -4,9 +4,16 @@ A point in time, encoded per RFC-3339. Typically in UTC.
 scalar Time
 
 """
-Full CloudEvent with JSON data (header + data payload).
+Full CloudEvent: selectable header, data (JSON), and optional data_base64.
 """
-scalar RawEvent
+type CloudEvent {
+  """CloudEvents header fields. Request only the fields you need."""
+  header: CloudEventHeader!
+  """JSON payload. Omitted if not requested."""
+  data: String
+  """Base64-encoded payload when present. Omitted if not requested."""
+  dataBase64: String
+}
 
 """
 The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
@@ -25,12 +32,12 @@ type Query {
   """
   Latest full cloud event.
   """
-  latestCloudEvent(did: String!, filter: CloudEventFilter): RawEvent!
+  latestCloudEvent(did: String!, filter: CloudEventFilter): CloudEvent!
 
   """
   List full cloud events.
   """
-  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [RawEvent!]!
+  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
 }
 
 """
