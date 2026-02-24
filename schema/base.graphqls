@@ -4,13 +4,18 @@ A point in time, encoded per RFC-3339. Typically in UTC.
 scalar Time
 
 """
+Arbitrary JSON value; serialized as raw JSON (object/array), not an escaped string.
+"""
+scalar JSON
+
+"""
 Full CloudEvent: selectable header, data (JSON), and optional data_base64.
 """
 type CloudEvent {
   """CloudEvents header fields. Request only the fields you need."""
   header: CloudEventHeader!
   """JSON payload. Omitted if not requested."""
-  data: String
+  data: JSON
   """Base64-encoded payload when present. Omitted if not requested."""
   dataBase64: String
 }

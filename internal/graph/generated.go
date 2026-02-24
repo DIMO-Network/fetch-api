@@ -84,7 +84,7 @@ type ComplexityRoot struct {
 
 type CloudEventResolver interface {
 	Header(ctx context.Context, obj *CloudEventWrapper) (*cloudevent.CloudEventHeader, error)
-	Data(ctx context.Context, obj *CloudEventWrapper) (*string, error)
+	Data(ctx context.Context, obj *CloudEventWrapper) (RawJSON, error)
 	DataBase64(ctx context.Context, obj *CloudEventWrapper) (*string, error)
 }
 type QueryResolver interface {
@@ -360,13 +360,18 @@ A point in time, encoded per RFC-3339. Typically in UTC.
 scalar Time
 
 """
+Arbitrary JSON value; serialized as raw JSON (object/array), not an escaped string.
+"""
+scalar JSON
+
+"""
 Full CloudEvent: selectable header, data (JSON), and optional data_base64.
 """
 type CloudEvent {
   """CloudEvents header fields. Request only the fields you need."""
   header: CloudEventHeader!
   """JSON payload. Omitted if not requested."""
-  data: String
+  data: JSON
   """Base64-encoded payload when present. Omitted if not requested."""
   dataBase64: String
 }
@@ -640,7 +645,7 @@ func (ec *executionContext) _CloudEvent_data(ctx context.Context, field graphql.
 			return ec.resolvers.CloudEvent().Data(ctx, obj)
 		},
 		nil,
-		ec.marshalOString2ᚖstring,
+		ec.marshalOJSON2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐRawJSON,
 		true,
 		false,
 	)
@@ -653,7 +658,7 @@ func (ec *executionContext) fieldContext_CloudEvent_data(_ context.Context, fiel
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type JSON does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4153,6 +4158,22 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOJSON2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐRawJSON(ctx context.Context, v any) (RawJSON, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res RawJSON
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOJSON2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐRawJSON(ctx context.Context, sel ast.SelectionSet, v RawJSON) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

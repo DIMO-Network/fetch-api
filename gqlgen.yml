@@ -22,6 +22,8 @@ resolver:
 models:
   Time:
     model: github.com/99designs/gqlgen/graphql.Time
+  JSON:
+    model: github.com/DIMO-Network/fetch-api/internal/graph.RawJSON
   CloudEvent:
     model: github.com/DIMO-Network/fetch-api/internal/graph.CloudEventWrapper
   CloudEventHeader:

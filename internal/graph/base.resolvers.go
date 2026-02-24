@@ -23,13 +23,14 @@ func (r *cloudEventResolver) Header(ctx context.Context, obj *CloudEventWrapper)
 	return &obj.Raw.CloudEventHeader, nil
 }
 
-// Data is the resolver for the data field. Allocates only when this field is requested.
-func (r *cloudEventResolver) Data(ctx context.Context, obj *CloudEventWrapper) (*string, error) {
+// Data is the resolver for the data field. Returns raw JSON so it is serialized as an object, not an escaped string.
+func (r *cloudEventResolver) Data(ctx context.Context, obj *CloudEventWrapper) (RawJSON, error) {
 	if obj == nil || obj.Raw == nil || len(obj.Raw.Data) == 0 {
 		return nil, nil
 	}
-	s := string(obj.Raw.Data)
-	return &s, nil
+	out := make(RawJSON, len(obj.Raw.Data))
+	copy(out, obj.Raw.Data)
+	return out, nil
 }
 
 // DataBase64 is the resolver for the dataBase64 field. Returns pointer into wrapped event when present.
