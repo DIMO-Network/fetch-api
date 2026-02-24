@@ -190,7 +190,9 @@ func (s *Service) ListCloudEventsFromIndexes(ctx context.Context, indexes []clou
 	for i := range indexes {
 		// Some objects have multiple cloud events so we cache the objects to avoid fetching them multiple times.
 		if data, ok := objectsByKeys[indexes[i].Data.Key]; ok {
-			events[i] = cloudevent.RawEvent{CloudEventHeader: indexes[i].CloudEventHeader, Data: data}
+			hdr := indexes[i].CloudEventHeader
+			hdr.Tags = grpc.TagsOrEmpty(hdr.Tags)
+			events[i] = cloudevent.RawEvent{CloudEventHeader: hdr, Data: data}
 			continue
 		}
 		events[i], err = s.GetCloudEventFromIndex(ctx, indexes[i], bucketName)
@@ -315,6 +317,7 @@ func toCloudEvent(dbHdr *cloudevent.CloudEventHeader, data []byte) (cloudevent.R
 		ev.Data = nil // never expose decoded bytes in Data
 	}
 	ev.CloudEventHeader = *dbHdr
+	ev.CloudEventHeader.Tags = grpc.TagsOrEmpty(ev.CloudEventHeader.Tags)
 	return ev, nil
 }
 

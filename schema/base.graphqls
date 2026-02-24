@@ -60,7 +60,7 @@ type CloudEventHeader {
   dataschema: String
   dataversion: String
   signature: String
-  tags: [String!]
+  tags: [String!]!
 }
 
 """

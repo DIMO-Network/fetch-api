@@ -7,6 +7,15 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// TagsOrEmpty returns the slice if non-nil and non-empty, otherwise a non-nil empty slice.
+// Ensures API always returns an array for tags, never null.
+func TagsOrEmpty(tags []string) []string {
+	if len(tags) > 0 {
+		return tags
+	}
+	return []string{}
+}
+
 // AsRawCloudEvent converts the CloudEvent to a cloudevent.RawEvent.
 func (c *CloudEvent) AsRawCloudEvent() cloudevent.RawEvent {
 	return cloudevent.RawEvent{
@@ -41,7 +50,7 @@ func (c *CloudEventHeader) AsCloudEventHeader() cloudevent.CloudEventHeader {
 		DataVersion:     c.GetDataVersion(),
 		Extras:          extras,
 		Signature:       c.GetSignature(),
-		Tags:            c.GetTags(),
+		Tags:            TagsOrEmpty(c.GetTags()),
 	}
 }
 
@@ -72,7 +81,7 @@ func CloudEventHeaderToProto(event *cloudevent.CloudEventHeader) *CloudEventHead
 		DataVersion:     event.DataVersion,
 		Extras:          extras,
 		Signature:       event.Signature,
-		Tags:            event.Tags,
+		Tags:            TagsOrEmpty(event.Tags),
 	}
 }
 
