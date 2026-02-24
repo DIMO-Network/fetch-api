@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/DIMO-Network/fetch-api/internal/auth"
 	"github.com/rs/zerolog"
 )
 
@@ -26,6 +27,20 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 			Logger().
 			WithContext(r.Context())
 		r = r.WithContext(loggerCtx)
+		next.ServeHTTP(w, r)
+	})
+}
+
+// authLoggerMiddleware adds the authenticated user to the logger.
+func authLoggerMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		validateClaims, ok := auth.GetValidatedClaims(r.Context())
+		if !ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		loggerCtx := zerolog.Ctx(r.Context()).With().Str("jwtSubject", validateClaims.RegisteredClaims.Subject).Logger()
+		r = r.WithContext(loggerCtx.WithContext(r.Context()))
 		next.ServeHTTP(w, r)
 	})
 }

@@ -7,61 +7,78 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"syscall"
 
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/DIMO-Network/fetch-api/internal/app"
 	"github.com/DIMO-Network/fetch-api/internal/config"
-	"github.com/DIMO-Network/server-garage/pkg/env"
-	"github.com/DIMO-Network/server-garage/pkg/logging"
 	"github.com/DIMO-Network/server-garage/pkg/monserver"
 	"github.com/DIMO-Network/server-garage/pkg/runner"
+	"github.com/DIMO-Network/shared/pkg/settings"
+	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-	settingsFile := flag.String("env", ".env", "env file")
-	flag.Parse()
+	logger := zerolog.New(os.Stdout).With().Timestamp().Str("app", app.AppName).Logger()
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range info.Settings {
+			if s.Key == "vcs.revision" && len(s.Value) == 40 {
+				logger = logger.With().Str("commit", s.Value[:7]).Logger()
+				break
+			}
+		}
+	}
+	zerolog.DefaultContextLogger = &logger
 
 	mainCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
+	go func() {
+		<-mainCtx.Done()
+		logger.Info().Msg("Received signal, shutting down...")
+		cancel()
+	}()
 
-	logger := logging.GetAndSetDefaultLogger("fetch-api")
+	runnerGroup, runnerCtx := errgroup.WithContext(mainCtx)
 
-	settings, err := env.LoadSettings[config.Settings](*settingsFile)
+	settingsFile := flag.String("settings", "settings.yaml", "settings file")
+	flag.Parse()
+
+	cfg, err := settings.LoadConfig[config.Settings](*settingsFile)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't load settings.")
 	}
 
-	application, err := app.New(&settings)
+	application, err := app.New(cfg)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't create application.")
 	}
 	defer application.Cleanup()
 
-	rpcServer, err := app.CreateGRPCServer(&logger, &settings)
+	rpcServer, err := app.CreateGRPCServer(&logger, &cfg)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Failed to create gRPC server.")
 	}
 
-	group, gCtx := errgroup.WithContext(mainCtx)
-
-	// Monitoring server (health, pprof) - same pattern as telemetry-api
-	monSrv := monserver.NewMonitoringServer(&logger, settings.EnablePprof)
-	runner.RunHandler(gCtx, group, monSrv, ":"+strconv.Itoa(settings.MonPort))
+	monSrv := monserver.NewMonitoringServer(&logger, cfg.EnablePprof)
+	runner.RunHandler(runnerCtx, runnerGroup, monSrv, ":"+strconv.Itoa(cfg.MonPort))
 
 	mux := http.NewServeMux()
-	mux.Handle("/", app.PanicRecoveryMiddleware(app.LoggerMiddleware(playground.Handler("GraphQL playground", "/query"))))
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthy"))
+	})
+	mux.Handle("/", app.LoggerMiddleware(app.PanicRecoveryMiddleware(playground.Handler("GraphQL playground", "/query"))))
 	mux.Handle("/query", application.Handler)
 
-	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msg("Starting web server")
-	runner.RunHandler(gCtx, group, mux, ":"+strconv.Itoa(settings.Port))
+	logger.Info().Msgf("Server started on port: %d", cfg.Port)
+	runner.RunHandler(runnerCtx, runnerGroup, mux, ":"+strconv.Itoa(cfg.Port))
 
-	logger.Info().Str("port", strconv.Itoa(settings.GRPCPort)).Msg("Starting gRPC server")
-	runner.RunGRPC(gCtx, group, rpcServer, ":"+strconv.Itoa(settings.GRPCPort))
+	logger.Info().Msgf("gRPC server started on port: %d", cfg.GRPCPort)
+	runner.RunGRPC(runnerCtx, runnerGroup, rpcServer, ":"+strconv.Itoa(cfg.GRPCPort))
 
-	err = group.Wait()
+	err = runnerGroup.Wait()
 	if err != nil && !errors.Is(err, context.Canceled) {
 		logger.Fatal().Err(err).Msg("Server shut down due to an error.")
 	}

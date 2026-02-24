@@ -12,6 +12,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
 	"github.com/DIMO-Network/fetch-api/internal/graph"
+	"github.com/DIMO-Network/fetch-api/internal/limits"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/server-garage/pkg/gql/errorhandler"
@@ -25,6 +26,9 @@ import (
 	"google.golang.org/grpc"
 )
 
+// AppName is the name of the application.
+var AppName = "fetch-api"
+
 // App is the main application (GraphQL over net/http). gRPC is created separately via CreateGRPCServer.
 type App struct {
 	Handler http.Handler
@@ -32,31 +36,40 @@ type App struct {
 }
 
 // New creates a new application with GraphQL handler and middleware.
-func New(settings *config.Settings) (*App, error) {
+func New(settings config.Settings) (*App, error) {
 	chainID, err := strconv.ParseUint(settings.ChainID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
 	}
 
-	chConn, err := chClientFromSettings(settings)
+	chConn, err := chClientFromSettings(&settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
 	}
-	s3Client := s3ClientFromSettings(settings)
+	s3Client := s3ClientFromSettings(&settings)
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
 	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	gqlSrv := newGraphQLHandler(settings, eventService, buckets, chainID)
+	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, chainID)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create JWT middleware: %w", err)
 	}
 
+	limiter, err := limits.New(settings.MaxRequestDuration)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create request time limit middleware: %w", err)
+	}
+
 	serverHandler := PanicRecoveryMiddleware(
 		LoggerMiddleware(
-			jwtMiddleware.CheckJWT(
-				auth.AddClaimHandler(gqlSrv),
+			limiter.AddRequestTimeout(
+				jwtMiddleware.CheckJWT(
+					authLoggerMiddleware(
+						auth.AddClaimHandler(gqlSrv),
+					),
+				),
 			),
 		),
 	)
