@@ -17,7 +17,7 @@ import (
 const fetchers = 25
 
 // ListCloudEventsFromIndexes fetches a list of cloud events from the index service by trying to get them from each bucket in the list returning the first successful result.
-func ListCloudEventsFromIndexes(ctx context.Context, evtSvc *eventrepo.Service, indexKeys []cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) ([]cloudevent.CloudEvent[json.RawMessage], error) {
+func ListCloudEventsFromIndexes(ctx context.Context, evtSvc *eventrepo.Service, indexKeys []cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) ([]cloudevent.RawEvent, error) {
 	objectsByKeys := map[string]json.RawMessage{}
 	// mutex to protect concurrent access to the map
 	var mutex sync.RWMutex
@@ -55,18 +55,17 @@ func ListCloudEventsFromIndexes(ctx context.Context, evtSvc *eventrepo.Service, 
 	}
 
 	// create a slice of cloud events
-	dataObjects := make([]cloudevent.CloudEvent[json.RawMessage], len(indexKeys))
+	dataObjects := make([]cloudevent.RawEvent, len(indexKeys))
 	for i, objectInfo := range indexKeys {
-		event := cloudevent.CloudEvent[json.RawMessage]{CloudEventHeader: objectInfo.CloudEventHeader, Data: objectsByKeys[objectInfo.Data.Key]}
-		dataObjects[i] = event
+		dataObjects[i] = cloudevent.RawEvent{CloudEventHeader: objectInfo.CloudEventHeader, Data: objectsByKeys[objectInfo.Data.Key]}
 	}
 
 	return dataObjects, nil
 }
 
-// GetCloudEventFromKey gets an object from the index service by trying to get it from each bucket in the list returning the first successful result.
-func GetCloudEventFromIndex(ctx context.Context, evtSvc *eventrepo.Service, indexKeys cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) (cloudevent.CloudEvent[json.RawMessage], error) {
-	var obj cloudevent.CloudEvent[json.RawMessage]
+// GetCloudEventFromIndex gets an object from the index service by trying to get it from each bucket in the list returning the first successful result.
+func GetCloudEventFromIndex(ctx context.Context, evtSvc *eventrepo.Service, indexKeys cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) (cloudevent.RawEvent, error) {
+	var obj cloudevent.RawEvent
 	var err error
 	// Try to get the object from each bucket in the list
 	for _, bucket := range buckets {
@@ -76,9 +75,9 @@ func GetCloudEventFromIndex(ctx context.Context, evtSvc *eventrepo.Service, inde
 			if errors.As(err, &notFoundErr) {
 				continue
 			}
-			return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("failed to get object: %w", err)
+			return cloudevent.RawEvent{}, fmt.Errorf("failed to get object: %w", err)
 		}
 		return obj, nil
 	}
-	return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("failed to get object: %w", err)
+	return cloudevent.RawEvent{}, fmt.Errorf("failed to get object: %w", err)
 }

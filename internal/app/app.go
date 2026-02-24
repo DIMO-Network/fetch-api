@@ -5,19 +5,19 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/DIMO-Network/fetch-api/internal/auth"
 	"github.com/DIMO-Network/fetch-api/internal/config"
-	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
+	"github.com/DIMO-Network/fetch-api/internal/graph"
+	"github.com/DIMO-Network/fetch-api/internal/limits"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
-	"github.com/DIMO-Network/server-garage/pkg/fibercommon"
-	"github.com/DIMO-Network/server-garage/pkg/fibercommon/jwtmiddleware"
+	"github.com/DIMO-Network/server-garage/pkg/gql/errorhandler"
+	gqlmetrics "github.com/DIMO-Network/server-garage/pkg/gql/metrics"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
-	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/fiber/v2/middleware/redirect"
-	"github.com/gofiber/swagger"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -26,59 +26,90 @@ import (
 	"google.golang.org/grpc"
 )
 
-// CreateWebServer creates a new web server with the given logger and settings.
-func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
-	chainId, err := strconv.ParseUint(settings.ChainID, 10, 64)
+// AppName is the name of the application.
+var AppName = "fetch-api"
+
+// App is the main application (GraphQL over net/http). gRPC is created separately via CreateGRPCServer.
+type App struct {
+	Handler http.Handler
+	cleanup  func()
+}
+
+// New creates a new application with GraphQL handler and middleware.
+func New(settings config.Settings) (*App, error) {
+	chainID, err := strconv.ParseUint(settings.ChainID, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
 	}
 
-	app := fiber.New(fiber.Config{
-		ErrorHandler:          fibercommon.ErrorHandler,
-		DisableStartupMessage: true,
-	})
-	app.Use(fibercommon.ContextLoggerMiddleware)
-
-	jwtAuth := jwtmiddleware.NewJWTMiddleware(settings.TokenExchangeJWTKeySetURL)
-
-	app.Use(recover.New(recover.Config{
-		Next:              nil,
-		EnableStackTrace:  true,
-		StackTraceHandler: nil,
-	}))
-	app.Use(cors.New())
-	app.Get("/", HealthCheck)
-	app.Use(redirect.New(redirect.Config{
-		Rules: map[string]string{
-			"/v1/swagger":   "/swagger",
-			"/v1/swagger/*": "/swagger/$1",
-		},
-		StatusCode: http.StatusMovedPermanently,
-	}))
-	app.Get("/swagger/*", swagger.HandlerDefault)
-
-	// API v1 routes
-	v1 := app.Group("/v1")
-	vehicleGroup := v1.Group("/vehicle")
-
-	chConn, err := chClientFromSettings(settings)
+	chConn, err := chClientFromSettings(&settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
 	}
+	s3Client := s3ClientFromSettings(&settings)
+	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
+	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	s3Client := s3ClientFromSettings(settings)
-	vehHandler := httphandler.NewHandler(chConn, s3Client,
-		[]string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket}, settings.VehicleNFTAddress, chainId)
+	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, chainID)
 
-	vehicleMiddleware := jwtmiddleware.AllOfPermissions(settings.VehicleNFTAddress, httphandler.TokenIDParam, []string{tokenclaims.PermissionGetRawData})
+	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWT middleware: %w", err)
+	}
 
-	// File endpoints
-	vehicleGroup.Post("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
-	vehicleGroup.Post("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
-	vehicleGroup.Post("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
-	vehicleGroup.Post("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
+	maxReqDur := settings.MaxRequestDuration
+	if maxReqDur == "" {
+		maxReqDur = "60s"
+	}
+	limiter, err := limits.New(maxReqDur)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create request time limit middleware: %w", err)
+	}
 
-	return app, nil
+	serverHandler := PanicRecoveryMiddleware(
+		LoggerMiddleware(
+			limiter.AddRequestTimeout(
+				jwtMiddleware.CheckJWT(
+					authLoggerMiddleware(
+						auth.AddClaimHandler(gqlSrv),
+					),
+				),
+			),
+		),
+	)
+
+	return &App{
+		Handler: serverHandler,
+		cleanup: func() {},
+	}, nil
+}
+
+// Cleanup runs any cleanup logic (e.g. closing connections).
+func (a *App) Cleanup() {
+	if a.cleanup != nil {
+		a.cleanup()
+	}
+}
+
+// newGraphQLHandler creates a configured gqlgen handler.Server.
+func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, chainID uint64) *handler.Server {
+	resolver := &graph.Resolver{
+		EventService: eventService,
+		Buckets:      buckets,
+		VehicleAddr:  settings.VehicleNFTAddress,
+		ChainID:      chainID,
+	}
+
+	cfg := graph.Config{Resolvers: resolver}
+	srv := handler.New(graph.NewExecutableSchema(cfg))
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.FixedComplexityLimit(100))
+	srv.Use(gqlmetrics.Tracer{})
+	srv.SetErrorPresenter(errorhandler.ErrorPresenter)
+	return srv
 }
 
 // CreateGRPCServer creates a new gRPC server with the given logger and settings.
@@ -89,8 +120,9 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 	}
 
 	s3Client := s3ClientFromSettings(settings)
+	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	rpcServer := rpc.NewServer(chConn, s3Client, []string{settings.CloudEventBucket, settings.EphemeralBucket, settings.VCBucket})
+	rpcServer := rpc.NewServer([]string{settings.CloudEventBucket, settings.EphemeralBucket}, eventService)
 
 	grpcPanic := metrics.GRPCPanicker{Logger: logger}
 	server := grpc.NewServer(
@@ -105,20 +137,4 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 	fetchgrpc.RegisterFetchServiceServer(server, rpcServer)
 
 	return server, nil
-}
-
-// HealthCheck godoc
-// @Summary Show the status of server.
-// @Description get the status of server.
-// @Tags root
-// @Accept */*
-// @Produce json
-// @Success 200 {object} map[string]interface{}
-// @Router / [get]
-func HealthCheck(ctx *fiber.Ctx) error {
-	res := map[string]any{
-		"data": "Server is up and running",
-	}
-
-	return ctx.JSON(res)
 }

@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
@@ -24,9 +23,9 @@ type Server struct {
 }
 
 // NewServer creates a new Server instance.
-func NewServer(chConn clickhouse.Conn, objGetter eventrepo.ObjectGetter, buckets []string) *Server {
+func NewServer(buckets []string, eventService *eventrepo.Service) *Server {
 	return &Server{
-		eventService: eventrepo.New(chConn, objGetter),
+		eventService: eventService,
 		buckets:      buckets,
 	}
 }

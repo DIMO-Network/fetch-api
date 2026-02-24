@@ -1,0 +1,81 @@
+"""
+A point in time, encoded per RFC-3339. Typically in UTC.
+"""
+scalar Time
+
+"""
+Arbitrary JSON value; serialized as raw JSON (object/array), not an escaped string.
+"""
+scalar JSON
+
+"""
+Full CloudEvent: selectable header, data (JSON), and optional data_base64.
+"""
+type CloudEvent {
+  """CloudEvents header fields. Request only the fields you need."""
+  header: CloudEventHeader!
+  """JSON payload. Omitted if not requested."""
+  data: JSON
+  """Base64-encoded payload when present. Omitted if not requested."""
+  dataBase64: String
+}
+
+"""
+The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
+"""
+type Query {
+  """
+  Latest cloud event index matching filters.
+  """
+  latestIndex(did: String!, filter: CloudEventFilter): CloudEventIndex!
+
+  """
+  List cloud event indexes matching filters.
+  """
+  indexes(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!
+
+  """
+  Latest full cloud event.
+  """
+  latestCloudEvent(did: String!, filter: CloudEventFilter): CloudEvent!
+
+  """
+  List full cloud events.
+  """
+  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
+}
+
+"""
+CloudEvents header fields per the CloudEvents v1.0 spec.
+"""
+type CloudEventHeader {
+  id: String!
+  source: String!
+  producer: String!
+  specversion: String!
+  subject: String!
+  time: Time!
+  type: String!
+  datacontenttype: String
+  dataschema: String
+  dataversion: String
+  signature: String
+  tags: [String!]
+}
+
+"""
+Cloud event index entry: typed header + storage key.
+"""
+type CloudEventIndex {
+  header: CloudEventHeader!
+  indexKey: String!
+}
+
+input CloudEventFilter {
+  id: String
+  type: String
+  source: String
+  producer: String
+  before: Time
+  after: Time
+}

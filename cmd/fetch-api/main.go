@@ -4,61 +4,81 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
+	"syscall"
 
-	_ "github.com/DIMO-Network/fetch-api/docs"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/DIMO-Network/fetch-api/internal/app"
 	"github.com/DIMO-Network/fetch-api/internal/config"
-	"github.com/DIMO-Network/server-garage/pkg/env"
-	"github.com/DIMO-Network/server-garage/pkg/logging"
 	"github.com/DIMO-Network/server-garage/pkg/monserver"
 	"github.com/DIMO-Network/server-garage/pkg/runner"
+	"github.com/DIMO-Network/shared/pkg/settings"
+	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 )
 
-// @title                       DIMO Fetch API
-// @version                     1.0
-// @securityDefinitions.apikey  BearerAuth
-// @in                          header
-// @name                        Authorization
 func main() {
-	settingsFile := flag.String("env", ".env", "env file")
+	logger := zerolog.New(os.Stdout).With().Timestamp().Str("app", app.AppName).Logger()
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, s := range info.Settings {
+			if s.Key == "vcs.revision" && len(s.Value) == 40 {
+				logger = logger.With().Str("commit", s.Value[:7]).Logger()
+				break
+			}
+		}
+	}
+	zerolog.DefaultContextLogger = &logger
+
+	mainCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-mainCtx.Done()
+		logger.Info().Msg("Received signal, shutting down...")
+		cancel()
+	}()
+
+	runnerGroup, runnerCtx := errgroup.WithContext(mainCtx)
+
+	settingsFile := flag.String("settings", "settings.yaml", "settings file")
 	flag.Parse()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	logger := logging.GetAndSetDefaultLogger("fetch-api")
-
-	settings, err := env.LoadSettings[config.Settings](*settingsFile)
+	cfg, err := settings.LoadConfig[config.Settings](*settingsFile)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("Couldn't load settings.")
 	}
 
-	webServer, err := app.CreateWebServer(&settings)
+	application, err := app.New(cfg)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to create web server.")
+		logger.Fatal().Err(err).Msg("Couldn't create application.")
 	}
-	rpcServer, err := app.CreateGRPCServer(&logger, &settings)
+	defer application.Cleanup()
+
+	rpcServer, err := app.CreateGRPCServer(&logger, &cfg)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to create RPC server.")
+		logger.Fatal().Err(err).Msg("Failed to create gRPC server.")
 	}
 
-	group, gCtx := errgroup.WithContext(ctx)
+	monSrv := monserver.NewMonitoringServer(&logger, cfg.EnablePprof)
+	runner.RunHandler(runnerCtx, runnerGroup, monSrv, ":"+strconv.Itoa(cfg.MonPort))
 
-	monApp := monserver.NewMonitoringServer(&logger, settings.EnablePprof)
-	logger.Info().Str("port", strconv.Itoa(settings.MonPort)).Msgf("Starting monitoring server")
-	runner.RunHandler(gCtx, group, monApp, ":"+strconv.Itoa(settings.MonPort))
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("healthy"))
+	})
+	mux.Handle("/", app.LoggerMiddleware(app.PanicRecoveryMiddleware(playground.Handler("GraphQL playground", "/query"))))
+	mux.Handle("/query", application.Handler)
 
-	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msgf("Starting web server")
-	runner.RunFiber(gCtx, group, webServer, ":"+strconv.Itoa(settings.Port))
+	logger.Info().Msgf("Server started on port: %d", cfg.Port)
+	runner.RunHandler(runnerCtx, runnerGroup, mux, ":"+strconv.Itoa(cfg.Port))
 
-	logger.Info().Str("port", strconv.Itoa(settings.GRPCPort)).Msgf("Starting gRPC server")
-	runner.RunGRPC(gCtx, group, rpcServer, ":"+strconv.Itoa(settings.GRPCPort))
+	logger.Info().Msgf("gRPC server started on port: %d", cfg.GRPCPort)
+	runner.RunGRPC(runnerCtx, runnerGroup, rpcServer, ":"+strconv.Itoa(cfg.GRPCPort))
 
-	err = group.Wait()
+	err = runnerGroup.Wait()
 	if err != nil && !errors.Is(err, context.Canceled) {
 		logger.Fatal().Err(err).Msg("Server shut down due to an error.")
 	}

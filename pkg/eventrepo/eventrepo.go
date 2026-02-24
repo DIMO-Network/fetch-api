@@ -1,4 +1,4 @@
-// Package eventrepo contains service code for gettting and managing cloudevent objects.
+// Package eventrepo contains service code for getting and managing cloudevent objects.
 package eventrepo
 
 import (
@@ -13,6 +13,7 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	chindexer "github.com/DIMO-Network/cloudevent/pkg/clickhouse"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/DIMO-Network/fetch-api/pkg/parquetreader"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/volatiletech/sqlboiler/v4/drivers"
@@ -25,8 +26,11 @@ const tagsColumn = "JSONExtract(extras, 'tags', 'Array(String)')"
 
 // Service manages and retrieves data messages from indexed objects in S3.
 type Service struct {
-	objGetter ObjectGetter
-	chConn    clickhouse.Conn
+	objGetter     ObjectGetter
+	chConn        clickhouse.Conn
+	parquetReader *parquetreader.Reader
+	// parquetBucket is the object storage bucket for Iceberg Parquet files.
+	parquetBucket string
 }
 
 // ObjectInfo is the information about the object in S3.
@@ -40,11 +44,13 @@ type ObjectGetter interface {
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 }
 
-// New creates a new instance of serviceService.
-func New(chConn clickhouse.Conn, objGetter ObjectGetter) *Service {
+// New creates a new instance of Service.
+func New(chConn clickhouse.Conn, objGetter ObjectGetter, parquetBucket string) *Service {
 	return &Service{
-		objGetter: objGetter,
-		chConn:    chConn,
+		objGetter:     objGetter,
+		chConn:        chConn,
+		parquetReader: parquetreader.New(objGetter),
+		parquetBucket: parquetBucket,
 	}
 }
 
@@ -136,13 +142,13 @@ func (s *Service) ListIndexesAdvanced(ctx context.Context, limit int, advancedOp
 }
 
 // ListCloudEvents fetches and returns the cloud events that match the given options.
-func (s *Service) ListCloudEvents(ctx context.Context, bucketName string, limit int, opts *grpc.SearchOptions) ([]cloudevent.CloudEvent[json.RawMessage], error) {
+func (s *Service) ListCloudEvents(ctx context.Context, bucketName string, limit int, opts *grpc.SearchOptions) ([]cloudevent.RawEvent, error) {
 	advancedOpts := convertSearchOptionsToAdvanced(opts)
 	return s.ListCloudEventsAdvanced(ctx, bucketName, limit, advancedOpts)
 }
 
 // ListCloudEventsAdvanced fetches and returns the cloud events that match the given advanced options.
-func (s *Service) ListCloudEventsAdvanced(ctx context.Context, bucketName string, limit int, advancedOpts *grpc.AdvancedSearchOptions) ([]cloudevent.CloudEvent[json.RawMessage], error) {
+func (s *Service) ListCloudEventsAdvanced(ctx context.Context, bucketName string, limit int, advancedOpts *grpc.AdvancedSearchOptions) ([]cloudevent.RawEvent, error) {
 	events, err := s.ListIndexesAdvanced(ctx, limit, advancedOpts)
 	if err != nil {
 		return nil, err
@@ -156,35 +162,35 @@ func (s *Service) ListCloudEventsAdvanced(ctx context.Context, bucketName string
 }
 
 // GetLatestCloudEvent fetches and returns the latest cloud event that matches the given options.
-func (s *Service) GetLatestCloudEvent(ctx context.Context, bucketName string, opts *grpc.SearchOptions) (cloudevent.CloudEvent[json.RawMessage], error) {
+func (s *Service) GetLatestCloudEvent(ctx context.Context, bucketName string, opts *grpc.SearchOptions) (cloudevent.RawEvent, error) {
 	advancedOpts := convertSearchOptionsToAdvanced(opts)
 	return s.GetLatestCloudEventAdvanced(ctx, bucketName, advancedOpts)
 }
 
 // GetLatestCloudEventAdvanced fetches and returns the latest cloud event that matches the given advanced options.
-func (s *Service) GetLatestCloudEventAdvanced(ctx context.Context, bucketName string, advancedOpts *grpc.AdvancedSearchOptions) (cloudevent.CloudEvent[json.RawMessage], error) {
+func (s *Service) GetLatestCloudEventAdvanced(ctx context.Context, bucketName string, advancedOpts *grpc.AdvancedSearchOptions) (cloudevent.RawEvent, error) {
 	cloudIdx, err := s.GetLatestIndexAdvanced(ctx, advancedOpts)
 	if err != nil {
-		return cloudevent.CloudEvent[json.RawMessage]{}, err
+		return cloudevent.RawEvent{}, err
 	}
 
 	data, err := s.GetCloudEventFromIndex(ctx, cloudIdx, bucketName)
 	if err != nil {
-		return cloudevent.CloudEvent[json.RawMessage]{}, err
+		return cloudevent.RawEvent{}, err
 	}
 
 	return data, nil
 }
 
 // ListCloudEventsFromIndexes fetches and returns the cloud events for the given index.
-func (s *Service) ListCloudEventsFromIndexes(ctx context.Context, indexes []cloudevent.CloudEvent[ObjectInfo], bucketName string) ([]cloudevent.CloudEvent[json.RawMessage], error) {
-	events := make([]cloudevent.CloudEvent[json.RawMessage], len(indexes))
+func (s *Service) ListCloudEventsFromIndexes(ctx context.Context, indexes []cloudevent.CloudEvent[ObjectInfo], bucketName string) ([]cloudevent.RawEvent, error) {
+	events := make([]cloudevent.RawEvent, len(indexes))
 	var err error
-	objectsByKeys := map[string][]byte{}
+	objectsByKeys := map[string]json.RawMessage{}
 	for i := range indexes {
 		// Some objects have multiple cloud events so we cache the objects to avoid fetching them multiple times.
-		if obj, ok := objectsByKeys[indexes[i].Data.Key]; ok {
-			events[i] = cloudevent.CloudEvent[json.RawMessage]{CloudEventHeader: indexes[i].CloudEventHeader, Data: obj}
+		if data, ok := objectsByKeys[indexes[i].Data.Key]; ok {
+			events[i] = cloudevent.RawEvent{CloudEventHeader: indexes[i].CloudEventHeader, Data: data}
 			continue
 		}
 		events[i], err = s.GetCloudEventFromIndex(ctx, indexes[i], bucketName)
@@ -197,12 +203,16 @@ func (s *Service) ListCloudEventsFromIndexes(ctx context.Context, indexes []clou
 }
 
 // GetCloudEventFromIndex fetches and returns the cloud event for the given index.
-func (s *Service) GetCloudEventFromIndex(ctx context.Context, index cloudevent.CloudEvent[ObjectInfo], bucketName string) (cloudevent.CloudEvent[json.RawMessage], error) {
+func (s *Service) GetCloudEventFromIndex(ctx context.Context, index cloudevent.CloudEvent[ObjectInfo], bucketName string) (cloudevent.RawEvent, error) {
 	rawData, err := s.GetObjectFromKey(ctx, index.Data.Key, bucketName)
 	if err != nil {
-		return cloudevent.CloudEvent[json.RawMessage]{}, err
+		return cloudevent.RawEvent{}, err
 	}
-	return toCloudEvent(&index.CloudEventHeader, rawData), nil
+	ev, err := toCloudEvent(&index.CloudEventHeader, rawData)
+	if err != nil {
+		return cloudevent.RawEvent{}, err
+	}
+	return ev, nil
 }
 
 // ListObjectsFromKeys fetches and returns the objects for the given keys.
@@ -218,8 +228,43 @@ func (s *Service) ListObjectsFromKeys(ctx context.Context, keys []string, bucket
 	return data, nil
 }
 
-// GetRawObjectFromKey fetches and returns the raw object for the given key without unmarshalling to a cloud event.
+// GetObjectFromKey fetches and returns the raw object for the given key.
+// Routes based on index_key format:
+//   - If key contains "#": Parquet reference (new Iceberg path) -- reads the data column
+//     from the Parquet file at the specified row offset.
+//   - Otherwise: legacy S3 path -- fetches the entire object as before.
 func (s *Service) GetObjectFromKey(ctx context.Context, key, bucketName string) ([]byte, error) {
+	if parquetreader.IsParquetRef(key) {
+		return s.getObjectFromParquet(ctx, key)
+	}
+	return s.getObjectFromS3(ctx, key, bucketName)
+}
+
+// getObjectFromParquet reads the data column from a Parquet file for a specific row.
+func (s *Service) getObjectFromParquet(ctx context.Context, key string) ([]byte, error) {
+	ref, err := parquetreader.ParseIndexKey(key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse parquet index_key: %w", err)
+	}
+
+	// Bucket may come from full s3:// URI in index_key (ref.Bucket) or from config.
+	bucket := s.parquetBucket
+	if ref.Bucket != "" {
+		bucket = ref.Bucket
+	}
+	if bucket == "" {
+		return nil, fmt.Errorf("parquet bucket not configured and index_key has no s3:// URI: %s", key)
+	}
+
+	data, err := s.parquetReader.ReadData(ctx, bucket, ref)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read data from parquet: %w", err)
+	}
+	return data, nil
+}
+
+// getObjectFromS3 fetches the entire object from S3 (legacy per-file JSON path).
+func (s *Service) getObjectFromS3(ctx context.Context, key, bucketName string) ([]byte, error) {
 	obj, err := s.objGetter.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(key),
@@ -258,53 +303,19 @@ func (s *Service) StoreObject(ctx context.Context, bucketName string, cloudHeade
 	return nil
 }
 
-// toCloudEvent converts the given data to a cloud event with the given header
-// if the provided data is already a cloud event we will replace the header with the given one.
-func toCloudEvent(dbHdr *cloudevent.CloudEventHeader, data []byte) cloudevent.CloudEvent[json.RawMessage] {
-	retData := data
-	event := cloudevent.CloudEvent[json.RawMessage]{}
-	err := json.Unmarshal(data, &event)
-	emptyHdr := cloudevent.CloudEventHeader{}
-	if err == nil && !event.Equals(emptyHdr) {
-		// if the data is already a cloud event we use the embedded data field
-		retData = event.Data
+// toCloudEvent deserializes the stored CloudEvent JSON using the cloudevent package,
+// then overlays the index header. We never decode data_base64 into Data—when present,
+// DataBase64 is preserved for round-trip and Data is left nil.
+func toCloudEvent(dbHdr *cloudevent.CloudEventHeader, data []byte) (cloudevent.RawEvent, error) {
+	var ev cloudevent.RawEvent
+	if err := json.Unmarshal(data, &ev); err != nil {
+		return cloudevent.RawEvent{}, err
 	}
-	return cloudevent.CloudEvent[json.RawMessage]{CloudEventHeader: *dbHdr, Data: retData}
-}
-
-func SearchOptionsToQueryMod(opts *grpc.SearchOptions) ([]qm.QueryMod, error) {
-	if opts == nil {
-		return nil, nil
+	if ev.DataBase64 != "" {
+		ev.Data = nil // never expose decoded bytes in Data
 	}
-	var mods []qm.QueryMod
-	if opts.GetId() != nil {
-		mods = append(mods, qm.Where(chindexer.IDColumn+" = ?", opts.GetId().GetValue()))
-	}
-	if opts.GetAfter() != nil {
-		mods = append(mods, qm.Where(chindexer.TimestampColumn+" > ?", opts.GetAfter().AsTime()))
-	}
-	if opts.GetBefore() != nil {
-		mods = append(mods, qm.Where(chindexer.TimestampColumn+" < ?", opts.GetBefore().AsTime()))
-	}
-	if opts.GetType() != nil {
-		mods = append(mods, qm.Where(chindexer.TypeColumn+" = ?", opts.GetType().GetValue()))
-	}
-	if opts.GetDataVersion() != nil {
-		mods = append(mods, qm.Where(chindexer.DataVersionColumn+" = ?", opts.GetDataVersion().GetValue()))
-	}
-	if opts.GetSubject() != nil {
-		mods = append(mods, qm.Where(chindexer.SubjectColumn+" = ?", opts.GetSubject().GetValue()))
-	}
-	if opts.GetSource() != nil {
-		mods = append(mods, qm.Where(chindexer.SourceColumn+" = ?", opts.GetSource().GetValue()))
-	}
-	if opts.GetProducer() != nil {
-		mods = append(mods, qm.Where(chindexer.ProducerColumn+" = ?", opts.GetProducer().GetValue()))
-	}
-	if opts.GetExtras() != nil {
-		mods = append(mods, qm.Where(chindexer.ExtrasColumn+" = ?", opts.GetExtras().GetValue()))
-	}
-	return mods, nil
+	ev.CloudEventHeader = *dbHdr
+	return ev, nil
 }
 
 // convertSearchOptionsToAdvanced converts basic SearchOptions to AdvancedSearchOptions

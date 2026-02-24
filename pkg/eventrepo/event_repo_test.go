@@ -92,7 +92,7 @@ func TestGetLatestIndexKey(t *testing.T) {
 		},
 	}
 
-	indexService := eventrepo.New(conn, nil)
+	indexService := eventrepo.New(conn, nil, "")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -164,13 +164,14 @@ func TestGetDataFromIndex(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	mockS3Client := NewMockObjectGetter(ctrl)
-	content := []byte(`{"vin": "1HGCM82633A123456"}`)
+	// Stored object is full CloudEvent JSON (cloudevent unmarshaler expects envelope with "data").
+	content := []byte(`{"data":{"vin": "1HGCM82633A123456"}}`)
 	mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).Return(&s3.GetObjectOutput{
 		Body:          io.NopCloser(bytes.NewReader(content)),
 		ContentLength: ref(int64(len(content))),
 	}, nil).AnyTimes()
 
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -202,7 +203,7 @@ func TestStoreObject(t *testing.T) {
 	mockS3Client := NewMockObjectGetter(ctrl)
 	mockS3Client.EXPECT().PutObject(gomock.Any(), gomock.Any(), gomock.Any()).Return(&s3.PutObjectOutput{}, nil).AnyTimes()
 
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	content := []byte(`{"vin": "1HGCM82633A123456"}`)
 	did := cloudevent.ERC721DID{
@@ -331,17 +332,18 @@ func TestGetData(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			mockS3Client := NewMockObjectGetter(ctrl)
 
-			indexService := eventrepo.New(conn, mockS3Client)
+			indexService := eventrepo.New(conn, mockS3Client, "")
 			var expectedContent [][]byte
 			for _, indexKey := range tt.expectedIndexKeys {
 				mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
 					require.Equal(t, *params.Key, indexKey)
 					quotedKey := `"` + indexKey + `"`
-					// content := []byte(`{"data":` + quotedKey + `}`)
 					expectedContent = append(expectedContent, []byte(quotedKey))
+					// Stored object is full CloudEvent JSON with "data" field.
+					body := []byte(`{"data":` + quotedKey + `}`)
 					return &s3.GetObjectOutput{
-						Body:          io.NopCloser(bytes.NewReader([]byte(quotedKey))),
-						ContentLength: ref(int64(len(quotedKey))),
+						Body:          io.NopCloser(bytes.NewReader(body)),
+						ContentLength: ref(int64(len(body))),
 					}, nil
 				})
 			}
@@ -418,9 +420,11 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockS3Client := NewMockObjectGetter(ctrl)
 	eventData := []byte(`{"status": "online", "lastSeen": "2023-01-01T12:00:00Z"}`)
+	// Stored object is full CloudEvent JSON (cloudevent unmarshaler expects envelope with "data").
+	eventDataEnvelope := []byte(`{"data":` + string(eventData) + `}`)
 
 	// Create service
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	// Test retrieving the event
 	t.Run("retrieve event with full headers", func(t *testing.T) {
@@ -429,8 +433,8 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 				// Verify the correct key was requested
 				require.Equal(t, indexKey, *params.Key)
 				return &s3.GetObjectOutput{
-					Body:          io.NopCloser(bytes.NewReader(eventData)),
-					ContentLength: ref(int64(len(eventData))),
+					Body:          io.NopCloser(bytes.NewReader(eventDataEnvelope)),
+					ContentLength: ref(int64(len(eventDataEnvelope))),
 				}, nil
 			},
 		)
@@ -472,8 +476,8 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 				// Verify the correct key was requested
 				require.Equal(t, indexKey2, *params.Key)
 				return &s3.GetObjectOutput{
-					Body:          io.NopCloser(bytes.NewReader(eventData)),
-					ContentLength: ref(int64(len(eventData))),
+					Body:          io.NopCloser(bytes.NewReader(eventDataEnvelope)),
+					ContentLength: ref(int64(len(eventDataEnvelope))),
 				}, nil
 			},
 		)
@@ -564,7 +568,7 @@ func TestListIndexesAdvanced(t *testing.T) {
 	keyTypeStatusSource1Producer3 := insertTestData(t, ctx, conn, eventIdx3)
 	keyTypeStatusSource3Producer4 := insertTestData(t, ctx, conn, eventIdx4)
 
-	indexService := eventrepo.New(conn, nil)
+	indexService := eventrepo.New(conn, nil, "")
 
 	tests := []struct {
 		name              string
