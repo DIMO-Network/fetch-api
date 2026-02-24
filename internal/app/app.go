@@ -57,7 +57,11 @@ func New(settings config.Settings) (*App, error) {
 		return nil, fmt.Errorf("failed to create JWT middleware: %w", err)
 	}
 
-	limiter, err := limits.New(settings.MaxRequestDuration)
+	maxReqDur := settings.MaxRequestDuration
+	if maxReqDur == "" {
+		maxReqDur = "60s"
+	}
+	limiter, err := limits.New(maxReqDur)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create request time limit middleware: %w", err)
 	}
