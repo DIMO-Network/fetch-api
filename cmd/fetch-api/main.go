@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 
-	_ "github.com/DIMO-Network/fetch-api/docs"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/DIMO-Network/fetch-api/internal/app"
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/server-garage/pkg/env"
@@ -18,16 +20,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// @title                       DIMO Fetch API
-// @version                     1.0
-// @securityDefinitions.apikey  BearerAuth
-// @in                          header
-// @name                        Authorization
 func main() {
 	settingsFile := flag.String("env", ".env", "env file")
 	flag.Parse()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	mainCtx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	logger := logging.GetAndSetDefaultLogger("fetch-api")
@@ -37,25 +34,31 @@ func main() {
 		logger.Fatal().Err(err).Msg("Couldn't load settings.")
 	}
 
-	webServer, err := app.CreateWebServer(&settings)
+	application, err := app.New(&settings)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to create web server.")
+		logger.Fatal().Err(err).Msg("Couldn't create application.")
 	}
+	defer application.Cleanup()
+
 	rpcServer, err := app.CreateGRPCServer(&logger, &settings)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to create RPC server.")
+		logger.Fatal().Err(err).Msg("Failed to create gRPC server.")
 	}
 
-	group, gCtx := errgroup.WithContext(ctx)
+	group, gCtx := errgroup.WithContext(mainCtx)
 
-	monApp := monserver.NewMonitoringServer(&logger, settings.EnablePprof)
-	logger.Info().Str("port", strconv.Itoa(settings.MonPort)).Msgf("Starting monitoring server")
-	runner.RunHandler(gCtx, group, monApp, ":"+strconv.Itoa(settings.MonPort))
+	// Monitoring server (health, pprof) - same pattern as telemetry-api
+	monSrv := monserver.NewMonitoringServer(&logger, settings.EnablePprof)
+	runner.RunHandler(gCtx, group, monSrv, ":"+strconv.Itoa(settings.MonPort))
 
-	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msgf("Starting web server")
-	runner.RunFiber(gCtx, group, webServer, ":"+strconv.Itoa(settings.Port))
+	mux := http.NewServeMux()
+	mux.Handle("/", app.PanicRecoveryMiddleware(app.LoggerMiddleware(playground.Handler("GraphQL playground", "/query"))))
+	mux.Handle("/query", application.Handler)
 
-	logger.Info().Str("port", strconv.Itoa(settings.GRPCPort)).Msgf("Starting gRPC server")
+	logger.Info().Str("port", strconv.Itoa(settings.Port)).Msg("Starting web server")
+	runner.RunHandler(gCtx, group, mux, ":"+strconv.Itoa(settings.Port))
+
+	logger.Info().Str("port", strconv.Itoa(settings.GRPCPort)).Msg("Starting gRPC server")
 	runner.RunGRPC(gCtx, group, rpcServer, ":"+strconv.Itoa(settings.GRPCPort))
 
 	err = group.Wait()
