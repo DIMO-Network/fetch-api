@@ -13,12 +13,16 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
+	"github.com/DIMO-Network/fetch-api/internal/graph"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/DIMO-Network/server-garage/pkg/fibercommon/jwtmiddleware"
 	"github.com/DIMO-Network/server-garage/pkg/richerrors"
+	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
@@ -77,19 +81,19 @@ func (s *searchParams) toSearchOptions(subject cloudevent.ERC721DID) *grpc.Searc
 }
 
 // NewHandler creates a new Handler instance.
-func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string,
+func NewHandler(chConn clickhouse.Conn, s3Client *s3.Client, buckets []string, eventService *eventrepo.Service,
 	vehicleAddr common.Address, chainID uint64,
 ) *Handler {
-	indexService := eventrepo.New(chConn, s3Client)
 	return &Handler{
-		eventService: indexService,
+		eventService: eventService,
 		buckets:      buckets,
 		vehicleAddr:  vehicleAddr,
 		chainID:      chainID,
 	}
 }
 
-// parseTokenAndParams parses tokenId path param and query params; returns opts and any error.
+// parseTokenAndParams parses tokenId path param and query params, validates access via
+// the same logic as GraphQL (DID built from path), and returns opts and any error.
 func (h *Handler) parseTokenAndParams(fCtx *fiber.Ctx) (*grpc.SearchOptions, *searchParams, error) {
 	tokenID := fCtx.Params(TokenIDParam)
 	uTokenID, err := strconv.ParseUint(tokenID, 0, 32)
@@ -101,6 +105,16 @@ func (h *Handler) parseTokenAndParams(fCtx *fiber.Ctx) (*grpc.SearchOptions, *se
 		return nil, nil, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("failed to parse request query: %v", err))
 	}
 	subject := cloudevent.ERC721DID{ChainID: h.chainID, ContractAddress: h.vehicleAddr, TokenID: big.NewInt(int64(uTokenID))}
+	did := subject.String()
+
+	var claims *tokenclaims.Token
+	if jwtToken, ok := fCtx.Locals(jwtmiddleware.TokenClaimsKey).(*jwt.Token); ok {
+		claims, _ = jwtToken.Claims.(*tokenclaims.Token)
+	}
+	ctx := context.WithValue(fCtx.Context(), graph.ClaimsContextKey{}, claims)
+	if err := graph.CheckVehicleRawDataByDID(ctx, did); err != nil {
+		return nil, nil, fiber.NewError(fiber.StatusForbidden, err.Error())
+	}
 	return params.toSearchOptions(subject), &params, nil
 }
 

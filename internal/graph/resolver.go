@@ -3,7 +3,6 @@ package graph
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"slices"
 
 	"github.com/DIMO-Network/cloudevent"
@@ -58,27 +57,4 @@ func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string,
 		return nil, fmt.Errorf("invalid DID: %w", err)
 	}
 	return filterToSearchOptions(filter, subject), nil
-}
-
-// CheckVehicleRawData returns an error if the context does not have claims or the token
-// does not have GetRawData permission for the given vehicle tokenID.
-func CheckVehicleRawData(ctx context.Context, vehicleAddr common.Address, tokenID int) error {
-	tok, _ := ctx.Value(ClaimsContextKey{}).(*tokenclaims.Token)
-	if tok == nil {
-		return fmt.Errorf("unauthorized: no token claims")
-	}
-	assetDID, err := cloudevent.DecodeERC721DID(tok.Asset)
-	if err != nil {
-		return fmt.Errorf("unauthorized: invalid asset")
-	}
-	if assetDID.ContractAddress != vehicleAddr {
-		return fmt.Errorf("unauthorized: wrong contract")
-	}
-	if assetDID.TokenID.Cmp(big.NewInt(int64(tokenID))) != 0 {
-		return fmt.Errorf("unauthorized: token ID mismatch")
-	}
-	if !slices.Contains(tok.Permissions, tokenclaims.PermissionGetRawData) {
-		return fmt.Errorf("unauthorized: missing GetRawData privilege")
-	}
-	return nil
 }

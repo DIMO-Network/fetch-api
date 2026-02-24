@@ -10,7 +10,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/httphandler"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
@@ -23,7 +23,6 @@ import (
 	gqlmetrics "github.com/DIMO-Network/server-garage/pkg/gql/metrics"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
 	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -59,7 +58,7 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 		StackTraceHandler: nil,
 	}))
 	app.Use(cors.New())
-	app.Get("/", HealthCheck)
+	app.Get("/health", HealthCheck)
 	app.Use(redirect.New(redirect.Config{
 		Rules: map[string]string{
 			"/v1/swagger":   "/swagger",
@@ -75,24 +74,28 @@ func CreateWebServer(settings *config.Settings) (*fiber.App, error) {
 	}
 	s3Client := s3ClientFromSettings(settings)
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
+	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	// API v1 routes (register first, same order as main)
+	// GraphQL endpoint
+	gqlSrv := newGraphQLHandler(settings, eventService, buckets, chainId)
+	app.Post("/query", jwtAuth, graphQLHandler(gqlSrv))
+	app.Get("/query", jwtAuth, graphQLHandler(gqlSrv))
+	// GraphQL playground UI (same as telemetry-api); use HTTP headers in the UI to add JWT for /query
+	app.Get("/", playgroundHandler())
+
+	// API v1 routes
 	v1 := app.Group("/v1")
 	vehicleGroup := v1.Group("/vehicle")
 
-	vehHandler := httphandler.NewHandler(chConn, s3Client, buckets, settings.VehicleNFTAddress, chainId)
+	vehHandler := httphandler.NewHandler(chConn, s3Client, buckets, eventService, settings.VehicleNFTAddress, chainId)
 
 	vehicleMiddleware := jwtmiddleware.AllOfPermissions(settings.VehicleNFTAddress, httphandler.TokenIDParam, []string{tokenclaims.PermissionGetRawData})
 
+	// File endpoints
 	vehicleGroup.Post("/latest-index-key/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestIndexKey)
 	vehicleGroup.Post("/index-keys/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetIndexKeys)
 	vehicleGroup.Post("/objects/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetObjects)
 	vehicleGroup.Post("/latest-object/:"+httphandler.TokenIDParam, jwtAuth, vehicleMiddleware, vehHandler.GetLatestObject)
-
-	// GraphQL endpoint (added after vehicle routes)
-	gqlSrv := newGraphQLHandler(settings, chConn, s3Client, buckets, chainId)
-	app.Post("/query", jwtAuth, graphQLHandler(gqlSrv))
-	app.Get("/query", jwtAuth, graphQLHandler(gqlSrv))
 
 	return app, nil
 }
@@ -105,8 +108,9 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 	}
 
 	s3Client := s3ClientFromSettings(settings)
+	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	rpcServer := rpc.NewServer(chConn, s3Client, []string{settings.CloudEventBucket, settings.EphemeralBucket})
+	rpcServer := rpc.NewServer([]string{settings.CloudEventBucket, settings.EphemeralBucket}, eventService)
 
 	grpcPanic := metrics.GRPCPanicker{Logger: logger}
 	server := grpc.NewServer(
@@ -124,9 +128,7 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 }
 
 // newGraphQLHandler creates a configured gqlgen handler.Server.
-func newGraphQLHandler(settings *config.Settings, chConn clickhouse.Conn, s3Client *s3.Client, buckets []string, chainID uint64) *handler.Server {
-	eventService := eventrepo.New(chConn, s3Client)
-
+func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, chainID uint64) *handler.Server {
 	resolver := &graph.Resolver{
 		EventService: eventService,
 		Buckets:      buckets,
@@ -144,6 +146,25 @@ func newGraphQLHandler(settings *config.Settings, chConn clickhouse.Conn, s3Clie
 	srv.Use(gqlmetrics.Tracer{})
 	srv.SetErrorPresenter(errorhandler.ErrorPresenter)
 	return srv
+}
+
+// playgroundHandler serves the GraphQL playground UI (same as telemetry-api). Queries hit /query; add JWT via the playground headers.
+func playgroundHandler() fiber.Handler {
+	pg := playground.Handler("GraphQL playground", "/query")
+	return func(c *fiber.Ctx) error {
+		req, err := http.NewRequestWithContext(c.Context(), c.Method(), c.OriginalURL(), nil)
+		if err != nil {
+			return err
+		}
+		for k, v := range c.GetReqHeaders() {
+			if len(v) > 0 {
+				req.Header.Set(k, v[0])
+			}
+		}
+		w := &fiberResponseWriter{c: c}
+		pg.ServeHTTP(w, req)
+		return nil
+	}
 }
 
 // graphQLHandler bridges Fiber to the gqlgen http.Handler and injects token claims into the request context.

@@ -92,7 +92,7 @@ func TestGetLatestIndexKey(t *testing.T) {
 		},
 	}
 
-	indexService := eventrepo.New(conn, nil)
+	indexService := eventrepo.New(conn, nil, "")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -171,7 +171,7 @@ func TestGetDataFromIndex(t *testing.T) {
 		ContentLength: ref(int64(len(content))),
 	}, nil).AnyTimes()
 
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -203,7 +203,7 @@ func TestStoreObject(t *testing.T) {
 	mockS3Client := NewMockObjectGetter(ctrl)
 	mockS3Client.EXPECT().PutObject(gomock.Any(), gomock.Any(), gomock.Any()).Return(&s3.PutObjectOutput{}, nil).AnyTimes()
 
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	content := []byte(`{"vin": "1HGCM82633A123456"}`)
 	did := cloudevent.ERC721DID{
@@ -332,7 +332,7 @@ func TestGetData(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			mockS3Client := NewMockObjectGetter(ctrl)
 
-			indexService := eventrepo.New(conn, mockS3Client)
+			indexService := eventrepo.New(conn, mockS3Client, "")
 			var expectedContent [][]byte
 			for _, indexKey := range tt.expectedIndexKeys {
 				mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
@@ -424,7 +424,7 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 	eventDataEnvelope := []byte(`{"data":` + string(eventData) + `}`)
 
 	// Create service
-	indexService := eventrepo.New(conn, mockS3Client)
+	indexService := eventrepo.New(conn, mockS3Client, "")
 
 	// Test retrieving the event
 	t.Run("retrieve event with full headers", func(t *testing.T) {
@@ -568,7 +568,7 @@ func TestListIndexesAdvanced(t *testing.T) {
 	keyTypeStatusSource1Producer3 := insertTestData(t, ctx, conn, eventIdx3)
 	keyTypeStatusSource3Producer4 := insertTestData(t, ctx, conn, eventIdx4)
 
-	indexService := eventrepo.New(conn, nil)
+	indexService := eventrepo.New(conn, nil, "")
 
 	tests := []struct {
 		name              string

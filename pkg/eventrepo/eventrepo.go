@@ -45,18 +45,13 @@ type ObjectGetter interface {
 }
 
 // New creates a new instance of Service.
-func New(chConn clickhouse.Conn, objGetter ObjectGetter) *Service {
+func New(chConn clickhouse.Conn, objGetter ObjectGetter, parquetBucket string) *Service {
 	return &Service{
 		objGetter:     objGetter,
 		chConn:        chConn,
 		parquetReader: parquetreader.New(objGetter),
+		parquetBucket: parquetBucket,
 	}
-}
-
-// SetParquetBucket configures the bucket used for Iceberg Parquet files.
-// If not set, Parquet index_key references will fail.
-func (s *Service) SetParquetBucket(bucket string) {
-	s.parquetBucket = bucket
 }
 
 // GetLatestIndex returns the latest cloud event index that matches the given options.
