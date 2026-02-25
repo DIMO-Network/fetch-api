@@ -47,8 +47,8 @@ func CheckVehicleRawDataByDID(ctx context.Context, did string) error {
 	return nil
 }
 
-// requireVehicleOptsByDID validates access by DID and returns search options for the vehicle.
-func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
+// requireVehicleOptsByDID validates access by DID and returns advanced search options for the vehicle.
+func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string, filter *model.CloudEventFilter) (*grpc.AdvancedSearchOptions, error) {
 	if err := CheckVehicleRawDataByDID(ctx, did); err != nil {
 		return nil, err
 	}
@@ -56,5 +56,5 @@ func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string,
 	if err != nil {
 		return nil, fmt.Errorf("invalid DID: %w", err)
 	}
-	return filterToSearchOptions(filter, subject), nil
+	return filterToAdvancedSearchOptions(filter, subject), nil
 }

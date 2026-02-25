@@ -10,13 +10,14 @@ import (
 
 // Filter for cloud event queries.
 type CloudEventFilter struct {
-	ID          *string    `json:"id,omitempty"`
-	Type        *string    `json:"type,omitempty"`
-	Dataversion *string    `json:"dataversion,omitempty"`
-	Source      *string    `json:"source,omitempty"`
-	Producer    *string    `json:"producer,omitempty"`
-	Before      *time.Time `json:"before,omitempty"`
-	After       *time.Time `json:"after,omitempty"`
+	ID           *string    `json:"id,omitempty"`
+	Type         *string    `json:"type,omitempty"`
+	Dataversion  *string    `json:"dataversion,omitempty"`
+	Dataversions []string   `json:"dataversions,omitempty"`
+	Source       *string    `json:"source,omitempty"`
+	Producer     *string    `json:"producer,omitempty"`
+	Before       *time.Time `json:"before,omitempty"`
+	After        *time.Time `json:"after,omitempty"`
 }
 
 // Cloud event index entry: typed header + storage key.

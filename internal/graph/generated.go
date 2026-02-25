@@ -428,12 +428,14 @@ type CloudEventIndex {
 }
 
 """
-Filter for cloud event queries. 
+Filter for cloud event queries.
 """
 input CloudEventFilter {
   id: String
   type: String
   dataversion: String
+  """Filter by one or more dataversion values (OR logic)."""
+  dataversions: [String!]
   source: String
   producer: String
   before: Time
@@ -2882,7 +2884,7 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "type", "dataversion", "source", "producer", "before", "after"}
+	fieldsInOrder := [...]string{"id", "type", "dataversion", "dataversions", "source", "producer", "before", "after"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -2910,6 +2912,13 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 				return it, err
 			}
 			it.Dataversion = data
+		case "dataversions":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataversions"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Dataversions = data
 		case "source":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4248,6 +4257,13 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 }
 
 func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v any) (*time.Time, error) {

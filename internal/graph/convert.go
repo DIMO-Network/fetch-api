@@ -6,31 +6,36 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// filterToSearchOptions converts GraphQL filter and tokenID to grpc.SearchOptions.
-func filterToSearchOptions(filter *model.CloudEventFilter, subject cloudevent.ERC721DID) *grpc.SearchOptions {
-	opts := &grpc.SearchOptions{
-		Subject: &wrapperspb.StringValue{Value: subject.String()},
+// filterToAdvancedSearchOptions converts a GraphQL filter and subject DID to grpc.AdvancedSearchOptions.
+func filterToAdvancedSearchOptions(filter *model.CloudEventFilter, subject cloudevent.ERC721DID) *grpc.AdvancedSearchOptions {
+	opts := &grpc.AdvancedSearchOptions{
+		Subject: &grpc.StringFilterOption{In: []string{subject.String()}},
 	}
 	if filter == nil {
 		return opts
 	}
 	if filter.ID != nil {
-		opts.Id = &wrapperspb.StringValue{Value: *filter.ID}
+		opts.Id = &grpc.StringFilterOption{In: []string{*filter.ID}}
 	}
 	if filter.Type != nil {
-		opts.Type = &wrapperspb.StringValue{Value: *filter.Type}
+		opts.Type = &grpc.StringFilterOption{In: []string{*filter.Type}}
 	}
+	// dataversion (exact) and dataversions (list) are merged into a single In filter.
+	var dvIn []string
 	if filter.Dataversion != nil {
-		opts.DataVersion = &wrapperspb.StringValue{Value: *filter.Dataversion}
+		dvIn = append(dvIn, *filter.Dataversion)
+	}
+	dvIn = append(dvIn, filter.Dataversions...)
+	if len(dvIn) > 0 {
+		opts.DataVersion = &grpc.StringFilterOption{In: dvIn}
 	}
 	if filter.Source != nil {
-		opts.Source = &wrapperspb.StringValue{Value: *filter.Source}
+		opts.Source = &grpc.StringFilterOption{In: []string{*filter.Source}}
 	}
 	if filter.Producer != nil {
-		opts.Producer = &wrapperspb.StringValue{Value: *filter.Producer}
+		opts.Producer = &grpc.StringFilterOption{In: []string{*filter.Producer}}
 	}
 	if filter.Before != nil {
 		opts.Before = timestamppb.New(*filter.Before)
@@ -40,6 +45,7 @@ func filterToSearchOptions(filter *model.CloudEventFilter, subject cloudevent.ER
 	}
 	return opts
 }
+
 
 const defaultLimit = 10
 

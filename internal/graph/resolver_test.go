@@ -103,7 +103,7 @@ func TestRequireVehicleOptsByDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		require.NotNil(t, opts.Subject)
-		assert.Equal(t, didStr, opts.Subject.Value)
+		assert.Equal(t, []string{didStr}, opts.Subject.In)
 	})
 
 	t.Run("applies filter to search options", func(t *testing.T) {
@@ -122,8 +122,8 @@ func TestRequireVehicleOptsByDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		require.NotNil(t, opts.Type)
-		assert.Equal(t, "dimo.status", opts.Type.Value)
-		assert.Equal(t, didStr, opts.Subject.Value)
+		assert.Equal(t, []string{"dimo.status"}, opts.Type.In)
+		assert.Equal(t, []string{didStr}, opts.Subject.In)
 	})
 
 	t.Run("unauthorized when token does not match DID", func(t *testing.T) {

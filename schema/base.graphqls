@@ -72,12 +72,14 @@ type CloudEventIndex {
 }
 
 """
-Filter for cloud event queries. 
+Filter for cloud event queries.
 """
 input CloudEventFilter {
   id: String
   type: String
   dataversion: String
+  """Filter by one or more dataversion values (OR logic)."""
+  dataversions: [String!]
   source: String
   producer: String
   before: Time
