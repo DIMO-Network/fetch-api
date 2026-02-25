@@ -71,9 +71,13 @@ type CloudEventIndex {
   indexKey: String!
 }
 
+"""
+Filter for cloud event queries. 
+"""
 input CloudEventFilter {
   id: String
   type: String
+  dataVersion: String
   source: String
   producer: String
   before: Time

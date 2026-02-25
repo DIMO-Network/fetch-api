@@ -427,9 +427,13 @@ type CloudEventIndex {
   indexKey: String!
 }
 
+"""
+Filter for cloud event queries. 
+"""
 input CloudEventFilter {
   id: String
   type: String
+  dataVersion: String
   source: String
   producer: String
   before: Time
@@ -2878,7 +2882,7 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "type", "source", "producer", "before", "after"}
+	fieldsInOrder := [...]string{"id", "type", "dataVersion", "source", "producer", "before", "after"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -2899,6 +2903,13 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 				return it, err
 			}
 			it.Type = data
+		case "dataVersion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataVersion"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DataVersion = data
 		case "source":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)

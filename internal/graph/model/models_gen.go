@@ -8,13 +8,15 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 )
 
+// Filter for cloud event queries.
 type CloudEventFilter struct {
-	ID       *string    `json:"id,omitempty"`
-	Type     *string    `json:"type,omitempty"`
-	Source   *string    `json:"source,omitempty"`
-	Producer *string    `json:"producer,omitempty"`
-	Before   *time.Time `json:"before,omitempty"`
-	After    *time.Time `json:"after,omitempty"`
+	ID          *string    `json:"id,omitempty"`
+	Type        *string    `json:"type,omitempty"`
+	DataVersion *string    `json:"dataVersion,omitempty"`
+	Source      *string    `json:"source,omitempty"`
+	Producer    *string    `json:"producer,omitempty"`
+	Before      *time.Time `json:"before,omitempty"`
+	After       *time.Time `json:"after,omitempty"`
 }
 
 // Cloud event index entry: typed header + storage key.
