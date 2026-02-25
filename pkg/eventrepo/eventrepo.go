@@ -317,7 +317,7 @@ func toCloudEvent(dbHdr *cloudevent.CloudEventHeader, data []byte) (cloudevent.R
 		ev.Data = nil // never expose decoded bytes in Data
 	}
 	ev.CloudEventHeader = *dbHdr
-	ev.CloudEventHeader.Tags = grpc.TagsOrEmpty(ev.CloudEventHeader.Tags)
+	ev.Tags = grpc.TagsOrEmpty(ev.Tags)
 	return ev, nil
 }
 

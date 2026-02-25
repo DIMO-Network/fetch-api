@@ -59,7 +59,7 @@ func resolveLimit(limit *int) int {
 // indexToModel converts a CloudEvent index entry to the GraphQL model,
 // using the CloudEventHeader from the library directly.
 func indexToModel(idx cloudevent.CloudEvent[eventrepo.ObjectInfo]) *model.CloudEventIndex {
-	idx.CloudEventHeader.Tags = grpc.TagsOrEmpty(idx.CloudEventHeader.Tags)
+	idx.Tags = grpc.TagsOrEmpty(idx.Tags)
 	return &model.CloudEventIndex{
 		Header:   &idx.CloudEventHeader,
 		IndexKey: idx.Data.Key,
