@@ -433,7 +433,7 @@ Filter for cloud event queries.
 input CloudEventFilter {
   id: String
   type: String
-  dataVersion: String
+  dataversion: String
   source: String
   producer: String
   before: Time
@@ -2882,7 +2882,7 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "type", "dataVersion", "source", "producer", "before", "after"}
+	fieldsInOrder := [...]string{"id", "type", "dataversion", "source", "producer", "before", "after"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -2903,13 +2903,13 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 				return it, err
 			}
 			it.Type = data
-		case "dataVersion":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataVersion"))
+		case "dataversion":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataversion"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.DataVersion = data
+			it.Dataversion = data
 		case "source":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)

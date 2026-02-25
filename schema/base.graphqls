@@ -77,7 +77,7 @@ Filter for cloud event queries.
 input CloudEventFilter {
   id: String
   type: String
-  dataVersion: String
+  dataversion: String
   source: String
   producer: String
   before: Time

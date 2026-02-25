@@ -23,8 +23,8 @@ func filterToSearchOptions(filter *model.CloudEventFilter, subject cloudevent.ER
 	if filter.Type != nil {
 		opts.Type = &wrapperspb.StringValue{Value: *filter.Type}
 	}
-	if filter.DataVersion != nil {
-		opts.DataVersion = &wrapperspb.StringValue{Value: *filter.DataVersion}
+	if filter.Dataversion != nil {
+		opts.DataVersion = &wrapperspb.StringValue{Value: *filter.Dataversion}
 	}
 	if filter.Source != nil {
 		opts.Source = &wrapperspb.StringValue{Value: *filter.Source}
