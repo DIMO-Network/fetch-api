@@ -24,4 +24,5 @@ type Settings struct {
 	S3AWSAccessKeyID          string          `yaml:"S3_AWS_ACCESS_KEY_ID"`
 	S3AWSSecretAccessKey      string          `yaml:"S3_AWS_SECRET_ACCESS_KEY"`
 	Clickhouse                config.Settings `yaml:",inline"`
+	IdentityAPIURL            string          `yaml:"IDENTITY_API_URL"`
 }

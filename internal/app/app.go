@@ -12,6 +12,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/config"
 	"github.com/DIMO-Network/fetch-api/internal/fetch/rpc"
 	"github.com/DIMO-Network/fetch-api/internal/graph"
+	"github.com/DIMO-Network/fetch-api/internal/identity"
 	"github.com/DIMO-Network/fetch-api/internal/limits"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
@@ -50,7 +51,12 @@ func New(settings config.Settings) (*App, error) {
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
 	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
 
-	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, chainID)
+	var identityClient identity.Client
+	if settings.IdentityAPIURL != "" {
+		identityClient = identity.New(settings.IdentityAPIURL)
+	}
+
+	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, chainID, identityClient)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
 	if err != nil {
@@ -92,12 +98,13 @@ func (a *App) Cleanup() {
 }
 
 // newGraphQLHandler creates a configured gqlgen handler.Server.
-func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, chainID uint64) *handler.Server {
+func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, chainID uint64, identityClient identity.Client) *handler.Server {
 	resolver := &graph.Resolver{
-		EventService: eventService,
-		Buckets:      buckets,
-		VehicleAddr:  settings.VehicleNFTAddress,
-		ChainID:      chainID,
+		EventService:   eventService,
+		Buckets:        buckets,
+		VehicleAddr:    settings.VehicleNFTAddress,
+		ChainID:        chainID,
+		IdentityClient: identityClient,
 	}
 
 	cfg := graph.Config{Resolvers: resolver}
