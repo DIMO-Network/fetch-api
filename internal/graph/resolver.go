@@ -54,7 +54,7 @@ func checkRawDataPermissionsForVehicle(ctx context.Context, vehicleDID string) e
 	hasNonLocationHistory := slices.Contains(tok.Permissions, tokenclaims.PermissionGetNonLocationHistory)
 	hasAllTimeData := hasLocationHistory && hasNonLocationHistory
 	if !hasGetRawData && !hasAllTimeData {
-		return fmt.Errorf("unauthorized: token does not have access to this vehicle")
+		return fmt.Errorf("unauthorized: token does not have required permission for this vehicle operation")
 	}
 	return nil
 }
