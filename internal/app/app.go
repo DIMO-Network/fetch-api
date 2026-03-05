@@ -3,8 +3,6 @@ package app
 import (
 	"fmt"
 	"net/http"
-	"strconv"
-
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -38,11 +36,6 @@ type App struct {
 
 // New creates a new application with GraphQL handler and middleware.
 func New(settings config.Settings) (*App, error) {
-	chainID, err := strconv.ParseUint(settings.ChainID, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse chain ID: %w", err)
-	}
-
 	chConn, err := chClientFromSettings(&settings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
@@ -56,7 +49,7 @@ func New(settings config.Settings) (*App, error) {
 		identityClient = identity.New(settings.IdentityAPIURL)
 	}
 
-	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, chainID, identityClient)
+	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, identityClient)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
 	if err != nil {
@@ -98,12 +91,10 @@ func (a *App) Cleanup() {
 }
 
 // newGraphQLHandler creates a configured gqlgen handler.Server.
-func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, chainID uint64, identityClient identity.Client) *handler.Server {
+func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, identityClient identity.Client) *handler.Server {
 	resolver := &graph.Resolver{
 		EventService:   eventService,
 		Buckets:        buckets,
-		VehicleAddr:    settings.VehicleNFTAddress,
-		ChainID:        chainID,
 		IdentityClient: identityClient,
 	}
 

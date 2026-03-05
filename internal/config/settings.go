@@ -3,20 +3,17 @@ package config
 
 import (
 	"github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // Settings contains the application config.
 type Settings struct {
-	Port                      int             `yaml:"PORT"`
-	MonPort                   int             `yaml:"MON_PORT"`
-	GRPCPort                  int             `yaml:"GRPC_PORT"`
-	EnablePprof               bool            `yaml:"ENABLE_PPROF"`
-	MaxRequestDuration        string          `yaml:"MAX_REQUEST_DURATION"`
-	TokenExchangeJWTKeySetURL string          `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
-	TokenExchangeIssuer       string          `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
-	VehicleNFTAddress         common.Address  `yaml:"VEHICLE_NFT_ADDRESS"`
-	ChainID                   string          `yaml:"CHAIN_ID"`
+	Port                      int    `yaml:"PORT"`
+	MonPort                   int    `yaml:"MON_PORT"`
+	GRPCPort                  int    `yaml:"GRPC_PORT"`
+	EnablePprof               bool   `yaml:"ENABLE_PPROF"`
+	MaxRequestDuration        string `yaml:"MAX_REQUEST_DURATION"`
+	TokenExchangeJWTKeySetURL string `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
+	TokenExchangeIssuer       string `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
 	CloudEventBucket          string          `yaml:"CLOUDEVENT_BUCKET"`
 	EphemeralBucket           string          `yaml:"EPHEMERAL_BUCKET"`
 	ParquetBucket             string          `yaml:"PARQUET_BUCKET"`

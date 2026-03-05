@@ -17,9 +17,9 @@ var errDeviceNotFound = errors.New("device not found")
 
 // Client can resolve a device DID to the vehicle DID it is paired with.
 type Client interface {
-	// GetVehicleDIDForDevice looks up the vehicle DID that the given device DID is
+	// GetLinkedDIDForDevice looks up the vehicle DID that the given device DID is
 	// connected to. Returns an error if the device has no paired vehicle or is unknown.
-	GetVehicleDIDForDevice(ctx context.Context, deviceDID string) (string, error)
+	GetLinkedDIDForDevice(ctx context.Context, deviceDID string) (string, error)
 }
 
 // HTTPClient queries the identity-api GraphQL endpoint over HTTP.
@@ -59,10 +59,10 @@ type deviceResponse struct {
 	Errors []gqlError             `json:"errors"`
 }
 
-// GetVehicleDIDForDevice looks up the device as both aftermarket and synthetic in a single
+// GetLinkedDIDForDevice looks up the device as both aftermarket and synthetic in a single
 // GraphQL request. One will typically return data and the other NOT_FOUND; the first
 // with a valid vehicle DID is returned. If both fail, an error is returned.
-func (c *HTTPClient) GetVehicleDIDForDevice(ctx context.Context, deviceDID string) (string, error) {
+func (c *HTTPClient) GetLinkedDIDForDevice(ctx context.Context, deviceDID string) (string, error) {
 	const query = `query($did: String!) {
   aftermarketDevice(by: {tokenDID: $did}) {
     vehicle { tokenDID }

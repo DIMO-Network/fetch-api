@@ -43,7 +43,7 @@ func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrap
 
 // LatestIndex is the resolver for the latestIndex field.
 func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
-	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
+	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *mod
 
 // Indexes is the resolver for the indexes field.
 func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error) {
-	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
+	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, fil
 
 // LatestCloudEvent is the resolver for the latestCloudEvent field.
 func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*CloudEventWrapper, error) {
-	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
+	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 
 // CloudEvents is the resolver for the cloudEvents field.
 func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*CloudEventWrapper, error) {
-	opts, err := r.requireVehicleOptsByDID(ctx, did, filter)
+	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}

@@ -11,7 +11,6 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 // This file will not be regenerated automatically.
@@ -24,69 +23,65 @@ type ClaimsContextKey struct{}
 type Resolver struct {
 	EventService   *eventrepo.Service
 	Buckets        []string
-	VehicleAddr    common.Address
-	ChainID        uint64
 	IdentityClient identity.Client
 }
 
-// CheckVehicleRawDataByDID returns an error if the context does not have claims or the token
-// does not have GetRawData permission for the given vehicle DID, or if the DID is invalid.
-func CheckVehicleRawDataByDID(ctx context.Context, did string) error {
-	if _, err := cloudevent.DecodeERC721DID(did); err != nil {
-		return fmt.Errorf("invalid DID: %w", err)
+const (
+	errNoTokenClaims     = "unauthorized: no token claims"
+	errNoPermission      = "unauthorized: token does not have required permission for this operation"
+	errNoAccessToSubject = "unauthorized: token does not have access to this subject"
+)
+
+// requireSubjectOptsByDID validates raw-data access and returns search options for the DID.
+// requestedDID: the DID from the client (e.g. cloudEvents(did: "...")).
+// tokenSubjectDID: the DID the JWT grants access to (tok.Asset).
+func (r *queryResolver) requireSubjectOptsByDID(ctx context.Context, requestedDID string, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
+	token, err := requireRawDataToken(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return checkRawDataPermissionsForVehicle(ctx, did)
+	tokenSubjectDID := token.Asset // DID the JWT permits access to
+	searchSubject, err := r.ensureRequestedDIDLinkedToPermissionedSubject(ctx, requestedDID, tokenSubjectDID)
+	if err != nil {
+		return nil, err
+	}
+	return filterToSearchOptions(filter, searchSubject), nil
 }
 
-// checkRawDataPermissionsForVehicle verifies the context token has access for vehicleDID.
-// vehicleDID must already be validated.
-// Allowed: GetRawData, or both GetLocationHistory (all-time location) and GetNonLocationHistory.
-func checkRawDataPermissionsForVehicle(ctx context.Context, vehicleDID string) error {
+// requireRawDataToken returns the token if the context has claims and the token has raw-data permission.
+// Call this first so unauthenticated or insufficient-permission requests get a clear error before any DID resolution.
+func requireRawDataToken(ctx context.Context) (*tokenclaims.Token, error) {
 	tok, _ := ctx.Value(ClaimsContextKey{}).(*tokenclaims.Token)
 	if tok == nil {
-		return fmt.Errorf("unauthorized: no token claims")
-	}
-	if tok.Asset != vehicleDID {
-		return fmt.Errorf("unauthorized: token does not have access to this vehicle")
+		return nil, fmt.Errorf("%s", errNoTokenClaims)
 	}
 	hasGetRawData := slices.Contains(tok.Permissions, tokenclaims.PermissionGetRawData)
 	hasLocationHistory := slices.Contains(tok.Permissions, tokenclaims.PermissionGetLocationHistory)
 	hasNonLocationHistory := slices.Contains(tok.Permissions, tokenclaims.PermissionGetNonLocationHistory)
 	hasAllTimeData := hasLocationHistory && hasNonLocationHistory
 	if !hasGetRawData && !hasAllTimeData {
-		return fmt.Errorf("unauthorized: token does not have required permission for this vehicle operation")
+		return nil, fmt.Errorf("%s", errNoPermission)
 	}
-	return nil
+	return tok, nil
 }
 
-// requireVehicleOptsByDID validates raw-data access and returns search options for the DID.
-//
-// If did belongs to the vehicle NFT contract (r.VehicleAddr), the token asset must match that
-// vehicle DID directly. Otherwise the DID is treated as a device DID: identity-api is called
-// to resolve the paired vehicle, and the token must have access to that vehicle. Either way,
-// the search subject is always the originally requested DID.
-func (r *queryResolver) requireVehicleOptsByDID(ctx context.Context, did string, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
-	decoded, err := cloudevent.DecodeERC721DID(did)
+// ensureRequestedDIDLinkedToPermissionedSubject verifies the client-requested DID is allowed by the token.
+// requestedDID: the DID from the query (e.g. cloudEvents(did: "...")).
+// tokenSubjectDID: the DID the JWT grants access to (tok.Asset).
+func (r *queryResolver) ensureRequestedDIDLinkedToPermissionedSubject(ctx context.Context, requestedDID string, tokenSubjectDID string) (cloudevent.ERC721DID, error) {
+	requestedDIDParsed, err := cloudevent.DecodeERC721DID(requestedDID)
 	if err != nil {
-		return nil, fmt.Errorf("invalid DID: %w", err)
+		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
 	}
-
-	var vehicleDID string
-	if decoded.ContractAddress == r.VehicleAddr {
-		vehicleDID = did
-	} else {
-		if r.IdentityClient == nil {
-			return nil, fmt.Errorf("device DID lookup not configured: no identity client")
-		}
-		vehicleDID, err = r.IdentityClient.GetVehicleDIDForDevice(ctx, did)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve vehicle for device DID: %w", err)
-		}
+	if requestedDID == tokenSubjectDID {
+		return requestedDIDParsed, nil
 	}
-
-	if err := checkRawDataPermissionsForVehicle(ctx, vehicleDID); err != nil {
-		return nil, err
+	if r.IdentityClient == nil {
+		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
 	}
-
-	return filterToSearchOptions(filter, decoded), nil
+	linkedDID, err := r.IdentityClient.GetLinkedDIDForDevice(ctx, requestedDIDParsed.String())
+	if err != nil || linkedDID != tokenSubjectDID {
+		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
+	}
+	return requestedDIDParsed, nil
 }
