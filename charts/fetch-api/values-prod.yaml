@@ -11,7 +11,7 @@ env:
   TOKEN_EXCHANGE_ISSUER_URL: https://auth-roles-rights.dimo.zone
   CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-prod
   EPHEMERAL_BUCKET: dimo-ingest-ephemeral-prod
-  PARQUET_BUCKET: dimo-iceberg-prod
+  PARQUET_BUCKET: dimo-storage-prod
   VEHICLE_NFT_ADDRESS: '0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF'
   IDENTITY_API_URL: https://identity-api.dimo.zone/query
 ingress:

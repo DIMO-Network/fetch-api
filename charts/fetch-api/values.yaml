@@ -33,7 +33,7 @@ env:
   TOKEN_EXCHANGE_ISSUER_URL: https://auth-roles-rights.dev.dimo.zone
   CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
   EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
-  PARQUET_BUCKET: dimo-iceberg-dev
+  PARQUET_BUCKET: dimo-storage-dev
   S3_AWS_REGION: us-east-2
   IDENTITY_API_URL: https://identity-api.dev.dimo.zone/query
 service:
