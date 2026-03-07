@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.86
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
-	github.com/DIMO-Network/cloudevent v0.2.1
+	github.com/DIMO-Network/cloudevent v0.2.2
 	github.com/DIMO-Network/server-garage v0.0.7
 	github.com/DIMO-Network/shared v1.1.5
 	github.com/DIMO-Network/token-exchange-api v0.4.0
