@@ -405,16 +405,16 @@ type Query {
 CloudEvents header fields per the CloudEvents v1.0 spec.
 """
 type CloudEventHeader {
-  id: String!
-  source: String!
-  producer: String!
   specversion: String!
-  subject: String!
-  time: Time!
   type: String!
+  source: String!
+  subject: String!
+  id: String!
+  time: Time!
   datacontenttype: String
   dataschema: String
   dataversion: String
+  producer: String!
   signature: String
   tags: [String!]!
 }
@@ -608,26 +608,26 @@ func (ec *executionContext) fieldContext_CloudEvent_header(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_CloudEventHeader_id(ctx, field)
-			case "source":
-				return ec.fieldContext_CloudEventHeader_source(ctx, field)
-			case "producer":
-				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "specversion":
 				return ec.fieldContext_CloudEventHeader_specversion(ctx, field)
-			case "subject":
-				return ec.fieldContext_CloudEventHeader_subject(ctx, field)
-			case "time":
-				return ec.fieldContext_CloudEventHeader_time(ctx, field)
 			case "type":
 				return ec.fieldContext_CloudEventHeader_type(ctx, field)
+			case "source":
+				return ec.fieldContext_CloudEventHeader_source(ctx, field)
+			case "subject":
+				return ec.fieldContext_CloudEventHeader_subject(ctx, field)
+			case "id":
+				return ec.fieldContext_CloudEventHeader_id(ctx, field)
+			case "time":
+				return ec.fieldContext_CloudEventHeader_time(ctx, field)
 			case "datacontenttype":
 				return ec.fieldContext_CloudEventHeader_datacontenttype(ctx, field)
 			case "dataschema":
 				return ec.fieldContext_CloudEventHeader_dataschema(ctx, field)
 			case "dataversion":
 				return ec.fieldContext_CloudEventHeader_dataversion(ctx, field)
+			case "producer":
+				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "signature":
 				return ec.fieldContext_CloudEventHeader_signature(ctx, field)
 			case "tags":
@@ -697,14 +697,14 @@ func (ec *executionContext) fieldContext_CloudEvent_dataBase64(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _CloudEventHeader_id(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
+func (ec *executionContext) _CloudEventHeader_specversion(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_CloudEventHeader_id,
+		ec.fieldContext_CloudEventHeader_specversion,
 		func(ctx context.Context) (any, error) {
-			return obj.ID, nil
+			return obj.SpecVersion, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -713,7 +713,36 @@ func (ec *executionContext) _CloudEventHeader_id(ctx context.Context, field grap
 	)
 }
 
-func (ec *executionContext) fieldContext_CloudEventHeader_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CloudEventHeader_specversion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CloudEventHeader",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CloudEventHeader_type(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CloudEventHeader_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CloudEventHeader_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CloudEventHeader",
 		Field:      field,
@@ -755,64 +784,6 @@ func (ec *executionContext) fieldContext_CloudEventHeader_source(_ context.Conte
 	return fc, nil
 }
 
-func (ec *executionContext) _CloudEventHeader_producer(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_CloudEventHeader_producer,
-		func(ctx context.Context) (any, error) {
-			return obj.Producer, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_CloudEventHeader_producer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CloudEventHeader",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CloudEventHeader_specversion(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_CloudEventHeader_specversion,
-		func(ctx context.Context) (any, error) {
-			return obj.SpecVersion, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_CloudEventHeader_specversion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CloudEventHeader",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _CloudEventHeader_subject(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -830,6 +801,35 @@ func (ec *executionContext) _CloudEventHeader_subject(ctx context.Context, field
 }
 
 func (ec *executionContext) fieldContext_CloudEventHeader_subject(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CloudEventHeader",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CloudEventHeader_id(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CloudEventHeader_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CloudEventHeader_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CloudEventHeader",
 		Field:      field,
@@ -866,35 +866,6 @@ func (ec *executionContext) fieldContext_CloudEventHeader_time(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _CloudEventHeader_type(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_CloudEventHeader_type,
-		func(ctx context.Context) (any, error) {
-			return obj.Type, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_CloudEventHeader_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CloudEventHeader",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -975,6 +946,35 @@ func (ec *executionContext) _CloudEventHeader_dataversion(ctx context.Context, f
 }
 
 func (ec *executionContext) fieldContext_CloudEventHeader_dataversion(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CloudEventHeader",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CloudEventHeader_producer(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CloudEventHeader_producer,
+		func(ctx context.Context) (any, error) {
+			return obj.Producer, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CloudEventHeader_producer(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "CloudEventHeader",
 		Field:      field,
@@ -1069,26 +1069,26 @@ func (ec *executionContext) fieldContext_CloudEventIndex_header(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_CloudEventHeader_id(ctx, field)
-			case "source":
-				return ec.fieldContext_CloudEventHeader_source(ctx, field)
-			case "producer":
-				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "specversion":
 				return ec.fieldContext_CloudEventHeader_specversion(ctx, field)
-			case "subject":
-				return ec.fieldContext_CloudEventHeader_subject(ctx, field)
-			case "time":
-				return ec.fieldContext_CloudEventHeader_time(ctx, field)
 			case "type":
 				return ec.fieldContext_CloudEventHeader_type(ctx, field)
+			case "source":
+				return ec.fieldContext_CloudEventHeader_source(ctx, field)
+			case "subject":
+				return ec.fieldContext_CloudEventHeader_subject(ctx, field)
+			case "id":
+				return ec.fieldContext_CloudEventHeader_id(ctx, field)
+			case "time":
+				return ec.fieldContext_CloudEventHeader_time(ctx, field)
 			case "datacontenttype":
 				return ec.fieldContext_CloudEventHeader_datacontenttype(ctx, field)
 			case "dataschema":
 				return ec.fieldContext_CloudEventHeader_dataschema(ctx, field)
 			case "dataversion":
 				return ec.fieldContext_CloudEventHeader_dataversion(ctx, field)
+			case "producer":
+				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "signature":
 				return ec.fieldContext_CloudEventHeader_signature(ctx, field)
 			case "tags":
@@ -3099,8 +3099,13 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("CloudEventHeader")
-		case "id":
-			out.Values[i] = ec._CloudEventHeader_id(ctx, field, obj)
+		case "specversion":
+			out.Values[i] = ec._CloudEventHeader_specversion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._CloudEventHeader_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3109,28 +3114,18 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "producer":
-			out.Values[i] = ec._CloudEventHeader_producer(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "specversion":
-			out.Values[i] = ec._CloudEventHeader_specversion(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "subject":
 			out.Values[i] = ec._CloudEventHeader_subject(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "time":
-			out.Values[i] = ec._CloudEventHeader_time(ctx, field, obj)
+		case "id":
+			out.Values[i] = ec._CloudEventHeader_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "type":
-			out.Values[i] = ec._CloudEventHeader_type(ctx, field, obj)
+		case "time":
+			out.Values[i] = ec._CloudEventHeader_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3140,6 +3135,11 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 			out.Values[i] = ec._CloudEventHeader_dataschema(ctx, field, obj)
 		case "dataversion":
 			out.Values[i] = ec._CloudEventHeader_dataversion(ctx, field, obj)
+		case "producer":
+			out.Values[i] = ec._CloudEventHeader_producer(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "signature":
 			out.Values[i] = ec._CloudEventHeader_signature(ctx, field, obj)
 		case "tags":

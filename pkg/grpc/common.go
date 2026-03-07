@@ -7,13 +7,16 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// emptyTags is a shared empty slice returned by TagsOrEmpty to avoid per-call allocation.
+var emptyTags = []string{}
+
 // TagsOrEmpty returns the slice if non-nil and non-empty, otherwise a non-nil empty slice.
 // Ensures API always returns an array for tags, never null.
 func TagsOrEmpty(tags []string) []string {
 	if len(tags) > 0 {
 		return tags
 	}
-	return []string{}
+	return emptyTags
 }
 
 // AsRawCloudEvent converts the CloudEvent to a cloudevent.RawEvent.

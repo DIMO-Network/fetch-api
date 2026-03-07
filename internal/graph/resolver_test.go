@@ -16,12 +16,12 @@ import (
 )
 
 func TestRequireVehicleOptsByDID(t *testing.T) {
-	did := cloudevent.ERC721DID{
+	testDID := cloudevent.ERC721DID{
 		ChainID:         137,
 		ContractAddress: common.HexToAddress("0x1234567890123456789012345678901234567890"),
 		TokenID:         big.NewInt(1),
 	}
-	didStr := did.String()
+	didStr := testDID.String()
 
 	t.Run("returns search options with subject DID", func(t *testing.T) {
 		ctx := contextWithToken(didStr, tokenclaims.PermissionGetRawData)

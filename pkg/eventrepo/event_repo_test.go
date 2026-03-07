@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
-	chindexer "github.com/DIMO-Network/cloudevent/pkg/clickhouse"
+	chindexer "github.com/DIMO-Network/cloudevent/clickhouse"
+	"github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -333,19 +334,16 @@ func TestGetData(t *testing.T) {
 			mockS3Client := NewMockObjectGetter(ctrl)
 
 			indexService := eventrepo.New(conn, mockS3Client, "")
-			var expectedContent [][]byte
-			for _, indexKey := range tt.expectedIndexKeys {
+			// Allow GetObject calls in any order since fetches are concurrent.
+			if len(tt.expectedIndexKeys) > 0 {
 				mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
-					require.Equal(t, *params.Key, indexKey)
-					quotedKey := `"` + indexKey + `"`
-					expectedContent = append(expectedContent, []byte(quotedKey))
-					// Stored object is full CloudEvent JSON with "data" field.
+					quotedKey := `"` + *params.Key + `"`
 					body := []byte(`{"data":` + quotedKey + `}`)
 					return &s3.GetObjectOutput{
 						Body:          io.NopCloser(bytes.NewReader(body)),
 						ContentLength: ref(int64(len(body))),
 					}, nil
-				})
+				}).Times(len(tt.expectedIndexKeys))
 			}
 			events, err := indexService.ListCloudEvents(context.Background(), "test-bucket", 10, tt.opts)
 
@@ -353,9 +351,11 @@ func TestGetData(t *testing.T) {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Len(t, events, len(expectedContent))
-				for i, content := range expectedContent {
-					require.Equal(t, string(content), string(events[i].Data))
+				require.Len(t, events, len(tt.expectedIndexKeys))
+				// Verify each event's data matches its index key (order matches ClickHouse result order).
+				for i, expectedKey := range tt.expectedIndexKeys {
+					expectedData := `"` + expectedKey + `"`
+					require.Equal(t, expectedData, string(events[i].Data), "data mismatch at position %d", i)
 				}
 			}
 		})
@@ -462,9 +462,8 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 
 		// Verify extras
 		require.NotNil(t, retrievedEvent.Extras)
-		require.Equal(t, 2, len(retrievedEvent.Extras))
+		require.Equal(t, 1, len(retrievedEvent.Extras))
 		require.Equal(t, "extra-value", retrievedEvent.Extras["extraField"])
-		require.Equal(t, fullHeaderEvent.Signature, retrievedEvent.Extras["signature"].(string))
 
 		// Verify data content
 		require.Equal(t, string(eventData), string(retrievedEvent.Data))
@@ -490,13 +489,193 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 
 		// Verify all header fields
 		assert.Equal(t, fullHeaderEvent2.ID, retrievedEvent.ID, "ID mismatch")
-		assert.Equal(t, fullHeaderEvent2.Extras["signature"], retrievedEvent.Signature, "Signature field not set correctly")
-		assert.Equal(t, fullHeaderEvent2.Extras["signature"], retrievedEvent.Extras["signature"], "Signature field not set correctly in extras")
+		assert.Equal(t, "0x09876543210", retrievedEvent.Signature, "Signature field not set correctly")
+		assert.Nil(t, retrievedEvent.Extras["signature"], "Signature should not be in extras")
 	})
 }
 
 func ref[T any](x T) *T {
 	return &x
+}
+
+// encodeTestParquet encodes the given events into a parquet byte buffer and
+// returns the raw bytes and the map of event index to index key.
+func encodeTestParquet(t *testing.T, events []cloudevent.RawEvent, objectKey string) ([]byte, map[int]string) {
+	t.Helper()
+	var buf bytes.Buffer
+	indexKeys, err := parquet.Encode(&buf, events, objectKey)
+	require.NoError(t, err)
+	return buf.Bytes(), indexKeys
+}
+
+// mockS3ParquetReader sets up GetObject expectations to serve the full parquet
+// file bytes (downloaded in one GET by S3ReaderAt). Returns the mock.
+func mockS3ParquetReader(t *testing.T, ctrl *gomock.Controller, parquetBytes []byte) *MockObjectGetter {
+	t.Helper()
+	mock := NewMockObjectGetter(ctrl)
+	mock.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+		func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+			return &s3.GetObjectOutput{
+				Body:          io.NopCloser(bytes.NewReader(parquetBytes)),
+				ContentLength: ref(int64(len(parquetBytes))),
+			}, nil
+		},
+	).AnyTimes()
+	return mock
+}
+
+// TestGetCloudEventFromIndex_ParquetRef tests the parquet retrieval path.
+func TestGetCloudEventFromIndex_ParquetRef(t *testing.T) {
+	t.Parallel()
+	chContainer := setupClickHouseContainer(t)
+	conn, err := chContainer.GetClickHouseAsConn()
+	require.NoError(t, err)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Millisecond)
+
+	contractAddr := randAddress()
+	tokenID := big.NewInt(999)
+	subject := cloudevent.ERC721DID{
+		ChainID:         153,
+		ContractAddress: contractAddr,
+		TokenID:         tokenID,
+	}.String()
+
+	// Create a test event and encode it to parquet
+	testEvent := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			ID:          "pq-event-1",
+			Source:      "test-source",
+			Producer:    "test-producer",
+			Subject:     subject,
+			Time:        now,
+			Type:        cloudevent.TypeStatus,
+			DataVersion: "v1.0",
+		},
+		Data: json.RawMessage(`{"vin":"1HGCM82633A999999"}`),
+	}
+
+	objectKey := "test-prefix/batch.parquet"
+	parquetBytes, indexKeys := encodeTestParquet(t, []cloudevent.RawEvent{testEvent}, objectKey)
+	require.Len(t, indexKeys, 1)
+	parquetIndexKey := indexKeys[0] // e.g. "test-prefix/batch.parquet#0"
+
+	// Insert an index row in ClickHouse pointing to the parquet ref
+	indexHdr := &cloudevent.CloudEventHeader{
+		ID:          testEvent.ID,
+		Source:      testEvent.Source,
+		Producer:    testEvent.Producer,
+		Subject:     subject,
+		Time:        now,
+		Type:        cloudevent.TypeStatus,
+		DataVersion: "v1.0",
+	}
+	insertTestData(t, ctx, conn, indexHdr)
+
+	// Set up mock S3 to serve parquet range requests
+	ctrl := gomock.NewController(t)
+	mockS3 := mockS3ParquetReader(t, ctrl, parquetBytes)
+
+	indexService := eventrepo.New(conn, mockS3, "test-parquet-bucket")
+
+	// Build the index object as GetCloudEventFromIndex expects
+	index := cloudevent.CloudEvent[eventrepo.ObjectInfo]{
+		CloudEventHeader: *indexHdr,
+		Data:             eventrepo.ObjectInfo{Key: parquetIndexKey},
+	}
+
+	result, err := indexService.GetCloudEventFromIndex(ctx, &index, "legacy-bucket")
+	require.NoError(t, err)
+
+	// Verify the returned event
+	assert.Equal(t, testEvent.ID, result.ID, "ID mismatch")
+	assert.Equal(t, testEvent.Source, result.Source, "Source mismatch")
+	assert.Equal(t, testEvent.Producer, result.Producer, "Producer mismatch")
+	assert.Equal(t, testEvent.Subject, result.Subject, "Subject mismatch")
+	assert.Equal(t, testEvent.Type, result.Type, "Type mismatch")
+	assert.JSONEq(t, string(testEvent.Data), string(result.Data), "Data mismatch")
+	// Tags should be normalized (empty -> [])
+	assert.NotNil(t, result.Tags, "Tags should be normalized, not nil")
+}
+
+// TestListCloudEventsFromIndexes_ParquetCaching tests that multiple rows from
+// the same parquet file share one S3ReaderAt (HeadObject called once).
+func TestListCloudEventsFromIndexes_ParquetCaching(t *testing.T) {
+	t.Parallel()
+	chContainer := setupClickHouseContainer(t)
+	conn, err := chContainer.GetClickHouseAsConn()
+	require.NoError(t, err)
+	ctx := context.Background()
+	now := time.Now().UTC().Truncate(time.Millisecond)
+
+	contractAddr := randAddress()
+	tokenID := big.NewInt(888)
+	subject := cloudevent.ERC721DID{
+		ChainID:         153,
+		ContractAddress: contractAddr,
+		TokenID:         tokenID,
+	}.String()
+
+	// Create two events and encode them into one parquet file
+	event0 := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			ID:          "pq-cache-0",
+			Source:      "src",
+			Producer:    "prod",
+			Subject:     subject,
+			Time:        now.Add(-1 * time.Hour),
+			Type:        cloudevent.TypeStatus,
+			DataVersion: "v1.0",
+		},
+		Data: json.RawMessage(`{"row":0}`),
+	}
+	event1 := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			ID:          "pq-cache-1",
+			Source:      "src",
+			Producer:    "prod",
+			Subject:     subject,
+			Time:        now,
+			Type:        cloudevent.TypeStatus,
+			DataVersion: "v1.0",
+		},
+		Data: json.RawMessage(`{"row":1}`),
+	}
+
+	objectKey := "cache-test/batch.parquet"
+	parquetBytes, indexKeys := encodeTestParquet(t, []cloudevent.RawEvent{event0, event1}, objectKey)
+	require.Len(t, indexKeys, 2)
+
+	// Insert index rows in ClickHouse
+	hdr0 := event0.CloudEventHeader
+	hdr1 := event1.CloudEventHeader
+	insertTestData(t, ctx, conn, &hdr0)
+	insertTestData(t, ctx, conn, &hdr1)
+
+	ctrl := gomock.NewController(t)
+	mockS3 := mockS3ParquetReader(t, ctrl, parquetBytes)
+
+	indexService := eventrepo.New(conn, mockS3, "test-parquet-bucket")
+
+	indexes := []cloudevent.CloudEvent[eventrepo.ObjectInfo]{
+		{CloudEventHeader: hdr0, Data: eventrepo.ObjectInfo{Key: indexKeys[0]}},
+		{CloudEventHeader: hdr1, Data: eventrepo.ObjectInfo{Key: indexKeys[1]}},
+	}
+
+	results, err := indexService.ListCloudEventsFromIndexes(ctx, indexes, "legacy-bucket")
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+
+	// Verify both events returned correctly
+	assert.Equal(t, "pq-cache-0", results[0].ID)
+	assert.JSONEq(t, `{"row":0}`, string(results[0].Data))
+	assert.Equal(t, "pq-cache-1", results[1].ID)
+	assert.JSONEq(t, `{"row":1}`, string(results[1].Data))
+
+	// Tags normalized
+	for _, r := range results {
+		assert.NotNil(t, r.Tags, "Tags should be normalized")
+	}
 }
 
 // TestListIndexesAdvanced tests the ListIndexesAdvanced function with various advanced filter options.

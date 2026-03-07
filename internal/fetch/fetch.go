@@ -3,81 +3,122 @@ package fetch
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/singleflight"
 )
 
 const fetchers = 25
 
-// ListCloudEventsFromIndexes fetches a list of cloud events from the index service by trying to get them from each bucket in the list returning the first successful result.
+// ListCloudEventsFromIndexes fetches cloud events by splitting indexes into
+// parquet refs (handled efficiently via eventrepo with reader caching) and
+// legacy JSON refs (fetched concurrently with multi-bucket fallback).
+// Both paths run concurrently.
 func ListCloudEventsFromIndexes(ctx context.Context, evtSvc *eventrepo.Service, indexKeys []cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) ([]cloudevent.RawEvent, error) {
-	objectsByKeys := map[string]json.RawMessage{}
-	// mutex to protect concurrent access to the map
-	var mutex sync.RWMutex
-	// create an error group to handle concurrent fetching
-	group, errCtx := errgroup.WithContext(ctx)
-	group.SetLimit(fetchers)
+	if len(indexKeys) == 0 {
+		return nil, nil
+	}
 
-	for _, objectInfo := range indexKeys {
-		// check if we already have this object before spawning a goroutine
-		mutex.Lock()
-		_, ok := objectsByKeys[objectInfo.Data.Key]
-		if ok {
-			mutex.Unlock()
-			continue
+	events := make([]cloudevent.RawEvent, len(indexKeys))
+
+	// Split into parquet and JSON indexes, preserving original positions.
+	var parquetIndexes []cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var parquetPositions []int
+	type jsonItem struct {
+		pos  int
+		info cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	}
+	var jsonItems []jsonItem
+
+	for i, idx := range indexKeys {
+		if parquet.IsParquetRef(idx.Data.Key) {
+			parquetIndexes = append(parquetIndexes, idx)
+			parquetPositions = append(parquetPositions, i)
+		} else {
+			jsonItems = append(jsonItems, jsonItem{pos: i, info: idx})
 		}
-		// mark the object as being fetched
-		objectsByKeys[objectInfo.Data.Key] = nil
-		mutex.Unlock()
+	}
 
+	group, errCtx := errgroup.WithContext(ctx)
+
+	// Parquet refs: delegate to eventrepo which shares S3ReaderAt and parquet
+	// Reader across rows from the same file. Bucket is embedded in the parquet
+	// ref or comes from config — the bucketName parameter is unused.
+	if len(parquetIndexes) > 0 {
 		group.Go(func() error {
-			obj, err := GetCloudEventFromIndex(errCtx, evtSvc, objectInfo, buckets)
+			pqEvents, err := evtSvc.ListCloudEventsFromIndexes(errCtx, parquetIndexes, "")
 			if err != nil {
-				return fmt.Errorf("failed to get object: %w", err)
+				return fmt.Errorf("fetch parquet events: %w", err)
 			}
-			mutex.Lock()
-			objectsByKeys[objectInfo.Data.Key] = obj.Data
-			mutex.Unlock()
-
+			for i, ev := range pqEvents {
+				events[parquetPositions[i]] = ev
+			}
 			return nil
 		})
 	}
-	// Wait for all goroutines to complete
+
+	// JSON refs: concurrent fetch with multi-bucket fallback and dedup.
+	if len(jsonItems) > 0 {
+		group.Go(func() error {
+			var sf singleflight.Group
+
+			jsonGroup, jsonCtx := errgroup.WithContext(errCtx)
+			jsonGroup.SetLimit(fetchers)
+
+			for _, item := range jsonItems {
+				jsonGroup.Go(func() error {
+					v, err, _ := sf.Do(item.info.Data.Key, func() (any, error) {
+						return GetCloudEventFromIndex(jsonCtx, evtSvc, &item.info, buckets)
+					})
+					if err != nil {
+						return err
+					}
+					obj := v.(cloudevent.RawEvent)
+					// Apply this index's header; shared result may have a different one.
+					events[item.pos] = cloudevent.RawEvent{
+						CloudEventHeader: item.info.CloudEventHeader,
+						Data:             obj.Data,
+						DataBase64:       obj.DataBase64,
+					}
+					return nil
+				})
+			}
+
+			return jsonGroup.Wait()
+		})
+	}
+
 	if err := group.Wait(); err != nil {
 		return nil, err
 	}
 
-	// create a slice of cloud events
-	dataObjects := make([]cloudevent.RawEvent, len(indexKeys))
-	for i, objectInfo := range indexKeys {
-		dataObjects[i] = cloudevent.RawEvent{CloudEventHeader: objectInfo.CloudEventHeader, Data: objectsByKeys[objectInfo.Data.Key]}
-	}
-
-	return dataObjects, nil
+	return events, nil
 }
 
-// GetCloudEventFromIndex gets an object from the index service by trying to get it from each bucket in the list returning the first successful result.
-func GetCloudEventFromIndex(ctx context.Context, evtSvc *eventrepo.Service, indexKeys cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) (cloudevent.RawEvent, error) {
-	var obj cloudevent.RawEvent
-	var err error
-	// Try to get the object from each bucket in the list
+// GetCloudEventFromIndex gets an object from the index service by trying each
+// bucket in order, returning the first successful result.
+func GetCloudEventFromIndex(ctx context.Context, evtSvc *eventrepo.Service, indexKeys *cloudevent.CloudEvent[eventrepo.ObjectInfo], buckets []string) (cloudevent.RawEvent, error) {
+	if len(buckets) == 0 {
+		return cloudevent.RawEvent{}, fmt.Errorf("no buckets configured")
+	}
+	var lastErr error
 	for _, bucket := range buckets {
-		obj, err = evtSvc.GetCloudEventFromIndex(ctx, indexKeys, bucket)
+		obj, err := evtSvc.GetCloudEventFromIndex(ctx, indexKeys, bucket)
 		if err != nil {
-			notFoundErr := &types.NoSuchKey{}
-			if errors.As(err, &notFoundErr) {
+			var notFound *types.NoSuchKey
+			if errors.As(err, &notFound) {
+				lastErr = err
 				continue
 			}
 			return cloudevent.RawEvent{}, fmt.Errorf("failed to get object: %w", err)
 		}
 		return obj, nil
 	}
-	return cloudevent.RawEvent{}, fmt.Errorf("failed to get object: %w", err)
+	return cloudevent.RawEvent{}, fmt.Errorf("object not found in any bucket: %w", lastErr)
 }

@@ -117,13 +117,13 @@ func (s *Server) ListCloudEvents(ctx context.Context, req *grpc.ListCloudEventsR
 
 // GetLatestCloudEvent translates the gRPC call to the indexrepo type and fetches the latest data for the given options.
 func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestCloudEventRequest) (*grpc.GetLatestCloudEventResponse, error) {
-	var metdata cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var metadata cloudevent.CloudEvent[eventrepo.ObjectInfo]
 	var err error
 
 	if req.GetAdvancedOptions() != nil {
-		metdata, err = s.eventService.GetLatestIndexAdvanced(ctx, req.GetAdvancedOptions())
+		metadata, err = s.eventService.GetLatestIndexAdvanced(ctx, req.GetAdvancedOptions())
 	} else {
-		metdata, err = s.eventService.GetLatestIndex(ctx, req.GetOptions())
+		metadata, err = s.eventService.GetLatestIndex(ctx, req.GetOptions())
 	}
 
 	if err != nil {
@@ -132,7 +132,7 @@ func (s *Server) GetLatestCloudEvent(ctx context.Context, req *grpc.GetLatestClo
 		}
 		return nil, status.Errorf(codes.Internal, "failed to get latest index: %v", err)
 	}
-	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.eventService, metdata, s.buckets)
+	latestData, err := fetch.GetCloudEventFromIndex(ctx, s.eventService, &metadata, s.buckets)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get latest object: %v", err)
 	}

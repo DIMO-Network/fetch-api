@@ -10,8 +10,8 @@ import (
 	chconfig "github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
 	"github.com/DIMO-Network/clickhouse-infra/pkg/container"
 	"github.com/DIMO-Network/cloudevent"
-	chindexer "github.com/DIMO-Network/cloudevent/pkg/clickhouse"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse/migrations"
+	chindexer "github.com/DIMO-Network/cloudevent/clickhouse"
+	"github.com/DIMO-Network/cloudevent/clickhouse/migrations"
 	"github.com/stretchr/testify/require"
 )
 

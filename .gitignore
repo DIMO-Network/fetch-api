@@ -30,6 +30,6 @@ __debug_bin*
 *.code-workspace
 .history/
 .env
-
+.claude/
 
 fetch-api

@@ -24,13 +24,12 @@ func (r *cloudEventResolver) Header(ctx context.Context, obj *CloudEventWrapper)
 }
 
 // Data is the resolver for the data field. Returns raw JSON so it is serialized as an object, not an escaped string.
+// Zero-copy: the underlying bytes are only read during serialization.
 func (r *cloudEventResolver) Data(ctx context.Context, obj *CloudEventWrapper) (RawJSON, error) {
 	if obj == nil || obj.Raw == nil || len(obj.Raw.Data) == 0 {
 		return nil, nil
 	}
-	out := make(RawJSON, len(obj.Raw.Data))
-	copy(out, obj.Raw.Data)
-	return out, nil
+	return RawJSON(obj.Raw.Data), nil
 }
 
 // DataBase64 is the resolver for the dataBase64 field. Returns pointer into wrapped event when present.
@@ -84,7 +83,7 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
-	ce, err := fetch.GetCloudEventFromIndex(ctx, r.EventService, idx, r.Buckets)
+	ce, err := fetch.GetCloudEventFromIndex(ctx, r.EventService, &idx, r.Buckets)
 	if err != nil {
 		return nil, err
 	}

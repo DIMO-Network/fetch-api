@@ -49,16 +49,16 @@ type Query {
 CloudEvents header fields per the CloudEvents v1.0 spec.
 """
 type CloudEventHeader {
-  id: String!
-  source: String!
-  producer: String!
   specversion: String!
-  subject: String!
-  time: Time!
   type: String!
+  source: String!
+  subject: String!
+  id: String!
+  time: Time!
   datacontenttype: String
   dataschema: String
   dataversion: String
+  producer: String!
   signature: String
   tags: [String!]!
 }
