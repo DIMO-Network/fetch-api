@@ -389,10 +389,10 @@ func parseParquetRef(indexKey string) (bucket, objectKey string, rowOffset int64
 	return "", objKey, rowOffset, nil
 }
 
-// maxObjectSize is the maximum size of a single S3 object we'll read (10 MiB).
+// maxObjectSize is the maximum size of a single S3 object we'll read (50 MiB).
 // Objects larger than this are rejected to prevent OOM from corrupted or
 // malicious index keys pointing to oversized objects.
-const maxObjectSize = 10 << 20
+const maxObjectSize = 50 << 20
 
 // getObjectFromS3 fetches the entire object from S3 (legacy per-file JSON path).
 func (s *Service) getObjectFromS3(ctx context.Context, key, bucketName string) ([]byte, error) {
