@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
+	"time"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
@@ -11,6 +12,8 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
 // This file will not be regenerated automatically.
@@ -24,6 +27,8 @@ type Resolver struct {
 	EventService   *eventrepo.Service
 	Buckets        []string
 	IdentityClient identity.Client
+	Presigner      *s3.PresignClient
+	PresignExpiry  time.Duration
 }
 
 const (
@@ -63,6 +68,26 @@ func requireRawDataToken(ctx context.Context) (*tokenclaims.Token, error) {
 		return nil, fmt.Errorf("%s", errNoPermission)
 	}
 	return tok, nil
+}
+
+// presignSingleEvent finds which configured bucket contains the large single-event
+// object at key and returns a pre-signed S3 GET URL valid for r.PresignExpiry.
+func (r *queryResolver) presignSingleEvent(ctx context.Context, key string) (string, error) {
+	for _, bucket := range r.Buckets {
+		_, err := r.EventService.HeadObject(ctx, bucket, key)
+		if err != nil {
+			continue
+		}
+		req, err := r.Presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(key),
+		}, func(o *s3.PresignOptions) { o.Expires = r.PresignExpiry })
+		if err != nil {
+			return "", fmt.Errorf("presign %s/%s: %w", bucket, key, err)
+		}
+		return req.URL, nil
+	}
+	return "", fmt.Errorf("single event not found in any bucket: %s", key)
 }
 
 // ensureRequestedDIDLinkedToPermissionedSubject verifies the client-requested DID is allowed by the token.

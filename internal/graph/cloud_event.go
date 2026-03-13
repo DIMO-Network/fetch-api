@@ -8,8 +8,10 @@ import (
 
 // CloudEventWrapper holds a pointer to a RawEvent so resolvers can expose
 // header, data, and dataBase64 without copying the underlying event.
+// For large single-file events, PresignedURL is set and Data/DataBase64 are null.
 type CloudEventWrapper struct {
-	Raw *cloudevent.RawEvent
+	Raw          *cloudevent.RawEvent
+	PresignedURL string // non-empty for large single-event refs; clients should fetch from this URL
 }
 
 // RawJSON is the raw bytes of a JSON value. It implements graphql.Marshaler by

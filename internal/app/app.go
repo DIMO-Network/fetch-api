@@ -3,6 +3,8 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"time"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -21,6 +23,7 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/rs/zerolog"
 	"google.golang.org/grpc"
 )
@@ -34,6 +37,9 @@ type App struct {
 	cleanup  func()
 }
 
+// defaultPresignExpiry is used when PRESIGNED_URL_EXPIRY is not configured.
+const defaultPresignExpiry = 15 * time.Minute
+
 // New creates a new application with GraphQL handler and middleware.
 func New(settings config.Settings) (*App, error) {
 	chConn, err := chClientFromSettings(&settings)
@@ -41,15 +47,25 @@ func New(settings config.Settings) (*App, error) {
 		return nil, fmt.Errorf("failed to create ClickHouse connection: %w", err)
 	}
 	s3Client := s3ClientFromSettings(&settings)
+	presignClient := s3.NewPresignClient(s3Client)
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket}
 	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
+
+	presignExpiry := defaultPresignExpiry
+	if settings.PresignedURLExpiry != "" {
+		d, err := time.ParseDuration(settings.PresignedURLExpiry)
+		if err != nil {
+			return nil, fmt.Errorf("invalid PRESIGNED_URL_EXPIRY %q: %w", settings.PresignedURLExpiry, err)
+		}
+		presignExpiry = d
+	}
 
 	var identityClient identity.Client
 	if settings.IdentityAPIURL != "" {
 		identityClient = identity.New(settings.IdentityAPIURL)
 	}
 
-	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, identityClient)
+	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, identityClient, presignClient, presignExpiry)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
 	if err != nil {
@@ -91,11 +107,13 @@ func (a *App) Cleanup() {
 }
 
 // newGraphQLHandler creates a configured gqlgen handler.Server.
-func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, identityClient identity.Client) *handler.Server {
+func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, identityClient identity.Client, presignClient *s3.PresignClient, presignExpiry time.Duration) *handler.Server {
 	resolver := &graph.Resolver{
 		EventService:   eventService,
 		Buckets:        buckets,
 		IdentityClient: identityClient,
+		Presigner:      presignClient,
+		PresignExpiry:  presignExpiry,
 	}
 
 	cfg := graph.Config{Resolvers: resolver}
