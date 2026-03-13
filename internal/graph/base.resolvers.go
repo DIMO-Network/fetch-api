@@ -13,6 +13,8 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
+	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
 )
 
 // Header is the resolver for the header field. Returns a pointer into the wrapped event; no copy.
@@ -38,6 +40,15 @@ func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrap
 		return nil, nil
 	}
 	return &obj.Raw.DataBase64, nil
+}
+
+// PresignedUrl is the resolver for the presignedUrl field.
+// Returns a short-lived pre-signed S3 URL for large single-file events.
+func (r *cloudEventResolver) PresignedUrl(ctx context.Context, obj *CloudEventWrapper) (*string, error) {
+	if obj == nil || obj.PresignedURL == "" {
+		return nil, nil
+	}
+	return &obj.PresignedURL, nil
 }
 
 // LatestIndex is the resolver for the latestIndex field.
@@ -83,6 +94,15 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
+	if eventrepo.IsSingleEventRef(idx.Data.Key) {
+		url, err := r.presignSingleEvent(ctx, idx.Data.Key)
+		if err != nil {
+			return nil, err
+		}
+		hdr := idx.CloudEventHeader
+		hdr.Tags = fetchgrpc.TagsOrEmpty(hdr.Tags)
+		return &CloudEventWrapper{Raw: &cloudevent.RawEvent{CloudEventHeader: hdr}, PresignedURL: url}, nil
+	}
 	ce, err := fetch.GetCloudEventFromIndex(ctx, r.EventService, &idx, r.Buckets)
 	if err != nil {
 		return nil, err
@@ -103,14 +123,37 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 		}
 		return nil, err
 	}
-	events, err := fetch.ListCloudEventsFromIndexes(ctx, r.EventService, list, r.Buckets)
-	if err != nil {
-		return nil, err
+
+	out := make([]*CloudEventWrapper, len(list))
+
+	// Separate single-event refs (presign only) from regular refs (fetch from S3).
+	var fetchIndexes []cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var fetchPositions []int
+	for i, idx := range list {
+		if eventrepo.IsSingleEventRef(idx.Data.Key) {
+			url, err := r.presignSingleEvent(ctx, idx.Data.Key)
+			if err != nil {
+				return nil, err
+			}
+			hdr := idx.CloudEventHeader
+			hdr.Tags = fetchgrpc.TagsOrEmpty(hdr.Tags)
+			out[i] = &CloudEventWrapper{Raw: &cloudevent.RawEvent{CloudEventHeader: hdr}, PresignedURL: url}
+		} else {
+			fetchIndexes = append(fetchIndexes, idx)
+			fetchPositions = append(fetchPositions, i)
+		}
 	}
-	out := make([]*CloudEventWrapper, len(events))
-	for i := range events {
-		out[i] = &CloudEventWrapper{Raw: &events[i]}
+
+	if len(fetchIndexes) > 0 {
+		events, err := fetch.ListCloudEventsFromIndexes(ctx, r.EventService, fetchIndexes, r.Buckets)
+		if err != nil {
+			return nil, err
+		}
+		for i, pos := range fetchPositions {
+			out[pos] = &CloudEventWrapper{Raw: &events[i]}
+		}
 	}
+
 	return out, nil
 }
 

@@ -14,10 +14,12 @@ Full CloudEvent: selectable header, data (JSON), and optional data_base64.
 type CloudEvent {
   """CloudEvents header fields. Request only the fields you need."""
   header: CloudEventHeader!
-  """JSON payload. Omitted if not requested."""
+  """JSON payload. Omitted if not requested. Null for large single-file events (see presignedUrl)."""
   data: JSON
   """Base64-encoded payload when present. Omitted if not requested."""
   dataBase64: String
+  """Pre-signed S3 URL for large single-file events. When present, data and dataBase64 are null. The URL is valid for a short time."""
+  presignedUrl: String
 }
 
 """

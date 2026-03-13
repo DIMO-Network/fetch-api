@@ -80,3 +80,23 @@ func (mr *MockObjectGetterMockRecorder) PutObject(ctx, params any, optFns ...any
 	varargs := append([]any{ctx, params}, optFns...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutObject", reflect.TypeOf((*MockObjectGetter)(nil).PutObject), varargs...)
 }
+
+// HeadObject mocks base method.
+func (m *MockObjectGetter) HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, params}
+	for _, a := range optFns {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HeadObject", varargs...)
+	ret0, _ := ret[0].(*s3.HeadObjectOutput)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HeadObject indicates an expected call of HeadObject.
+func (mr *MockObjectGetterMockRecorder) HeadObject(ctx, params any, optFns ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, params}, optFns...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeadObject", reflect.TypeOf((*MockObjectGetter)(nil).HeadObject), varargs...)
+}

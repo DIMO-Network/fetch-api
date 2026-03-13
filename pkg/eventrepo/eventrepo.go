@@ -14,6 +14,7 @@ import (
 	chindexer "github.com/DIMO-Network/cloudevent/clickhouse"
 	"github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/volatiletech/sqlboiler/v4/drivers"
 	"github.com/volatiletech/sqlboiler/v4/queries"
@@ -43,6 +44,14 @@ type ObjectInfo struct {
 type ObjectGetter interface {
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
+	HeadObject(ctx context.Context, params *s3.HeadObjectInput, optFns ...func(*s3.Options)) (*s3.HeadObjectOutput, error)
+}
+
+// IsSingleEventRef reports whether key is a large single-event JSON object
+// (filename of the form "single-<uuid>.json") rather than a parquet batch ref or legacy key.
+func IsSingleEventRef(key string) bool {
+	base := key[strings.LastIndexByte(key, '/')+1:]
+	return strings.HasPrefix(base, "single-") && strings.HasSuffix(base, ".json")
 }
 
 // New creates a new instance of Service.
@@ -419,6 +428,16 @@ func (s *Service) StoreObject(ctx context.Context, bucketName string, cloudHeade
 	}
 
 	return nil
+}
+
+// HeadObject returns the S3 object metadata for the given bucket and key.
+// It is used to discover which bucket contains a large single-event object
+// before generating a pre-signed URL.
+func (s *Service) HeadObject(ctx context.Context, bucket, key string) (*s3.HeadObjectOutput, error) {
+	return s.objGetter.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
 }
 
 // toCloudEvent extracts only the data and data_base64 fields from the stored
