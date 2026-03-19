@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/cloudevent"
@@ -152,6 +153,59 @@ func (s *Service) ListIndexesAdvanced(ctx context.Context, limit int, advancedOp
 		return nil, fmt.Errorf("no cloud events found %w", sql.ErrNoRows)
 	}
 	return cloudEvents, nil
+}
+
+// EventTypeSummary holds per-type aggregate metadata for a subject.
+type EventTypeSummary struct {
+	Type      string
+	Count     uint64
+	FirstSeen time.Time
+	LastSeen  time.Time
+}
+
+// GetEventTypeSummaries returns per-type counts and time ranges for the given search options.
+func (s *Service) GetEventTypeSummaries(ctx context.Context, opts *grpc.SearchOptions) ([]EventTypeSummary, error) {
+	advancedOpts := convertSearchOptionsToAdvanced(opts)
+
+	mods := []qm.QueryMod{
+		qm.Select(
+			chindexer.TypeColumn,
+			"count(*) AS count",
+			"MIN("+chindexer.TimestampColumn+") AS first_seen",
+			"MAX("+chindexer.TimestampColumn+") AS last_seen",
+		),
+		qm.From(chindexer.TableName),
+		qm.GroupBy(chindexer.TypeColumn),
+		qm.OrderBy(chindexer.TypeColumn),
+	}
+
+	if advancedOpts != nil {
+		mods = append(mods, AdvancedSearchOptionsToQueryMod(advancedOpts)...)
+	}
+
+	query, args := newQuery(mods...)
+	rows, err := s.chConn.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get event type summaries: %w", err)
+	}
+
+	var summaries []EventTypeSummary
+	for rows.Next() {
+		var s EventTypeSummary
+		if err := rows.Scan(&s.Type, &s.Count, &s.FirstSeen, &s.LastSeen); err != nil {
+			_ = rows.Close()
+			return nil, fmt.Errorf("failed to scan event type summary: %w", err)
+		}
+		summaries = append(summaries, s)
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate event type summaries: %w", err)
+	}
+	if summaries == nil {
+		summaries = []EventTypeSummary{}
+	}
+	return summaries, nil
 }
 
 // ListCloudEvents fetches and returns the cloud events that match the given options.

@@ -74,7 +74,15 @@ type ComplexityRoot struct {
 		IndexKey func(childComplexity int) int
 	}
 
+	EventTypeSummary struct {
+		Count     func(childComplexity int) int
+		FirstSeen func(childComplexity int) int
+		LastSeen  func(childComplexity int) int
+		Type      func(childComplexity int) int
+	}
+
 	Query struct {
+		AvailableEvents  func(childComplexity int, did string, filter *model.CloudEventFilter) int
 		CloudEvents      func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
 		Indexes          func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
 		LatestCloudEvent func(childComplexity int, did string, filter *model.CloudEventFilter) int
@@ -92,6 +100,7 @@ type QueryResolver interface {
 	Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error)
 	LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*CloudEventWrapper, error)
 	CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*CloudEventWrapper, error)
+	AvailableEvents(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.EventTypeSummary, error)
 }
 
 type executableSchema struct {
@@ -218,6 +227,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.CloudEventIndex.IndexKey(childComplexity), true
 
+	case "EventTypeSummary.count":
+		if e.complexity.EventTypeSummary.Count == nil {
+			break
+		}
+
+		return e.complexity.EventTypeSummary.Count(childComplexity), true
+	case "EventTypeSummary.firstSeen":
+		if e.complexity.EventTypeSummary.FirstSeen == nil {
+			break
+		}
+
+		return e.complexity.EventTypeSummary.FirstSeen(childComplexity), true
+	case "EventTypeSummary.lastSeen":
+		if e.complexity.EventTypeSummary.LastSeen == nil {
+			break
+		}
+
+		return e.complexity.EventTypeSummary.LastSeen(childComplexity), true
+	case "EventTypeSummary.type":
+		if e.complexity.EventTypeSummary.Type == nil {
+			break
+		}
+
+		return e.complexity.EventTypeSummary.Type(childComplexity), true
+
+	case "Query.availableEvents":
+		if e.complexity.Query.AvailableEvents == nil {
+			break
+		}
+
+		args, err := ec.field_Query_availableEvents_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AvailableEvents(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.cloudEvents":
 		if e.complexity.Query.CloudEvents == nil {
 			break
@@ -377,6 +422,20 @@ type CloudEvent {
 }
 
 """
+Summary of a single cloud event type for a subject.
+"""
+type EventTypeSummary {
+  """Cloud event type string (e.g. "dimo.status")."""
+  type: String!
+  """Number of cloud events of this type."""
+  count: Int!
+  """Earliest event timestamp."""
+  firstSeen: Time!
+  """Latest event timestamp."""
+  lastSeen: Time!
+}
+
+"""
 The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
 """
 type Query {
@@ -399,6 +458,11 @@ type Query {
   List full cloud events.
   """
   cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
+
+  """
+  List event types available for a subject, with counts and time ranges.
+  """
+  availableEvents(did: String!, filter: CloudEventFilter): [EventTypeSummary!]!
 }
 
 """
@@ -455,6 +519,22 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_availableEvents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["did"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOCloudEventFilter2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg1
 	return args, nil
 }
 
@@ -1129,6 +1209,122 @@ func (ec *executionContext) fieldContext_CloudEventIndex_indexKey(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _EventTypeSummary_type(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EventTypeSummary_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EventTypeSummary_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EventTypeSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EventTypeSummary_count(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EventTypeSummary_count,
+		func(ctx context.Context) (any, error) {
+			return obj.Count, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EventTypeSummary_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EventTypeSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EventTypeSummary_firstSeen(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EventTypeSummary_firstSeen,
+		func(ctx context.Context) (any, error) {
+			return obj.FirstSeen, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EventTypeSummary_firstSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EventTypeSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EventTypeSummary_lastSeen(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EventTypeSummary_lastSeen,
+		func(ctx context.Context) (any, error) {
+			return obj.LastSeen, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EventTypeSummary_lastSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EventTypeSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_latestIndex(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1315,6 +1511,57 @@ func (ec *executionContext) fieldContext_Query_cloudEvents(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_cloudEvents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_availableEvents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_availableEvents,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().AvailableEvents(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
+		},
+		nil,
+		ec.marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummaryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_availableEvents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_EventTypeSummary_type(ctx, field)
+			case "count":
+				return ec.fieldContext_EventTypeSummary_count(ctx, field)
+			case "firstSeen":
+				return ec.fieldContext_EventTypeSummary_firstSeen(ctx, field)
+			case "lastSeen":
+				return ec.fieldContext_EventTypeSummary_lastSeen(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EventTypeSummary", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_availableEvents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3214,6 +3461,60 @@ func (ec *executionContext) _CloudEventIndex(ctx context.Context, sel ast.Select
 	return out
 }
 
+var eventTypeSummaryImplementors = []string{"EventTypeSummary"}
+
+func (ec *executionContext) _EventTypeSummary(ctx context.Context, sel ast.SelectionSet, obj *model.EventTypeSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eventTypeSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EventTypeSummary")
+		case "type":
+			out.Values[i] = ec._EventTypeSummary_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._EventTypeSummary_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "firstSeen":
+			out.Values[i] = ec._EventTypeSummary_firstSeen(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastSeen":
+			out.Values[i] = ec._EventTypeSummary_lastSeen(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -3309,6 +3610,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_cloudEvents(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "availableEvents":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_availableEvents(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -3831,6 +4154,76 @@ func (ec *executionContext) marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNet
 		return graphql.Null
 	}
 	return ec._CloudEventIndex(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EventTypeSummary) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummary(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummary(ctx context.Context, sel ast.SelectionSet, v *model.EventTypeSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EventTypeSummary(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

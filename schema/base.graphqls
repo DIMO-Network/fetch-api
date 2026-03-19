@@ -21,6 +21,20 @@ type CloudEvent {
 }
 
 """
+Summary of a single cloud event type for a subject.
+"""
+type EventTypeSummary {
+  """Cloud event type string (e.g. "dimo.status")."""
+  type: String!
+  """Number of cloud events of this type."""
+  count: Int!
+  """Earliest event timestamp."""
+  firstSeen: Time!
+  """Latest event timestamp."""
+  lastSeen: Time!
+}
+
+"""
 The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
 """
 type Query {
@@ -43,6 +57,11 @@ type Query {
   List full cloud events.
   """
   cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
+
+  """
+  List event types available for a subject, with counts and time ranges.
+  """
+  availableEvents(did: String!, filter: CloudEventFilter): [EventTypeSummary!]!
 }
 
 """

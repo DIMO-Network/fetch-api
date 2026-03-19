@@ -114,6 +114,28 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 	return out, nil
 }
 
+// AvailableEvents is the resolver for the availableEvents field.
+func (r *queryResolver) AvailableEvents(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.EventTypeSummary, error) {
+	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
+	if err != nil {
+		return nil, err
+	}
+	summaries, err := r.EventService.GetEventTypeSummaries(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*model.EventTypeSummary, len(summaries))
+	for i, s := range summaries {
+		out[i] = &model.EventTypeSummary{
+			Type:      s.Type,
+			Count:     int(s.Count),
+			FirstSeen: s.FirstSeen,
+			LastSeen:  s.LastSeen,
+		}
+	}
+	return out, nil
+}
+
 // CloudEvent returns CloudEventResolver implementation.
 func (r *Resolver) CloudEvent() CloudEventResolver { return &cloudEventResolver{r} }
 
