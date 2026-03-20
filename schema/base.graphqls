@@ -23,7 +23,7 @@ type CloudEvent {
 """
 Summary of a single cloud event type for a subject.
 """
-type EventTypeSummary {
+type CloudEventTypeSummary {
   """Cloud event type string (e.g. "dimo.status")."""
   type: String!
   """Number of cloud events of this type."""
@@ -59,9 +59,9 @@ type Query {
   cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
 
   """
-  List event types available for a subject, with counts and time ranges.
+  List cloud event types available for a subject, with counts and time ranges.
   """
-  availableEvents(did: String!, filter: CloudEventFilter): [EventTypeSummary!]!
+  availableCloudEventTypes(did: String!, filter: CloudEventFilter): [CloudEventTypeSummary!]!
 }
 
 """

@@ -74,7 +74,7 @@ type ComplexityRoot struct {
 		IndexKey func(childComplexity int) int
 	}
 
-	EventTypeSummary struct {
+	CloudEventTypeSummary struct {
 		Count     func(childComplexity int) int
 		FirstSeen func(childComplexity int) int
 		LastSeen  func(childComplexity int) int
@@ -82,11 +82,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AvailableEvents  func(childComplexity int, did string, filter *model.CloudEventFilter) int
-		CloudEvents      func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
-		Indexes          func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
-		LatestCloudEvent func(childComplexity int, did string, filter *model.CloudEventFilter) int
-		LatestIndex      func(childComplexity int, did string, filter *model.CloudEventFilter) int
+		AvailableCloudEventTypes func(childComplexity int, did string, filter *model.CloudEventFilter) int
+		CloudEvents              func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
+		Indexes                  func(childComplexity int, did string, limit *int, filter *model.CloudEventFilter) int
+		LatestCloudEvent         func(childComplexity int, did string, filter *model.CloudEventFilter) int
+		LatestIndex              func(childComplexity int, did string, filter *model.CloudEventFilter) int
 	}
 }
 
@@ -100,7 +100,7 @@ type QueryResolver interface {
 	Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error)
 	LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*CloudEventWrapper, error)
 	CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*CloudEventWrapper, error)
-	AvailableEvents(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.EventTypeSummary, error)
+	AvailableCloudEventTypes(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.CloudEventTypeSummary, error)
 }
 
 type executableSchema struct {
@@ -227,42 +227,42 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.CloudEventIndex.IndexKey(childComplexity), true
 
-	case "EventTypeSummary.count":
-		if e.complexity.EventTypeSummary.Count == nil {
+	case "CloudEventTypeSummary.count":
+		if e.complexity.CloudEventTypeSummary.Count == nil {
 			break
 		}
 
-		return e.complexity.EventTypeSummary.Count(childComplexity), true
-	case "EventTypeSummary.firstSeen":
-		if e.complexity.EventTypeSummary.FirstSeen == nil {
+		return e.complexity.CloudEventTypeSummary.Count(childComplexity), true
+	case "CloudEventTypeSummary.firstSeen":
+		if e.complexity.CloudEventTypeSummary.FirstSeen == nil {
 			break
 		}
 
-		return e.complexity.EventTypeSummary.FirstSeen(childComplexity), true
-	case "EventTypeSummary.lastSeen":
-		if e.complexity.EventTypeSummary.LastSeen == nil {
+		return e.complexity.CloudEventTypeSummary.FirstSeen(childComplexity), true
+	case "CloudEventTypeSummary.lastSeen":
+		if e.complexity.CloudEventTypeSummary.LastSeen == nil {
 			break
 		}
 
-		return e.complexity.EventTypeSummary.LastSeen(childComplexity), true
-	case "EventTypeSummary.type":
-		if e.complexity.EventTypeSummary.Type == nil {
+		return e.complexity.CloudEventTypeSummary.LastSeen(childComplexity), true
+	case "CloudEventTypeSummary.type":
+		if e.complexity.CloudEventTypeSummary.Type == nil {
 			break
 		}
 
-		return e.complexity.EventTypeSummary.Type(childComplexity), true
+		return e.complexity.CloudEventTypeSummary.Type(childComplexity), true
 
-	case "Query.availableEvents":
-		if e.complexity.Query.AvailableEvents == nil {
+	case "Query.availableCloudEventTypes":
+		if e.complexity.Query.AvailableCloudEventTypes == nil {
 			break
 		}
 
-		args, err := ec.field_Query_availableEvents_args(ctx, rawArgs)
+		args, err := ec.field_Query_availableCloudEventTypes_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.AvailableEvents(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
+		return e.complexity.Query.AvailableCloudEventTypes(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.cloudEvents":
 		if e.complexity.Query.CloudEvents == nil {
 			break
@@ -424,7 +424,7 @@ type CloudEvent {
 """
 Summary of a single cloud event type for a subject.
 """
-type EventTypeSummary {
+type CloudEventTypeSummary {
   """Cloud event type string (e.g. "dimo.status")."""
   type: String!
   """Number of cloud events of this type."""
@@ -460,9 +460,9 @@ type Query {
   cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
 
   """
-  List event types available for a subject, with counts and time ranges.
+  List cloud event types available for a subject, with counts and time ranges.
   """
-  availableEvents(did: String!, filter: CloudEventFilter): [EventTypeSummary!]!
+  availableCloudEventTypes(did: String!, filter: CloudEventFilter): [CloudEventTypeSummary!]!
 }
 
 """
@@ -522,7 +522,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_availableEvents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Query_availableCloudEventTypes_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "did", ec.unmarshalNString2string)
@@ -1209,12 +1209,12 @@ func (ec *executionContext) fieldContext_CloudEventIndex_indexKey(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _EventTypeSummary_type(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _CloudEventTypeSummary_type(ctx context.Context, field graphql.CollectedField, obj *model.CloudEventTypeSummary) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_EventTypeSummary_type,
+		ec.fieldContext_CloudEventTypeSummary_type,
 		func(ctx context.Context) (any, error) {
 			return obj.Type, nil
 		},
@@ -1225,9 +1225,9 @@ func (ec *executionContext) _EventTypeSummary_type(ctx context.Context, field gr
 	)
 }
 
-func (ec *executionContext) fieldContext_EventTypeSummary_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CloudEventTypeSummary_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "EventTypeSummary",
+		Object:     "CloudEventTypeSummary",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1238,12 +1238,12 @@ func (ec *executionContext) fieldContext_EventTypeSummary_type(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _EventTypeSummary_count(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _CloudEventTypeSummary_count(ctx context.Context, field graphql.CollectedField, obj *model.CloudEventTypeSummary) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_EventTypeSummary_count,
+		ec.fieldContext_CloudEventTypeSummary_count,
 		func(ctx context.Context) (any, error) {
 			return obj.Count, nil
 		},
@@ -1254,9 +1254,9 @@ func (ec *executionContext) _EventTypeSummary_count(ctx context.Context, field g
 	)
 }
 
-func (ec *executionContext) fieldContext_EventTypeSummary_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CloudEventTypeSummary_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "EventTypeSummary",
+		Object:     "CloudEventTypeSummary",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1267,12 +1267,12 @@ func (ec *executionContext) fieldContext_EventTypeSummary_count(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _EventTypeSummary_firstSeen(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _CloudEventTypeSummary_firstSeen(ctx context.Context, field graphql.CollectedField, obj *model.CloudEventTypeSummary) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_EventTypeSummary_firstSeen,
+		ec.fieldContext_CloudEventTypeSummary_firstSeen,
 		func(ctx context.Context) (any, error) {
 			return obj.FirstSeen, nil
 		},
@@ -1283,9 +1283,9 @@ func (ec *executionContext) _EventTypeSummary_firstSeen(ctx context.Context, fie
 	)
 }
 
-func (ec *executionContext) fieldContext_EventTypeSummary_firstSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CloudEventTypeSummary_firstSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "EventTypeSummary",
+		Object:     "CloudEventTypeSummary",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1296,12 +1296,12 @@ func (ec *executionContext) fieldContext_EventTypeSummary_firstSeen(_ context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _EventTypeSummary_lastSeen(ctx context.Context, field graphql.CollectedField, obj *model.EventTypeSummary) (ret graphql.Marshaler) {
+func (ec *executionContext) _CloudEventTypeSummary_lastSeen(ctx context.Context, field graphql.CollectedField, obj *model.CloudEventTypeSummary) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_EventTypeSummary_lastSeen,
+		ec.fieldContext_CloudEventTypeSummary_lastSeen,
 		func(ctx context.Context) (any, error) {
 			return obj.LastSeen, nil
 		},
@@ -1312,9 +1312,9 @@ func (ec *executionContext) _EventTypeSummary_lastSeen(ctx context.Context, fiel
 	)
 }
 
-func (ec *executionContext) fieldContext_EventTypeSummary_lastSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_CloudEventTypeSummary_lastSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "EventTypeSummary",
+		Object:     "CloudEventTypeSummary",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1517,24 +1517,24 @@ func (ec *executionContext) fieldContext_Query_cloudEvents(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_availableEvents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_availableCloudEventTypes(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Query_availableEvents,
+		ec.fieldContext_Query_availableCloudEventTypes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AvailableEvents(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.resolvers.Query().AvailableCloudEventTypes(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
-		ec.marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummaryᚄ,
+		ec.marshalNCloudEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummaryᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Query_availableEvents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_availableCloudEventTypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -1543,15 +1543,15 @@ func (ec *executionContext) fieldContext_Query_availableEvents(ctx context.Conte
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "type":
-				return ec.fieldContext_EventTypeSummary_type(ctx, field)
+				return ec.fieldContext_CloudEventTypeSummary_type(ctx, field)
 			case "count":
-				return ec.fieldContext_EventTypeSummary_count(ctx, field)
+				return ec.fieldContext_CloudEventTypeSummary_count(ctx, field)
 			case "firstSeen":
-				return ec.fieldContext_EventTypeSummary_firstSeen(ctx, field)
+				return ec.fieldContext_CloudEventTypeSummary_firstSeen(ctx, field)
 			case "lastSeen":
-				return ec.fieldContext_EventTypeSummary_lastSeen(ctx, field)
+				return ec.fieldContext_CloudEventTypeSummary_lastSeen(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type EventTypeSummary", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CloudEventTypeSummary", field.Name)
 		},
 	}
 	defer func() {
@@ -1561,7 +1561,7 @@ func (ec *executionContext) fieldContext_Query_availableEvents(ctx context.Conte
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_availableEvents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Query_availableCloudEventTypes_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -3461,34 +3461,34 @@ func (ec *executionContext) _CloudEventIndex(ctx context.Context, sel ast.Select
 	return out
 }
 
-var eventTypeSummaryImplementors = []string{"EventTypeSummary"}
+var cloudEventTypeSummaryImplementors = []string{"CloudEventTypeSummary"}
 
-func (ec *executionContext) _EventTypeSummary(ctx context.Context, sel ast.SelectionSet, obj *model.EventTypeSummary) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, eventTypeSummaryImplementors)
+func (ec *executionContext) _CloudEventTypeSummary(ctx context.Context, sel ast.SelectionSet, obj *model.CloudEventTypeSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, cloudEventTypeSummaryImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("EventTypeSummary")
+			out.Values[i] = graphql.MarshalString("CloudEventTypeSummary")
 		case "type":
-			out.Values[i] = ec._EventTypeSummary_type(ctx, field, obj)
+			out.Values[i] = ec._CloudEventTypeSummary_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "count":
-			out.Values[i] = ec._EventTypeSummary_count(ctx, field, obj)
+			out.Values[i] = ec._CloudEventTypeSummary_count(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "firstSeen":
-			out.Values[i] = ec._EventTypeSummary_firstSeen(ctx, field, obj)
+			out.Values[i] = ec._CloudEventTypeSummary_firstSeen(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
 		case "lastSeen":
-			out.Values[i] = ec._EventTypeSummary_lastSeen(ctx, field, obj)
+			out.Values[i] = ec._CloudEventTypeSummary_lastSeen(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -3622,7 +3622,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "availableEvents":
+		case "availableCloudEventTypes":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -3631,7 +3631,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_availableEvents(ctx, field)
+				res = ec._Query_availableCloudEventTypes(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4156,7 +4156,7 @@ func (ec *executionContext) marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNet
 	return ec._CloudEventIndex(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EventTypeSummary) graphql.Marshaler {
+func (ec *executionContext) marshalNCloudEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CloudEventTypeSummary) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -4180,7 +4180,7 @@ func (ec *executionContext) marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMO�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummary(ctx, sel, v[i])
+			ret[i] = ec.marshalNCloudEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummary(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -4200,14 +4200,14 @@ func (ec *executionContext) marshalNEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMO�
 	return ret
 }
 
-func (ec *executionContext) marshalNEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐEventTypeSummary(ctx context.Context, sel ast.SelectionSet, v *model.EventTypeSummary) graphql.Marshaler {
+func (ec *executionContext) marshalNCloudEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummary(ctx context.Context, sel ast.SelectionSet, v *model.CloudEventTypeSummary) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._EventTypeSummary(ctx, sel, v)
+	return ec._CloudEventTypeSummary(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {

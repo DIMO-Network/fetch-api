@@ -981,8 +981,8 @@ func TestListIndexesAdvanced(t *testing.T) {
 	}
 }
 
-// TestGetEventTypeSummaries tests the GetEventTypeSummaries function.
-func TestGetEventTypeSummaries(t *testing.T) {
+// TestGetCloudEventTypeSummaries tests the GetCloudEventTypeSummaries function.
+func TestGetCloudEventTypeSummaries(t *testing.T) {
 	t.Parallel()
 	chContainer := setupClickHouseContainer(t)
 
@@ -1038,7 +1038,7 @@ func TestGetEventTypeSummaries(t *testing.T) {
 		opts := &grpc.SearchOptions{
 			Subject: &wrapperspb.StringValue{Value: subjectStr},
 		}
-		summaries, err := indexService.GetEventTypeSummaries(ctx, opts)
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
 		require.NoError(t, err)
 		require.Len(t, summaries, 2)
 
@@ -1061,7 +1061,7 @@ func TestGetEventTypeSummaries(t *testing.T) {
 			Subject: &wrapperspb.StringValue{Value: subjectStr},
 			Type:    &wrapperspb.StringValue{Value: cloudevent.TypeStatus},
 		}
-		summaries, err := indexService.GetEventTypeSummaries(ctx, opts)
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
 		require.NoError(t, err)
 		require.Len(t, summaries, 1)
 		assert.Equal(t, cloudevent.TypeStatus, summaries[0].Type)
@@ -1074,7 +1074,7 @@ func TestGetEventTypeSummaries(t *testing.T) {
 			After:   &timestamppb.Timestamp{Seconds: now.Add(-2*time.Hour - 30*time.Second).Unix()},
 			Before:  &timestamppb.Timestamp{Seconds: now.Add(-30*time.Minute + 30*time.Second).Unix()},
 		}
-		summaries, err := indexService.GetEventTypeSummaries(ctx, opts)
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
 		require.NoError(t, err)
 		// Should include status2 (-2h), status3 (-1h), fp1 (-30m)
 		require.Len(t, summaries, 2)
@@ -1093,7 +1093,7 @@ func TestGetEventTypeSummaries(t *testing.T) {
 			Subject: &wrapperspb.StringValue{Value: subjectStr},
 			Source:  &wrapperspb.StringValue{Value: "source-B"},
 		}
-		summaries, err := indexService.GetEventTypeSummaries(ctx, opts)
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
 		require.NoError(t, err)
 		require.Len(t, summaries, 1)
 		assert.Equal(t, cloudevent.TypeStatus, summaries[0].Type)
@@ -1109,7 +1109,7 @@ func TestGetEventTypeSummaries(t *testing.T) {
 		opts := &grpc.SearchOptions{
 			Subject: &wrapperspb.StringValue{Value: otherSubject.String()},
 		}
-		summaries, err := indexService.GetEventTypeSummaries(ctx, opts)
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
 		require.NoError(t, err)
 		require.Empty(t, summaries)
 	})

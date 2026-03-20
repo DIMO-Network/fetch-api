@@ -26,7 +26,7 @@ type CloudEventIndex struct {
 }
 
 // Summary of a single cloud event type for a subject.
-type EventTypeSummary struct {
+type CloudEventTypeSummary struct {
 	// Cloud event type string (e.g. "dimo.status").
 	Type string `json:"type"`
 	// Number of cloud events of this type.

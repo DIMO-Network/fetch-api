@@ -155,16 +155,16 @@ func (s *Service) ListIndexesAdvanced(ctx context.Context, limit int, advancedOp
 	return cloudEvents, nil
 }
 
-// EventTypeSummary holds per-type aggregate metadata for a subject.
-type EventTypeSummary struct {
+// CloudEventTypeSummary holds per-type aggregate metadata for a subject.
+type CloudEventTypeSummary struct {
 	Type      string
 	Count     uint64
 	FirstSeen time.Time
 	LastSeen  time.Time
 }
 
-// GetEventTypeSummaries returns per-type counts and time ranges for the given search options.
-func (s *Service) GetEventTypeSummaries(ctx context.Context, opts *grpc.SearchOptions) ([]EventTypeSummary, error) {
+// GetCloudEventTypeSummaries returns per-type counts and time ranges for the given search options.
+func (s *Service) GetCloudEventTypeSummaries(ctx context.Context, opts *grpc.SearchOptions) ([]CloudEventTypeSummary, error) {
 	advancedOpts := convertSearchOptionsToAdvanced(opts)
 
 	mods := []qm.QueryMod{
@@ -189,9 +189,9 @@ func (s *Service) GetEventTypeSummaries(ctx context.Context, opts *grpc.SearchOp
 		return nil, fmt.Errorf("failed to get event type summaries: %w", err)
 	}
 
-	var summaries []EventTypeSummary
+	var summaries []CloudEventTypeSummary
 	for rows.Next() {
-		var s EventTypeSummary
+		var s CloudEventTypeSummary
 		if err := rows.Scan(&s.Type, &s.Count, &s.FirstSeen, &s.LastSeen); err != nil {
 			_ = rows.Close()
 			return nil, fmt.Errorf("failed to scan event type summary: %w", err)
@@ -203,7 +203,7 @@ func (s *Service) GetEventTypeSummaries(ctx context.Context, opts *grpc.SearchOp
 		return nil, fmt.Errorf("failed to iterate event type summaries: %w", err)
 	}
 	if summaries == nil {
-		summaries = []EventTypeSummary{}
+		summaries = []CloudEventTypeSummary{}
 	}
 	return summaries, nil
 }
