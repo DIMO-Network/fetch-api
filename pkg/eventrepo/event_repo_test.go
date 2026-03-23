@@ -981,6 +981,140 @@ func TestListIndexesAdvanced(t *testing.T) {
 	}
 }
 
+// TestGetCloudEventTypeSummaries tests the GetCloudEventTypeSummaries function.
+func TestGetCloudEventTypeSummaries(t *testing.T) {
+	t.Parallel()
+	chContainer := setupClickHouseContainer(t)
+
+	conn, err := chContainer.GetClickHouseAsConn()
+	require.NoError(t, err)
+	ctx := context.Background()
+
+	contractAddr := randAddress()
+	deviceTokenID := big.NewInt(555555)
+	subject := cloudevent.ERC721DID{
+		ChainID:         153,
+		ContractAddress: contractAddr,
+		TokenID:         deviceTokenID,
+	}
+	subjectStr := subject.String()
+
+	now := time.Now().UTC().Truncate(time.Second)
+
+	// Insert 3 status events and 1 fingerprint event
+	status1 := &cloudevent.CloudEventHeader{
+		Subject: subjectStr,
+		Type:    cloudevent.TypeStatus,
+		Source:  "source-A",
+		Time:    now.Add(-3 * time.Hour),
+	}
+	status2 := &cloudevent.CloudEventHeader{
+		Subject: subjectStr,
+		Type:    cloudevent.TypeStatus,
+		Source:  "source-A",
+		Time:    now.Add(-2 * time.Hour),
+	}
+	status3 := &cloudevent.CloudEventHeader{
+		Subject: subjectStr,
+		Type:    cloudevent.TypeStatus,
+		Source:  "source-B",
+		Time:    now.Add(-1 * time.Hour),
+	}
+	fp1 := &cloudevent.CloudEventHeader{
+		Subject: subjectStr,
+		Type:    cloudevent.TypeFingerprint,
+		Source:  "source-A",
+		Time:    now.Add(-30 * time.Minute),
+	}
+
+	insertTestData(t, ctx, conn, status1)
+	insertTestData(t, ctx, conn, status2)
+	insertTestData(t, ctx, conn, status3)
+	insertTestData(t, ctx, conn, fp1)
+
+	indexService := eventrepo.New(conn, nil, "")
+
+	t.Run("no filter returns all types", func(t *testing.T) {
+		opts := &grpc.SearchOptions{
+			Subject: &wrapperspb.StringValue{Value: subjectStr},
+		}
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
+		require.NoError(t, err)
+		require.Len(t, summaries, 2)
+
+		// Results ordered by event_type; fingerprint < status alphabetically
+		fpSummary := summaries[0]
+		assert.Equal(t, cloudevent.TypeFingerprint, fpSummary.Type)
+		assert.Equal(t, uint64(1), fpSummary.Count)
+		assert.Equal(t, fp1.Time.UTC().Truncate(time.Second), fpSummary.FirstSeen.UTC().Truncate(time.Second))
+		assert.Equal(t, fp1.Time.UTC().Truncate(time.Second), fpSummary.LastSeen.UTC().Truncate(time.Second))
+
+		statusSummary := summaries[1]
+		assert.Equal(t, cloudevent.TypeStatus, statusSummary.Type)
+		assert.Equal(t, uint64(3), statusSummary.Count)
+		assert.Equal(t, status1.Time.UTC().Truncate(time.Second), statusSummary.FirstSeen.UTC().Truncate(time.Second))
+		assert.Equal(t, status3.Time.UTC().Truncate(time.Second), statusSummary.LastSeen.UTC().Truncate(time.Second))
+	})
+
+	t.Run("type filter", func(t *testing.T) {
+		opts := &grpc.SearchOptions{
+			Subject: &wrapperspb.StringValue{Value: subjectStr},
+			Type:    &wrapperspb.StringValue{Value: cloudevent.TypeStatus},
+		}
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
+		require.NoError(t, err)
+		require.Len(t, summaries, 1)
+		assert.Equal(t, cloudevent.TypeStatus, summaries[0].Type)
+		assert.Equal(t, uint64(3), summaries[0].Count)
+	})
+
+	t.Run("time range filter", func(t *testing.T) {
+		opts := &grpc.SearchOptions{
+			Subject: &wrapperspb.StringValue{Value: subjectStr},
+			After:   &timestamppb.Timestamp{Seconds: now.Add(-2*time.Hour - 30*time.Second).Unix()},
+			Before:  &timestamppb.Timestamp{Seconds: now.Add(-30*time.Minute + 30*time.Second).Unix()},
+		}
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
+		require.NoError(t, err)
+		// Should include status2 (-2h), status3 (-1h), fp1 (-30m)
+		require.Len(t, summaries, 2)
+
+		fpSummary := summaries[0]
+		assert.Equal(t, cloudevent.TypeFingerprint, fpSummary.Type)
+		assert.Equal(t, uint64(1), fpSummary.Count)
+
+		statusSummary := summaries[1]
+		assert.Equal(t, cloudevent.TypeStatus, statusSummary.Type)
+		assert.Equal(t, uint64(2), statusSummary.Count)
+	})
+
+	t.Run("source filter", func(t *testing.T) {
+		opts := &grpc.SearchOptions{
+			Subject: &wrapperspb.StringValue{Value: subjectStr},
+			Source:  &wrapperspb.StringValue{Value: "source-B"},
+		}
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
+		require.NoError(t, err)
+		require.Len(t, summaries, 1)
+		assert.Equal(t, cloudevent.TypeStatus, summaries[0].Type)
+		assert.Equal(t, uint64(1), summaries[0].Count)
+	})
+
+	t.Run("no matching events returns empty slice", func(t *testing.T) {
+		otherSubject := cloudevent.ERC721DID{
+			ChainID:         153,
+			ContractAddress: contractAddr,
+			TokenID:         big.NewInt(999999),
+		}
+		opts := &grpc.SearchOptions{
+			Subject: &wrapperspb.StringValue{Value: otherSubject.String()},
+		}
+		summaries, err := indexService.GetCloudEventTypeSummaries(ctx, opts)
+		require.NoError(t, err)
+		require.Empty(t, summaries)
+	})
+}
+
 func randAddress() common.Address {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {

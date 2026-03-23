@@ -95,7 +95,12 @@ endif
 	mv $(PATHINSTBIN)/protoclib/include $(PATHINSTBIN)/ 
 	rm $(PATHINSTBIN)/protoc.zip
 
-make tools: tools-golangci-lint tools-protoc ## install all tools
+tools-protoc-plugins: ## install protoc-gen-go and protoc-gen-go-grpc from go.mod tool directive
+	@mkdir -p $(PATHINSTBIN)
+	GOBIN=$(PATHINSTBIN) go install google.golang.org/protobuf/cmd/protoc-gen-go
+	GOBIN=$(PATHINSTBIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
+make tools: tools-golangci-lint tools-protoc tools-protoc-plugins ## install all tools
 
 gqlgen: ## Generate gqlgen code.
 	@go tool gqlgen generate

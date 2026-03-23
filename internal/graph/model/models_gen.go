@@ -25,6 +25,18 @@ type CloudEventIndex struct {
 	IndexKey string                       `json:"indexKey"`
 }
 
+// Summary of a single cloud event type for a subject.
+type CloudEventTypeSummary struct {
+	// Cloud event type string (e.g. "dimo.status").
+	Type string `json:"type"`
+	// Number of cloud events of this type.
+	Count int `json:"count"`
+	// Earliest event timestamp.
+	FirstSeen time.Time `json:"firstSeen"`
+	// Latest event timestamp.
+	LastSeen time.Time `json:"lastSeen"`
+}
+
 // The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:chainId:contract:tokenId).
 type Query struct {
 }
