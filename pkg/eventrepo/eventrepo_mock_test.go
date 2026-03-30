@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	s3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -79,4 +80,48 @@ func (mr *MockObjectGetterMockRecorder) PutObject(ctx, params any, optFns ...any
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx, params}, optFns...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutObject", reflect.TypeOf((*MockObjectGetter)(nil).PutObject), varargs...)
+}
+
+// MockPresigner is a mock of Presigner interface.
+type MockPresigner struct {
+	ctrl     *gomock.Controller
+	recorder *MockPresignerMockRecorder
+	isgomock struct{}
+}
+
+// MockPresignerMockRecorder is the mock recorder for MockPresigner.
+type MockPresignerMockRecorder struct {
+	mock *MockPresigner
+}
+
+// NewMockPresigner creates a new mock instance.
+func NewMockPresigner(ctrl *gomock.Controller) *MockPresigner {
+	mock := &MockPresigner{ctrl: ctrl}
+	mock.recorder = &MockPresignerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPresigner) EXPECT() *MockPresignerMockRecorder {
+	return m.recorder
+}
+
+// PresignGetObject mocks base method.
+func (m *MockPresigner) PresignGetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*v4.PresignedHTTPRequest, error) {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, params}
+	for _, a := range optFns {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PresignGetObject", varargs...)
+	ret0, _ := ret[0].(*v4.PresignedHTTPRequest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PresignGetObject indicates an expected call of PresignGetObject.
+func (mr *MockPresignerMockRecorder) PresignGetObject(ctx, params any, optFns ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, params}, optFns...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignGetObject", reflect.TypeOf((*MockPresigner)(nil).PresignGetObject), varargs...)
 }

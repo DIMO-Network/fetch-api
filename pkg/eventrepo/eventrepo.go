@@ -15,6 +15,8 @@ import (
 	chindexer "github.com/DIMO-Network/cloudevent/clickhouse"
 	"github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/volatiletech/sqlboiler/v4/drivers"
 	"github.com/volatiletech/sqlboiler/v4/queries"
@@ -30,6 +32,7 @@ const tagsColumn = "JSONExtract(extras, 'tags', 'Array(String)')"
 // Service manages and retrieves data messages from indexed objects in S3.
 type Service struct {
 	objGetter ObjectGetter
+	presigner Presigner
 	chConn    clickhouse.Conn
 	// parquetBucket is the object storage bucket for Iceberg Parquet files.
 	parquetBucket string
@@ -46,13 +49,41 @@ type ObjectGetter interface {
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 }
 
+// Presigner generates presigned S3 GET URLs.
+type Presigner interface {
+	PresignGetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
+}
+
+// BlobKeyPrefix is the S3 key prefix used for large binary blob objects.
+// Keys with this prefix are served via presigned URL instead of inline in the response.
+const BlobKeyPrefix = "cloudevent/blobs/"
+
+// presignTTL is the lifetime of generated presigned S3 URLs.
+const presignTTL = 15 * time.Minute
+
 // New creates a new instance of Service.
-func New(chConn clickhouse.Conn, objGetter ObjectGetter, parquetBucket string) *Service {
+func New(chConn clickhouse.Conn, objGetter ObjectGetter, presigner Presigner, parquetBucket string) *Service {
 	return &Service{
 		objGetter:     objGetter,
+		presigner:     presigner,
 		chConn:        chConn,
 		parquetBucket: parquetBucket,
 	}
+}
+
+// PresignBlobURL returns a short-lived presigned GET URL for the given S3 key and bucket.
+func (s *Service) PresignBlobURL(ctx context.Context, key, bucket string) (string, error) {
+	if s.presigner == nil {
+		return "", fmt.Errorf("presigner not configured")
+	}
+	req, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(presignTTL))
+	if err != nil {
+		return "", fmt.Errorf("presign %s/%s: %w", bucket, key, err)
+	}
+	return req.URL, nil
 }
 
 // GetLatestIndex returns the latest cloud event index that matches the given options.

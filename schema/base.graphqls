@@ -18,6 +18,8 @@ type CloudEvent {
   data: JSON
   """Base64-encoded payload when present. Omitted if not requested."""
   dataBase64: String
+  """Presigned S3 URL for large blob payloads. Set instead of data/dataBase64 when the object key has the blob prefix."""
+  dataUrl: String
 }
 
 """
