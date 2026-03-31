@@ -51,7 +51,7 @@ type ComplexityRoot struct {
 	CloudEvent struct {
 		Data       func(childComplexity int) int
 		DataBase64 func(childComplexity int) int
-		DataUrl    func(childComplexity int) int
+		DataURL    func(childComplexity int) int
 		Header     func(childComplexity int) int
 	}
 
@@ -95,7 +95,6 @@ type CloudEventResolver interface {
 	Header(ctx context.Context, obj *CloudEventWrapper) (*cloudevent.CloudEventHeader, error)
 	Data(ctx context.Context, obj *CloudEventWrapper) (RawJSON, error)
 	DataBase64(ctx context.Context, obj *CloudEventWrapper) (*string, error)
-	DataUrl(ctx context.Context, obj *CloudEventWrapper) (*string, error)
 }
 type QueryResolver interface {
 	LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error)
@@ -137,11 +136,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.CloudEvent.DataBase64(childComplexity), true
 	case "CloudEvent.dataUrl":
-		if e.complexity.CloudEvent.DataUrl == nil {
+		if e.complexity.CloudEvent.DataURL == nil {
 			break
 		}
 
-		return e.complexity.CloudEvent.DataUrl(childComplexity), true
+		return e.complexity.CloudEvent.DataURL(childComplexity), true
 	case "CloudEvent.header":
 		if e.complexity.CloudEvent.Header == nil {
 			break
@@ -794,10 +793,10 @@ func (ec *executionContext) _CloudEvent_dataUrl(ctx context.Context, field graph
 		field,
 		ec.fieldContext_CloudEvent_dataUrl,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CloudEvent().DataUrl(ctx, obj)
+			return obj.DataURL, nil
 		},
 		nil,
-		ec.marshalOString2ᚖstring,
+		ec.marshalOString2string,
 		true,
 		false,
 	)
@@ -807,8 +806,8 @@ func (ec *executionContext) fieldContext_CloudEvent_dataUrl(_ context.Context, f
 	fc = &graphql.FieldContext{
 		Object:     "CloudEvent",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -3356,38 +3355,7 @@ func (ec *executionContext) _CloudEvent(ctx context.Context, sel ast.SelectionSe
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "dataUrl":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CloudEvent_dataUrl(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._CloudEvent_dataUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -42,14 +42,6 @@ func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrap
 	return &obj.Raw.DataBase64, nil
 }
 
-// DataUrl is the resolver for the dataUrl field. Returns a presigned S3 URL for blob payloads.
-func (r *cloudEventResolver) DataUrl(ctx context.Context, obj *CloudEventWrapper) (*string, error) {
-	if obj == nil || obj.DataURL == "" {
-		return nil, nil
-	}
-	return &obj.DataURL, nil
-}
-
 // LatestIndex is the resolver for the latestIndex field.
 func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
