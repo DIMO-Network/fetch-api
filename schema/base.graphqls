@@ -18,6 +18,8 @@ type CloudEvent {
   data: JSON
   """Base64-encoded payload when present. Omitted if not requested."""
   dataBase64: String
+  """Presigned S3 URL for large binary payloads. Populated instead of data/dataBase64 for large files."""
+  dataUrl: String
 }
 
 """

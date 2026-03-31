@@ -9,10 +9,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
+	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 )
 
 // Header is the resolver for the header field. Returns a pointer into the wrapped event; no copy.
@@ -83,6 +85,17 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
+	if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
+		if len(r.Buckets) == 0 {
+			return nil, errors.New("no buckets configured")
+		}
+		url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key, r.Buckets[0])
+		if err != nil {
+			return nil, err
+		}
+		hdr := idx.CloudEventHeader
+		return &CloudEventWrapper{Raw: &cloudevent.RawEvent{CloudEventHeader: hdr}, DataURL: url}, nil
+	}
 	ce, err := fetch.GetCloudEventFromIndex(ctx, r.EventService, &idx, r.Buckets)
 	if err != nil {
 		return nil, err
@@ -103,14 +116,39 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 		}
 		return nil, err
 	}
-	events, err := fetch.ListCloudEventsFromIndexes(ctx, r.EventService, list, r.Buckets)
-	if err != nil {
-		return nil, err
+
+	out := make([]*CloudEventWrapper, len(list))
+	var nonBlobIdxs []cloudevent.CloudEvent[eventrepo.ObjectInfo]
+	var nonBlobPos []int
+
+	for i, idx := range list {
+		if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
+			if len(r.Buckets) == 0 {
+				return nil, errors.New("no buckets configured")
+			}
+			url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key, r.Buckets[0])
+			if err != nil {
+				return nil, err
+			}
+			hdr := idx.CloudEventHeader
+			out[i] = &CloudEventWrapper{Raw: &cloudevent.RawEvent{CloudEventHeader: hdr}, DataURL: url}
+		} else {
+			nonBlobIdxs = append(nonBlobIdxs, idx)
+			nonBlobPos = append(nonBlobPos, i)
+		}
 	}
-	out := make([]*CloudEventWrapper, len(events))
-	for i := range events {
-		out[i] = &CloudEventWrapper{Raw: &events[i]}
+
+	if len(nonBlobIdxs) > 0 {
+		events, err := fetch.ListCloudEventsFromIndexes(ctx, r.EventService, nonBlobIdxs, r.Buckets)
+		if err != nil {
+			return nil, err
+		}
+		for j := range events {
+			ev := events[j]
+			out[nonBlobPos[j]] = &CloudEventWrapper{Raw: &ev}
+		}
 	}
+
 	return out, nil
 }
 

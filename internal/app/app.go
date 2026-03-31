@@ -14,6 +14,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/limits"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/DIMO-Network/server-garage/pkg/gql/errorhandler"
 	gqlmetrics "github.com/DIMO-Network/server-garage/pkg/gql/metrics"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
@@ -42,7 +43,7 @@ func New(settings config.Settings) (*App, error) {
 	}
 	s3Client := s3ClientFromSettings(&settings)
 	buckets := []string{settings.CloudEventBucket, settings.EphemeralBucket, settings.ParquetBucket}
-	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
+	eventService := eventrepo.New(chConn, s3Client, s3.NewPresignClient(s3Client), settings.ParquetBucket)
 
 	var identityClient identity.Client
 	if settings.IdentityAPIURL != "" {
@@ -118,7 +119,7 @@ func CreateGRPCServer(logger *zerolog.Logger, settings *config.Settings) (*grpc.
 	}
 
 	s3Client := s3ClientFromSettings(settings)
-	eventService := eventrepo.New(chConn, s3Client, settings.ParquetBucket)
+	eventService := eventrepo.New(chConn, s3Client, s3.NewPresignClient(s3Client), settings.ParquetBucket)
 
 	rpcServer := rpc.NewServer([]string{settings.CloudEventBucket, settings.EphemeralBucket, settings.ParquetBucket}, eventService)
 

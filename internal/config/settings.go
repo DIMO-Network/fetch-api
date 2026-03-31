@@ -7,13 +7,13 @@ import (
 
 // Settings contains the application config.
 type Settings struct {
-	Port                      int    `yaml:"PORT"`
-	MonPort                   int    `yaml:"MON_PORT"`
-	GRPCPort                  int    `yaml:"GRPC_PORT"`
-	EnablePprof               bool   `yaml:"ENABLE_PPROF"`
-	MaxRequestDuration        string `yaml:"MAX_REQUEST_DURATION"`
-	TokenExchangeJWTKeySetURL string `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
-	TokenExchangeIssuer       string `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
+	Port                      int             `yaml:"PORT"`
+	MonPort                   int             `yaml:"MON_PORT"`
+	GRPCPort                  int             `yaml:"GRPC_PORT"`
+	EnablePprof               bool            `yaml:"ENABLE_PPROF"`
+	MaxRequestDuration        string          `yaml:"MAX_REQUEST_DURATION"`
+	TokenExchangeJWTKeySetURL string          `yaml:"TOKEN_EXCHANGE_JWK_KEY_SET_URL"`
+	TokenExchangeIssuer       string          `yaml:"TOKEN_EXCHANGE_ISSUER_URL"`
 	CloudEventBucket          string          `yaml:"CLOUDEVENT_BUCKET"`
 	EphemeralBucket           string          `yaml:"EPHEMERAL_BUCKET"`
 	ParquetBucket             string          `yaml:"PARQUET_BUCKET"`
