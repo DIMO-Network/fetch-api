@@ -20,13 +20,13 @@ func TestPresignBlobURL(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockPresigner := NewMockPresigner(ctrl)
 
-	svc := eventrepo.New(nil, nil, mockPresigner, "")
-
 	const (
 		bucket      = "test-bucket"
 		key         = "cloudevent/blobs/some-scan.bin"
 		expectedURL = "https://s3.amazonaws.com/test-bucket/cloudevent/blobs/some-scan.bin?X-Amz-Signature=abc123"
 	)
+
+	svc := eventrepo.New(nil, nil, mockPresigner, bucket)
 
 	mockPresigner.EXPECT().
 		PresignGetObject(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -44,7 +44,7 @@ func TestPresignBlobURL(t *testing.T) {
 			return &v4.PresignedHTTPRequest{URL: expectedURL}, nil
 		})
 
-	url, err := svc.PresignBlobURL(context.Background(), key, bucket)
+	url, err := svc.PresignBlobURL(context.Background(), key)
 	require.NoError(t, err)
 	assert.Equal(t, expectedURL, url)
 }
@@ -54,21 +54,33 @@ func TestPresignBlobURL_PresignerError(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	mockPresigner := NewMockPresigner(ctrl)
 
-	svc := eventrepo.New(nil, nil, mockPresigner, "")
+	svc := eventrepo.New(nil, nil, mockPresigner, "test-bucket")
 
 	mockPresigner.EXPECT().
 		PresignGetObject(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(nil, fmt.Errorf("signing failure"))
 
-	_, err := svc.PresignBlobURL(context.Background(), "cloudevent/blobs/test.bin", "test-bucket")
+	_, err := svc.PresignBlobURL(context.Background(), "cloudevent/blobs/test.bin")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "signing failure")
 }
 
 func TestPresignBlobURL_NilPresigner(t *testing.T) {
 	t.Parallel()
-	svc := eventrepo.New(nil, nil, nil, "")
+	svc := eventrepo.New(nil, nil, nil, "test-bucket")
 
-	_, err := svc.PresignBlobURL(context.Background(), "cloudevent/blobs/test.bin", "test-bucket")
+	_, err := svc.PresignBlobURL(context.Background(), "cloudevent/blobs/test.bin")
 	require.Error(t, err)
+}
+
+func TestPresignBlobURL_NoBucket(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	mockPresigner := NewMockPresigner(ctrl)
+
+	svc := eventrepo.New(nil, nil, mockPresigner, "")
+
+	_, err := svc.PresignBlobURL(context.Background(), "cloudevent/blobs/test.bin")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "parquet bucket not configured")
 }

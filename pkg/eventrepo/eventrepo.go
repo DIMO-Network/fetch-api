@@ -71,17 +71,20 @@ func New(chConn clickhouse.Conn, objGetter ObjectGetter, presigner Presigner, pa
 	}
 }
 
-// PresignBlobURL returns a short-lived presigned GET URL for the given S3 key and bucket.
-func (s *Service) PresignBlobURL(ctx context.Context, key, bucket string) (string, error) {
+// PresignBlobURL returns a short-lived presigned GET URL for the given S3 key in the parquet bucket.
+func (s *Service) PresignBlobURL(ctx context.Context, key string) (string, error) {
 	if s.presigner == nil {
 		return "", fmt.Errorf("presigner not configured")
 	}
+	if s.parquetBucket == "" {
+		return "", fmt.Errorf("parquet bucket not configured")
+	}
 	req, err := s.presigner.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
+		Bucket: aws.String(s.parquetBucket),
 		Key:    aws.String(key),
 	}, s3.WithPresignExpires(presignTTL))
 	if err != nil {
-		return "", fmt.Errorf("presign %s/%s: %w", bucket, key, err)
+		return "", fmt.Errorf("presign %s/%s: %w", s.parquetBucket, key, err)
 	}
 	return req.URL, nil
 }

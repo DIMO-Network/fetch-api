@@ -86,10 +86,7 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 		return nil, err
 	}
 	if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
-		if len(r.Buckets) == 0 {
-			return nil, errors.New("no buckets configured")
-		}
-		url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key, r.Buckets[0])
+		url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key)
 		if err != nil {
 			return nil, err
 		}
@@ -123,10 +120,7 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 
 	for i, idx := range list {
 		if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
-			if len(r.Buckets) == 0 {
-				return nil, errors.New("no buckets configured")
-			}
-			url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key, r.Buckets[0])
+			url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key)
 			if err != nil {
 				return nil, err
 			}
