@@ -20,8 +20,8 @@ github.com/DIMO-Network/cloudevent v0.2.5 h1:3s6ZKtBXHYy0ujMYBdOBF9uJAc5C+EKEF7/
 github.com/DIMO-Network/cloudevent v0.2.5/go.mod h1:zFG6pf7ejwC0y3//mHpISDHR/blsSz8Lew2c4ebc8Lw=
 github.com/DIMO-Network/server-garage v0.0.7 h1:kOBVyOtIbxa1x9pAf1epABTb9l/U3khf0PwUaHeHiKs=
 github.com/DIMO-Network/server-garage v0.0.7/go.mod h1:7DFor8MMJ8fLv9EB16Z5LrN+ftW3qeIk+swpkT7F2cU=
-github.com/DIMO-Network/shared v1.1.5 h1:cRI3BbeYOgolMkeBOSqbDVGxymnDfeP/q7xgIXJ5MkY=
-github.com/DIMO-Network/shared v1.1.5/go.mod h1:lDHUKwwT2LW6Zvd42Nb33dXklRNTmfyOlbUNx2dQfGY=
+github.com/DIMO-Network/shared v1.1.6 h1:KXGLO4Gh3xMNtZyzspiDhD5I0jJ+RivOQUBVIe7FXDQ=
+github.com/DIMO-Network/shared v1.1.6/go.mod h1:lDHUKwwT2LW6Zvd42Nb33dXklRNTmfyOlbUNx2dQfGY=
 github.com/DIMO-Network/token-exchange-api v0.4.0 h1:EayDrw9VdyAfc6rbpdnDxFhlN3lMhbonUJoouKZu35g=
 github.com/DIMO-Network/token-exchange-api v0.4.0/go.mod h1:cldgAyDGLMNk3YIf2mr6vGohcO0ANlZ88fCbI+v/wEY=
 github.com/DIMO-Network/yaml v0.1.0 h1:KQ3oKHUZETchR6Pxbmmol3e4ewrPv/q8cEwqxfwyZbU=

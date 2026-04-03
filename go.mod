@@ -8,7 +8,7 @@ require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
 	github.com/DIMO-Network/cloudevent v0.2.5
 	github.com/DIMO-Network/server-garage v0.0.7
-	github.com/DIMO-Network/shared v1.1.5
+	github.com/DIMO-Network/shared v1.1.6
 	github.com/DIMO-Network/token-exchange-api v0.4.0
 	github.com/auth0/go-jwt-middleware/v2 v2.2.2
 	github.com/aws/aws-sdk-go-v2 v1.38.3
