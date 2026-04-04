@@ -26,6 +26,7 @@ type Resolver struct {
 	IdentityClient identity.Client
 }
 
+// TODO(elffjs): Shouldn't these be Errors?
 const (
 	errNoTokenClaims     = "unauthorized: no token claims"
 	errNoPermission      = "unauthorized: token does not have required permission for this operation"
