@@ -68,20 +68,22 @@ func requireRawDataToken(ctx context.Context) (*tokenclaims.Token, error) {
 // ensureRequestedDIDLinkedToPermissionedSubject verifies the client-requested DID is allowed by the token.
 // requestedDID: the DID from the query (e.g. cloudEvents(did: "...")).
 // tokenSubjectDID: the DID the JWT grants access to (tok.Asset).
-func (r *queryResolver) ensureRequestedDIDLinkedToPermissionedSubject(ctx context.Context, requestedDID string, tokenSubjectDID string) (cloudevent.ERC721DID, error) {
+func (r *queryResolver) ensureRequestedDIDLinkedToPermissionedSubject(ctx context.Context, requestedDID string, tokenSubjectDID string) (string, error) {
+	// Direct match works for any DID format (did:ethr, did:erc721, etc.).
+	if requestedDID == tokenSubjectDID {
+		return requestedDID, nil
+	}
+	// Device-resolution path requires an ERC721 DID.
 	requestedDIDParsed, err := cloudevent.DecodeERC721DID(requestedDID)
 	if err != nil {
-		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
-	}
-	if requestedDID == tokenSubjectDID {
-		return requestedDIDParsed, nil
+		return "", fmt.Errorf("%s", errNoAccessToSubject)
 	}
 	if r.IdentityClient == nil {
-		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
+		return "", fmt.Errorf("%s", errNoAccessToSubject)
 	}
 	linkedDID, err := r.IdentityClient.GetLinkedDIDForDevice(ctx, requestedDIDParsed.String())
 	if err != nil || linkedDID != tokenSubjectDID {
-		return cloudevent.ERC721DID{}, fmt.Errorf("%s", errNoAccessToSubject)
+		return "", fmt.Errorf("%s", errNoAccessToSubject)
 	}
-	return requestedDIDParsed, nil
+	return requestedDIDParsed.String(), nil
 }

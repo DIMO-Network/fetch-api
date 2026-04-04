@@ -9,10 +9,10 @@ import (
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// filterToSearchOptions converts GraphQL filter and tokenID to grpc.SearchOptions.
-func filterToSearchOptions(filter *model.CloudEventFilter, subject cloudevent.ERC721DID) *grpc.SearchOptions {
+// filterToSearchOptions converts GraphQL filter and subject DID to grpc.SearchOptions.
+func filterToSearchOptions(filter *model.CloudEventFilter, subject string) *grpc.SearchOptions {
 	opts := &grpc.SearchOptions{
-		Subject: &wrapperspb.StringValue{Value: subject.String()},
+		Subject: &wrapperspb.StringValue{Value: subject},
 	}
 	if filter == nil {
 		return opts

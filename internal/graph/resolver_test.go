@@ -144,6 +144,60 @@ func (s *stubIdentityClient) GetLinkedDIDForDevice(_ context.Context, _ string) 
 	return s.vehicleDID, s.err
 }
 
+func TestRequireSubjectOptsByDID_EthrDID(t *testing.T) {
+	const ethrDID = "did:ethr:137:0xabcdef1234567890abcdef1234567890abcdef12"
+	const otherEthrDID = "did:ethr:137:0x1111111111111111111111111111111111111111"
+
+	t.Run("ethr token + same ethr query DID allowed", func(t *testing.T) {
+		ctx := contextWithToken(ethrDID, tokenclaims.PermissionGetRawData)
+		r := &Resolver{}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, ethrDID, nil)
+		require.NoError(t, err)
+		require.NotNil(t, opts)
+		require.NotNil(t, opts.Subject)
+		assert.Equal(t, ethrDID, opts.Subject.Value)
+	})
+
+	t.Run("ethr token + different ethr query DID denied", func(t *testing.T) {
+		ctx := contextWithToken(ethrDID, tokenclaims.PermissionGetRawData)
+		r := &Resolver{}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, otherEthrDID, nil)
+		require.Error(t, err)
+		assert.Nil(t, opts)
+		assert.Contains(t, err.Error(), "does not have access to this subject")
+	})
+
+	t.Run("ethr token + erc721 query DID denied (device resolution returns vehicle DID, not ethr DID)", func(t *testing.T) {
+		vehicleDID := cloudevent.ERC721DID{
+			ChainID:         137,
+			ContractAddress: common.HexToAddress("0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+			TokenID:         big.NewInt(1),
+		}.String()
+		ctx := contextWithToken(ethrDID, tokenclaims.PermissionGetRawData)
+		// Identity-api returns a vehicle DID, not the ethr DID — so linkedDID != tokenSubjectDID.
+		r := &Resolver{
+			IdentityClient: &stubIdentityClient{vehicleDID: vehicleDID},
+		}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, vehicleDID, nil)
+		require.Error(t, err)
+		assert.Nil(t, opts)
+		assert.Contains(t, err.Error(), "does not have access to this subject")
+	})
+
+	t.Run("ethr token without required permission denied", func(t *testing.T) {
+		ctx := contextWithToken(ethrDID)
+		r := &Resolver{}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, ethrDID, nil)
+		require.Error(t, err)
+		assert.Nil(t, opts)
+		assert.Contains(t, err.Error(), "required permission for this operation")
+	})
+}
+
 func TestRequireVehicleOptsByDID_DeviceDID(t *testing.T) {
 	vehicleAddr := common.HexToAddress("0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 	vehicleDID := cloudevent.ERC721DID{
