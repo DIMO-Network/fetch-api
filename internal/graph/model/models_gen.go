@@ -10,8 +10,10 @@ import (
 
 // Filter for cloud event queries.
 type CloudEventFilter struct {
-	ID          *string    `json:"id,omitempty"`
-	Type        *string    `json:"type,omitempty"`
+	ID   *string `json:"id,omitempty"`
+	Type *string `json:"type,omitempty"`
+	// List of event types to match (OR semantics). Combined with `type` if both are set.
+	Types       []string   `json:"types,omitempty"`
 	Dataversion *string    `json:"dataversion,omitempty"`
 	Source      *string    `json:"source,omitempty"`
 	Producer    *string    `json:"producer,omitempty"`

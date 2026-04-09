@@ -6,31 +6,38 @@ import (
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
-// filterToSearchOptions converts GraphQL filter and subject DID to grpc.SearchOptions.
-func filterToSearchOptions(filter *model.CloudEventFilter, subject string) *grpc.SearchOptions {
-	opts := &grpc.SearchOptions{
-		Subject: &wrapperspb.StringValue{Value: subject},
+// filterToAdvancedSearchOptions converts a GraphQL filter and subject DID directly to
+// grpc.AdvancedSearchOptions. The type and types fields are unioned: if both are set,
+// results match events whose type is any of the combined values.
+func filterToAdvancedSearchOptions(filter *model.CloudEventFilter, subject string) *grpc.AdvancedSearchOptions {
+	opts := &grpc.AdvancedSearchOptions{
+		Subject: &grpc.StringFilterOption{In: []string{subject}},
 	}
 	if filter == nil {
 		return opts
 	}
-	if filter.ID != nil {
-		opts.Id = &wrapperspb.StringValue{Value: *filter.ID}
-	}
+	// Merge type (single) and types (list) with OR semantics.
+	var allTypes []string
 	if filter.Type != nil {
-		opts.Type = &wrapperspb.StringValue{Value: *filter.Type}
+		allTypes = append(allTypes, *filter.Type)
+	}
+	allTypes = append(allTypes, filter.Types...)
+	if len(allTypes) > 0 {
+		opts.Type = &grpc.StringFilterOption{In: allTypes}
+	}
+	if filter.ID != nil {
+		opts.Id = &grpc.StringFilterOption{In: []string{*filter.ID}}
 	}
 	if filter.Dataversion != nil {
-		opts.DataVersion = &wrapperspb.StringValue{Value: *filter.Dataversion}
+		opts.DataVersion = &grpc.StringFilterOption{In: []string{*filter.Dataversion}}
 	}
 	if filter.Source != nil {
-		opts.Source = &wrapperspb.StringValue{Value: *filter.Source}
+		opts.Source = &grpc.StringFilterOption{In: []string{*filter.Source}}
 	}
 	if filter.Producer != nil {
-		opts.Producer = &wrapperspb.StringValue{Value: *filter.Producer}
+		opts.Producer = &grpc.StringFilterOption{In: []string{*filter.Producer}}
 	}
 	if filter.Before != nil {
 		opts.Before = timestamppb.New(*filter.Before)

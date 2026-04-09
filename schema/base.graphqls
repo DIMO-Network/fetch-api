@@ -93,11 +93,13 @@ type CloudEventIndex {
 }
 
 """
-Filter for cloud event queries. 
+Filter for cloud event queries.
 """
 input CloudEventFilter {
   id: String
   type: String
+  """List of event types to match (OR semantics). Combined with `type` if both are set."""
+  types: [String!]
   dataversion: String
   source: String
   producer: String

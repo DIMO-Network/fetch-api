@@ -501,11 +501,13 @@ type CloudEventIndex {
 }
 
 """
-Filter for cloud event queries. 
+Filter for cloud event queries.
 """
 input CloudEventFilter {
   id: String
   type: String
+  """List of event types to match (OR semantics). Combined with ` + "`" + `type` + "`" + ` if both are set."""
+  types: [String!]
   dataversion: String
   source: String
   producer: String
@@ -3171,7 +3173,7 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "type", "dataversion", "source", "producer", "before", "after"}
+	fieldsInOrder := [...]string{"id", "type", "types", "dataversion", "source", "producer", "before", "after"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3192,6 +3194,13 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 				return it, err
 			}
 			it.Type = data
+		case "types":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("types"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Types = data
 		case "dataversion":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dataversion"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
@@ -4667,6 +4676,42 @@ func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.S
 	_ = ctx
 	res := graphql.MarshalString(v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
