@@ -33,10 +33,10 @@ const (
 	errNoAccessToSubject = "unauthorized: token does not have access to this subject"
 )
 
-// requireSubjectOptsByDID validates raw-data access and returns search options for the DID.
+// requireSubjectOptsByDID validates raw-data access and returns advanced search options for the DID.
 // requestedDID: the DID from the client (e.g. cloudEvents(did: "...")).
 // tokenSubjectDID: the DID the JWT grants access to (tok.Asset).
-func (r *queryResolver) requireSubjectOptsByDID(ctx context.Context, requestedDID string, filter *model.CloudEventFilter) (*grpc.SearchOptions, error) {
+func (r *queryResolver) requireSubjectOptsByDID(ctx context.Context, requestedDID string, filter *model.CloudEventFilter) (*grpc.AdvancedSearchOptions, error) {
 	token, err := requireRawDataToken(ctx)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (r *queryResolver) requireSubjectOptsByDID(ctx context.Context, requestedDI
 	if err != nil {
 		return nil, err
 	}
-	return filterToSearchOptions(filter, searchSubject), nil
+	return filterToAdvancedSearchOptions(filter, searchSubject), nil
 }
 
 // requireRawDataToken returns the token if the context has claims and the token has raw-data permission.

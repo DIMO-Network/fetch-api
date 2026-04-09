@@ -31,10 +31,10 @@ func TestRequireVehicleOptsByDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		require.NotNil(t, opts.Subject)
-		assert.Equal(t, didStr, opts.Subject.Value)
+		assert.Equal(t, []string{didStr}, opts.Subject.In)
 	})
 
-	t.Run("applies filter to search options", func(t *testing.T) {
+	t.Run("applies single type filter to search options", func(t *testing.T) {
 		ctx := contextWithToken(didStr, tokenclaims.PermissionGetRawData)
 		filter := &model.CloudEventFilter{
 			Type: ptr("dimo.status"),
@@ -45,8 +45,37 @@ func TestRequireVehicleOptsByDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		require.NotNil(t, opts.Type)
-		assert.Equal(t, "dimo.status", opts.Type.Value)
-		assert.Equal(t, didStr, opts.Subject.Value)
+		assert.Equal(t, []string{"dimo.status"}, opts.Type.In)
+		assert.Equal(t, []string{didStr}, opts.Subject.In)
+	})
+
+	t.Run("applies types array filter to search options", func(t *testing.T) {
+		ctx := contextWithToken(didStr, tokenclaims.PermissionGetRawData)
+		filter := &model.CloudEventFilter{
+			Types: []string{"dimo.status", "dimo.fingerprint"},
+		}
+		r := &Resolver{}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, didStr, filter)
+		require.NoError(t, err)
+		require.NotNil(t, opts)
+		require.NotNil(t, opts.Type)
+		assert.Equal(t, []string{"dimo.status", "dimo.fingerprint"}, opts.Type.In)
+	})
+
+	t.Run("unions type and types when both set", func(t *testing.T) {
+		ctx := contextWithToken(didStr, tokenclaims.PermissionGetRawData)
+		filter := &model.CloudEventFilter{
+			Type:  ptr("dimo.status"),
+			Types: []string{"dimo.fingerprint", "dimo.attestation"},
+		}
+		r := &Resolver{}
+		q := &queryResolver{r}
+		opts, err := q.requireSubjectOptsByDID(ctx, didStr, filter)
+		require.NoError(t, err)
+		require.NotNil(t, opts)
+		require.NotNil(t, opts.Type)
+		assert.Equal(t, []string{"dimo.status", "dimo.fingerprint", "dimo.attestation"}, opts.Type.In)
 	})
 
 	t.Run("unauthorized when token does not match DID", func(t *testing.T) {
@@ -90,7 +119,7 @@ func TestRequireVehicleOptsByDID(t *testing.T) {
 		opts, err := q.requireSubjectOptsByDID(ctx, didStr, nil)
 		require.NoError(t, err)
 		require.NotNil(t, opts)
-		assert.Equal(t, didStr, opts.Subject.Value)
+		assert.Equal(t, []string{didStr}, opts.Subject.In)
 	})
 
 	t.Run("only GetLocationHistory without GetNonLocationHistory denied", func(t *testing.T) {
@@ -156,7 +185,7 @@ func TestRequireSubjectOptsByDID_EthrDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		require.NotNil(t, opts.Subject)
-		assert.Equal(t, ethrDID, opts.Subject.Value)
+		assert.Equal(t, []string{ethrDID}, opts.Subject.In)
 	})
 
 	t.Run("ethr token + different ethr query DID denied", func(t *testing.T) {
@@ -223,7 +252,7 @@ func TestRequireVehicleOptsByDID_DeviceDID(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, opts)
 		// Subject must be the device DID, not the vehicle DID.
-		assert.Equal(t, deviceDID, opts.Subject.Value)
+		assert.Equal(t, []string{deviceDID}, opts.Subject.In)
 	})
 
 	t.Run("device DID with no identity client returns error", func(t *testing.T) {

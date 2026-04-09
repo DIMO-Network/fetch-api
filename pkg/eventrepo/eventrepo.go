@@ -199,8 +199,11 @@ type CloudEventTypeSummary struct {
 
 // GetCloudEventTypeSummaries returns per-type counts and time ranges for the given search options.
 func (s *Service) GetCloudEventTypeSummaries(ctx context.Context, opts *grpc.SearchOptions) ([]CloudEventTypeSummary, error) {
-	advancedOpts := convertSearchOptionsToAdvanced(opts)
+	return s.GetCloudEventTypeSummariesAdvanced(ctx, convertSearchOptionsToAdvanced(opts))
+}
 
+// GetCloudEventTypeSummariesAdvanced returns event type summaries filtered by advanced search options.
+func (s *Service) GetCloudEventTypeSummariesAdvanced(ctx context.Context, advancedOpts *grpc.AdvancedSearchOptions) ([]CloudEventTypeSummary, error) {
 	mods := []qm.QueryMod{
 		qm.Select(
 			chindexer.TypeColumn,

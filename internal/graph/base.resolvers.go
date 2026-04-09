@@ -48,7 +48,7 @@ func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *mod
 	if err != nil {
 		return nil, err
 	}
-	idx, err := r.EventService.GetLatestIndex(ctx, opts)
+	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, fil
 	if err != nil {
 		return nil, err
 	}
-	list, err := r.EventService.ListIndexes(ctx, resolveLimit(limit), opts)
+	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return emptyCloudEventIndexList, nil
@@ -81,7 +81,7 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
-	idx, err := r.EventService.GetLatestIndex(ctx, opts)
+	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 	if err != nil {
 		return nil, err
 	}
-	list, err := r.EventService.ListIndexes(ctx, resolveLimit(limit), opts)
+	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return emptyCloudEventList, nil
@@ -152,7 +152,7 @@ func (r *queryResolver) AvailableCloudEventTypes(ctx context.Context, did string
 	if err != nil {
 		return nil, err
 	}
-	summaries, err := r.EventService.GetCloudEventTypeSummaries(ctx, opts)
+	summaries, err := r.EventService.GetCloudEventTypeSummariesAdvanced(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
