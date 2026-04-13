@@ -81,6 +81,7 @@ type CloudEventHeader {
   dataversion: String
   producer: String!
   signature: String
+  raweventid: String
   tags: [String!]!
 }
 

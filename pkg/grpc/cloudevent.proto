@@ -61,5 +61,7 @@ message CloudEventHeader {
 
   // Signature hold the signature of the a cloudevent's data field.
   string signature = 13;
-}
 
+  // RawEventID links a parsed event to the backing raw event when present.
+  string raw_event_id = 14;
+}

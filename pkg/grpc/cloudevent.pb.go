@@ -112,7 +112,9 @@ type CloudEventHeader struct {
 	// Tags are a list of tags that can be used to filter the events.
 	Tags []string `protobuf:"bytes,12,rep,name=tags,proto3" json:"tags,omitempty"`
 	// Signature hold the signature of the a cloudevent's data field.
-	Signature     string `protobuf:"bytes,13,opt,name=signature,proto3" json:"signature,omitempty"`
+	Signature string `protobuf:"bytes,13,opt,name=signature,proto3" json:"signature,omitempty"`
+	// RawEventID links a parsed event to the backing raw event when present.
+	RawEventId    string `protobuf:"bytes,14,opt,name=raw_event_id,json=rawEventId,proto3" json:"raw_event_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -238,6 +240,13 @@ func (x *CloudEventHeader) GetSignature() string {
 	return ""
 }
 
+func (x *CloudEventHeader) GetRawEventId() string {
+	if x != nil {
+		return x.RawEventId
+	}
+	return ""
+}
+
 var File_pkg_grpc_cloudevent_proto protoreflect.FileDescriptor
 
 const file_pkg_grpc_cloudevent_proto_rawDesc = "" +
@@ -247,7 +256,7 @@ const file_pkg_grpc_cloudevent_proto_rawDesc = "" +
 	"\n" +
 	"CloudEvent\x124\n" +
 	"\x06header\x18\x01 \x01(\v2\x1c.cloudevent.CloudEventHeaderR\x06header\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\xf6\x03\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\x98\x04\n" +
 	"\x10CloudEventHeader\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06source\x18\x02 \x01(\tR\x06source\x12\x1a\n" +
@@ -263,7 +272,9 @@ const file_pkg_grpc_cloudevent_proto_rawDesc = "" +
 	" \x01(\tR\vdataVersion\x12@\n" +
 	"\x06extras\x18\v \x03(\v2(.cloudevent.CloudEventHeader.ExtrasEntryR\x06extras\x12\x12\n" +
 	"\x04tags\x18\f \x03(\tR\x04tags\x12\x1c\n" +
-	"\tsignature\x18\r \x01(\tR\tsignature\x1a9\n" +
+	"\tsignature\x18\r \x01(\tR\tsignature\x12 \n" +
+	"\fraw_event_id\x18\x0e \x01(\tR\n" +
+	"rawEventId\x1a9\n" +
 	"\vExtrasEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\fR\x05value:\x028\x01B,Z*github.com/DIMO-Network/fetch-api/pkg/grpcb\x06proto3"

@@ -53,6 +53,7 @@ func (c *CloudEventHeader) AsCloudEventHeader() cloudevent.CloudEventHeader {
 		DataVersion:     c.GetDataVersion(),
 		Extras:          extras,
 		Signature:       c.GetSignature(),
+		RawEventID:      c.GetRawEventId(),
 		Tags:            TagsOrEmpty(c.GetTags()),
 	}
 }
@@ -84,6 +85,7 @@ func CloudEventHeaderToProto(event *cloudevent.CloudEventHeader) *CloudEventHead
 		DataVersion:     event.DataVersion,
 		Extras:          extras,
 		Signature:       event.Signature,
+		RawEventId:      event.RawEventID,
 		Tags:            TagsOrEmpty(event.Tags),
 	}
 }
