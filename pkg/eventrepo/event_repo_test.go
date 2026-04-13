@@ -399,6 +399,7 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 		DataVersion:     dataType,
 		SpecVersion:     cloudevent.SpecVersion,
 		Signature:       "0x1234567890",
+		RawEventID:      "raw-event-id-123",
 		Tags:            []string{"tests.tag1", "tests.tag2"},
 		Extras: map[string]any{
 			"extraField": "extra-value",
@@ -458,6 +459,7 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 		assert.Equal(t, fullHeaderEvent.DataVersion, retrievedEvent.DataVersion, "DataVersion mismatch")
 		assert.Equal(t, cloudevent.SpecVersion, retrievedEvent.SpecVersion, "SpecVersion mismatch")
 		assert.Equal(t, fullHeaderEvent.Signature, retrievedEvent.Signature, "Signature mismatch")
+		assert.Equal(t, fullHeaderEvent.RawEventID, retrievedEvent.RawEventID, "RawEventID mismatch")
 		assert.Equal(t, fullHeaderEvent.Tags, retrievedEvent.Tags, "Tags mismatch")
 
 		// Verify extras
@@ -491,6 +493,37 @@ func TestGetEventWithAllHeaderFields(t *testing.T) {
 		assert.Equal(t, fullHeaderEvent2.ID, retrievedEvent.ID, "ID mismatch")
 		assert.Equal(t, "0x09876543210", retrievedEvent.Signature, "Signature field not set correctly")
 		assert.Nil(t, retrievedEvent.Extras["signature"], "Signature should not be in extras")
+	})
+
+	t.Run("retrieve event with raw event id that is originally in extras", func(t *testing.T) {
+		fullHeaderEvent3 := fullHeaderEvent
+		fullHeaderEvent3.Subject = eventDID2.String()
+		fullHeaderEvent3.RawEventID = ""
+		fullHeaderEvent3.Extras = map[string]any{
+			"raweventid": "raw-event-id-from-extras",
+		}
+		indexKey3 := insertTestData(t, ctx, conn, &fullHeaderEvent3)
+
+		mockS3Client.EXPECT().GetObject(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+			func(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error) {
+				require.Equal(t, indexKey3, *params.Key)
+				return &s3.GetObjectOutput{
+					Body:          io.NopCloser(bytes.NewReader(eventDataEnvelope)),
+					ContentLength: ref(int64(len(eventDataEnvelope))),
+				}, nil
+			},
+		)
+		opts := &grpc.SearchOptions{
+			DataVersion: &wrapperspb.StringValue{Value: dataType},
+			Subject:     &wrapperspb.StringValue{Value: eventDID2.String()},
+		}
+
+		retrievedEvent, err := indexService.GetLatestCloudEvent(ctx, "test-bucket", opts)
+		require.NoError(t, err)
+
+		assert.Equal(t, fullHeaderEvent3.ID, retrievedEvent.ID, "ID mismatch")
+		assert.Equal(t, "raw-event-id-from-extras", retrievedEvent.RawEventID, "RawEventID field not set correctly")
+		assert.Nil(t, retrievedEvent.Extras["raweventid"], "RawEventID should not be in extras")
 	})
 }
 

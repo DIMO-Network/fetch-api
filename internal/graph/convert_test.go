@@ -22,6 +22,7 @@ func TestIndexToModel(t *testing.T) {
 				Type:            "dimo.status",
 				DataContentType: "application/json",
 				DataVersion:     "r/v0/s",
+				RawEventID:      "raw-event-123",
 			},
 			Data: eventrepo.ObjectInfo{Key: "s3://bucket/key"},
 		}
@@ -33,6 +34,7 @@ func TestIndexToModel(t *testing.T) {
 		assert.Equal(t, "dimo.status", out.Header.Type)
 		assert.Equal(t, "application/json", out.Header.DataContentType)
 		assert.Equal(t, "r/v0/s", out.Header.DataVersion)
+		assert.Equal(t, "raw-event-123", out.Header.RawEventID)
 		assert.Equal(t, "s3://bucket/key", out.IndexKey)
 	})
 
@@ -51,5 +53,6 @@ func TestIndexToModel(t *testing.T) {
 		assert.Empty(t, out.Header.DataContentType)
 		assert.Empty(t, out.Header.DataVersion)
 		assert.Empty(t, out.Header.Signature)
+		assert.Empty(t, out.Header.RawEventID)
 	})
 }

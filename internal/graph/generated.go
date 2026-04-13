@@ -61,6 +61,7 @@ type ComplexityRoot struct {
 		DataVersion     func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Producer        func(childComplexity int) int
+		RawEventID      func(childComplexity int) int
 		Signature       func(childComplexity int) int
 		Source          func(childComplexity int) int
 		SpecVersion     func(childComplexity int) int
@@ -178,6 +179,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.CloudEventHeader.Producer(childComplexity), true
+	case "CloudEventHeader.raweventid":
+		if e.complexity.CloudEventHeader.RawEventID == nil {
+			break
+		}
+
+		return e.complexity.CloudEventHeader.RawEventID(childComplexity), true
 	case "CloudEventHeader.signature":
 		if e.complexity.CloudEventHeader.Signature == nil {
 			break
@@ -489,6 +496,7 @@ type CloudEventHeader {
   dataversion: String
   producer: String!
   signature: String
+  raweventid: String
   tags: [String!]!
 }
 
@@ -721,6 +729,8 @@ func (ec *executionContext) fieldContext_CloudEvent_header(_ context.Context, fi
 				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "signature":
 				return ec.fieldContext_CloudEventHeader_signature(ctx, field)
+			case "raweventid":
+				return ec.fieldContext_CloudEventHeader_raweventid(ctx, field)
 			case "tags":
 				return ec.fieldContext_CloudEventHeader_tags(ctx, field)
 			}
@@ -1136,6 +1146,35 @@ func (ec *executionContext) fieldContext_CloudEventHeader_signature(_ context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _CloudEventHeader_raweventid(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CloudEventHeader_raweventid,
+		func(ctx context.Context) (any, error) {
+			return obj.RawEventID, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_CloudEventHeader_raweventid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CloudEventHeader",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CloudEventHeader_tags(ctx context.Context, field graphql.CollectedField, obj *cloudevent.CloudEventHeader) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1211,6 +1250,8 @@ func (ec *executionContext) fieldContext_CloudEventIndex_header(_ context.Contex
 				return ec.fieldContext_CloudEventHeader_producer(ctx, field)
 			case "signature":
 				return ec.fieldContext_CloudEventHeader_signature(ctx, field)
+			case "raweventid":
+				return ec.fieldContext_CloudEventHeader_raweventid(ctx, field)
 			case "tags":
 				return ec.fieldContext_CloudEventHeader_tags(ctx, field)
 			}
@@ -3442,6 +3483,8 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 			}
 		case "signature":
 			out.Values[i] = ec._CloudEventHeader_signature(ctx, field, obj)
+		case "raweventid":
+			out.Values[i] = ec._CloudEventHeader_raweventid(ctx, field, obj)
 		case "tags":
 			out.Values[i] = ec._CloudEventHeader_tags(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
