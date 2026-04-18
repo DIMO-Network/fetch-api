@@ -30,7 +30,6 @@ type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
 	CloudEvent() CloudEventResolver
-	CloudEventHeader() CloudEventHeaderResolver
 	Query() QueryResolver
 }
 
@@ -52,7 +51,7 @@ type ComplexityRoot struct {
 		DataVersion     func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Producer        func(childComplexity int) int
-		Raweventid      func(childComplexity int) int
+		RawEventID      func(childComplexity int) int
 		Signature       func(childComplexity int) int
 		Source          func(childComplexity int) int
 		SpecVersion     func(childComplexity int) int
@@ -87,9 +86,6 @@ type CloudEventResolver interface {
 	Header(ctx context.Context, obj *CloudEventWrapper) (*cloudevent.CloudEventHeader, error)
 	Data(ctx context.Context, obj *CloudEventWrapper) (RawJSON, error)
 	DataBase64(ctx context.Context, obj *CloudEventWrapper) (*string, error)
-}
-type CloudEventHeaderResolver interface {
-	Raweventid(ctx context.Context, obj *cloudevent.CloudEventHeader) (*string, error)
 }
 type QueryResolver interface {
 	LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error)
@@ -169,11 +165,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.CloudEventHeader.Producer(childComplexity), true
 	case "CloudEventHeader.raweventid":
-		if e.ComplexityRoot.CloudEventHeader.Raweventid == nil {
+		if e.ComplexityRoot.CloudEventHeader.RawEventID == nil {
 			break
 		}
 
-		return e.ComplexityRoot.CloudEventHeader.Raweventid(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.RawEventID(childComplexity), true
 	case "CloudEventHeader.signature":
 		if e.ComplexityRoot.CloudEventHeader.Signature == nil {
 			break
@@ -1150,10 +1146,10 @@ func (ec *executionContext) _CloudEventHeader_raweventid(ctx context.Context, fi
 		field,
 		ec.fieldContext_CloudEventHeader_raweventid,
 		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.CloudEventHeader().Raweventid(ctx, obj)
+			return obj.RawEventID, nil
 		},
 		nil,
-		ec.marshalOString2ᚖstring,
+		ec.marshalOString2string,
 		true,
 		false,
 	)
@@ -1163,8 +1159,8 @@ func (ec *executionContext) fieldContext_CloudEventHeader_raweventid(_ context.C
 	fc = &graphql.FieldContext{
 		Object:     "CloudEventHeader",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -3443,32 +3439,32 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 		case "specversion":
 			out.Values[i] = ec._CloudEventHeader_specversion(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "type":
 			out.Values[i] = ec._CloudEventHeader_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "source":
 			out.Values[i] = ec._CloudEventHeader_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "subject":
 			out.Values[i] = ec._CloudEventHeader_subject(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "id":
 			out.Values[i] = ec._CloudEventHeader_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "time":
 			out.Values[i] = ec._CloudEventHeader_time(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "datacontenttype":
 			out.Values[i] = ec._CloudEventHeader_datacontenttype(ctx, field, obj)
@@ -3479,47 +3475,16 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 		case "producer":
 			out.Values[i] = ec._CloudEventHeader_producer(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		case "signature":
 			out.Values[i] = ec._CloudEventHeader_signature(ctx, field, obj)
 		case "raweventid":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._CloudEventHeader_raweventid(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			out.Values[i] = ec._CloudEventHeader_raweventid(ctx, field, obj)
 		case "tags":
 			out.Values[i] = ec._CloudEventHeader_tags(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

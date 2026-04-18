@@ -42,14 +42,6 @@ func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrap
 	return &obj.Raw.DataBase64, nil
 }
 
-// Raweventid is the resolver for the raweventid field.
-func (r *cloudEventHeaderResolver) Raweventid(ctx context.Context, obj *cloudevent.CloudEventHeader) (*string, error) {
-	if obj == nil || obj.RawEventID == "" {
-		return nil, nil
-	}
-	return &obj.RawEventID, nil
-}
-
 // LatestIndex is the resolver for the latestIndex field.
 func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
@@ -179,12 +171,8 @@ func (r *queryResolver) AvailableCloudEventTypes(ctx context.Context, did string
 // CloudEvent returns CloudEventResolver implementation.
 func (r *Resolver) CloudEvent() CloudEventResolver { return &cloudEventResolver{r} }
 
-// CloudEventHeader returns CloudEventHeaderResolver implementation.
-func (r *Resolver) CloudEventHeader() CloudEventHeaderResolver { return &cloudEventHeaderResolver{r} }
-
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type cloudEventResolver struct{ *Resolver }
-type cloudEventHeaderResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
