@@ -1,5 +1,7 @@
 package graph
 
+//go:generate go run github.com/DIMO-Network/server-garage/cmd/mcpgen -schema ../../schema/ -prefix fetch -out mcp_tools_gen.go -package graph
+
 import (
 	"context"
 	"fmt"

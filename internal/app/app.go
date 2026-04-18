@@ -1,8 +1,10 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -17,6 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/DIMO-Network/server-garage/pkg/gql/errorhandler"
 	gqlmetrics "github.com/DIMO-Network/server-garage/pkg/gql/metrics"
+	"github.com/DIMO-Network/server-garage/pkg/mcpserver"
 	"github.com/DIMO-Network/shared/pkg/middleware/metrics"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
@@ -31,8 +34,9 @@ var AppName = "fetch-api"
 
 // App is the main application (GraphQL over net/http). gRPC is created separately via CreateGRPCServer.
 type App struct {
-	Handler http.Handler
-	cleanup  func()
+	Handler    http.Handler
+	MCPHandler http.Handler
+	cleanup    func()
 }
 
 // New creates a new application with GraphQL handler and middleware.
@@ -50,7 +54,8 @@ func New(settings config.Settings) (*App, error) {
 		identityClient = identity.New(settings.IdentityAPIURL)
 	}
 
-	gqlSrv := newGraphQLHandler(&settings, eventService, buckets, identityClient)
+	es := newExecutableSchema(eventService, buckets, identityClient)
+	gqlSrv := newGraphQLHandler(es)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
 	if err != nil {
@@ -66,21 +71,34 @@ func New(settings config.Settings) (*App, error) {
 		return nil, fmt.Errorf("couldn't create request time limit middleware: %w", err)
 	}
 
-	serverHandler := PanicRecoveryMiddleware(
-		LoggerMiddleware(
-			limiter.AddRequestTimeout(
-				jwtMiddleware.CheckJWT(
-					authLoggerMiddleware(
-						auth.AddClaimHandler(gqlSrv),
+	authChain := func(inner http.Handler) http.Handler {
+		return PanicRecoveryMiddleware(
+			LoggerMiddleware(
+				limiter.AddRequestTimeout(
+					jwtMiddleware.CheckJWT(
+						authLoggerMiddleware(
+							auth.AddClaimHandler(inner),
+						),
 					),
 				),
 			),
-		),
+		)
+	}
+
+	serverHandler := authChain(gqlSrv)
+
+	mcpHandler, err := mcpserver.New(context.Background(), mcpserver.NewGQLGenExecutor(es), "DIMO Fetch", "0.1.0", "fetch",
+		mcpserver.WithTools(graph.MCPTools),
+		mcpserver.WithCondensedSchema(graph.CondensedSchema),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create MCP handler: %w", err)
+	}
 
 	return &App{
-		Handler: serverHandler,
-		cleanup: func() {},
+		Handler:    serverHandler,
+		MCPHandler: authChain(mcpHandler),
+		cleanup:    func() {},
 	}, nil
 }
 
@@ -91,16 +109,19 @@ func (a *App) Cleanup() {
 	}
 }
 
-// newGraphQLHandler creates a configured gqlgen handler.Server.
-func newGraphQLHandler(settings *config.Settings, eventService *eventrepo.Service, buckets []string, identityClient identity.Client) *handler.Server {
+// newExecutableSchema builds the gqlgen ExecutableSchema shared by the GraphQL and MCP handlers.
+func newExecutableSchema(eventService *eventrepo.Service, buckets []string, identityClient identity.Client) graphql.ExecutableSchema {
 	resolver := &graph.Resolver{
 		EventService:   eventService,
 		Buckets:        buckets,
 		IdentityClient: identityClient,
 	}
+	return graph.NewExecutableSchema(graph.Config{Resolvers: resolver})
+}
 
-	cfg := graph.Config{Resolvers: resolver}
-	srv := handler.New(graph.NewExecutableSchema(cfg))
+// newGraphQLHandler creates a configured gqlgen handler.Server.
+func newGraphQLHandler(es graphql.ExecutableSchema) *handler.Server {
+	srv := handler.New(es)
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
