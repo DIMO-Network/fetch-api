@@ -1,7 +1,6 @@
 package app
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"github.com/99designs/gqlgen/graphql"
@@ -87,7 +86,7 @@ func New(settings config.Settings) (*App, error) {
 
 	serverHandler := authChain(gqlSrv)
 
-	mcpHandler, err := mcpserver.New(context.Background(), mcpserver.NewGQLGenExecutor(es), "DIMO Fetch", "0.1.0", "fetch",
+	mcpHandler, err := mcpserver.New(mcpserver.NewGQLGenExecutor(es), "DIMO Fetch", "0.1.0", "fetch",
 		mcpserver.WithTools(graph.MCPTools),
 		mcpserver.WithCondensedSchema(graph.CondensedSchema),
 	)
