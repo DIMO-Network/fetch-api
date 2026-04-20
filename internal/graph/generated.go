@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -24,20 +23,10 @@ import (
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
-	return &executableSchema{
-		schema:     cfg.Schema,
-		resolvers:  cfg.Resolvers,
-		directives: cfg.Directives,
-		complexity: cfg.Complexity,
-	}
+	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
 }
 
-type Config struct {
-	Schema     *ast.Schema
-	Resolvers  ResolverRoot
-	Directives DirectiveRoot
-	Complexity ComplexityRoot
-}
+type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
 	CloudEvent() CloudEventResolver
@@ -45,6 +34,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	McpHide func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -105,169 +95,164 @@ type QueryResolver interface {
 	AvailableCloudEventTypes(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.CloudEventTypeSummary, error)
 }
 
-type executableSchema struct {
-	schema     *ast.Schema
-	resolvers  ResolverRoot
-	directives DirectiveRoot
-	complexity ComplexityRoot
-}
+type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 func (e *executableSchema) Schema() *ast.Schema {
-	if e.schema != nil {
-		return e.schema
+	if e.SchemaData != nil {
+		return e.SchemaData
 	}
 	return parsedSchema
 }
 
 func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
-	ec := executionContext{nil, e, 0, 0, nil}
+	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
 
 	case "CloudEvent.data":
-		if e.complexity.CloudEvent.Data == nil {
+		if e.ComplexityRoot.CloudEvent.Data == nil {
 			break
 		}
 
-		return e.complexity.CloudEvent.Data(childComplexity), true
+		return e.ComplexityRoot.CloudEvent.Data(childComplexity), true
 	case "CloudEvent.dataBase64":
-		if e.complexity.CloudEvent.DataBase64 == nil {
+		if e.ComplexityRoot.CloudEvent.DataBase64 == nil {
 			break
 		}
 
-		return e.complexity.CloudEvent.DataBase64(childComplexity), true
+		return e.ComplexityRoot.CloudEvent.DataBase64(childComplexity), true
 	case "CloudEvent.dataUrl":
-		if e.complexity.CloudEvent.DataURL == nil {
+		if e.ComplexityRoot.CloudEvent.DataURL == nil {
 			break
 		}
 
-		return e.complexity.CloudEvent.DataURL(childComplexity), true
+		return e.ComplexityRoot.CloudEvent.DataURL(childComplexity), true
 	case "CloudEvent.header":
-		if e.complexity.CloudEvent.Header == nil {
+		if e.ComplexityRoot.CloudEvent.Header == nil {
 			break
 		}
 
-		return e.complexity.CloudEvent.Header(childComplexity), true
+		return e.ComplexityRoot.CloudEvent.Header(childComplexity), true
 
 	case "CloudEventHeader.datacontenttype":
-		if e.complexity.CloudEventHeader.DataContentType == nil {
+		if e.ComplexityRoot.CloudEventHeader.DataContentType == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.DataContentType(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.DataContentType(childComplexity), true
 	case "CloudEventHeader.dataschema":
-		if e.complexity.CloudEventHeader.DataSchema == nil {
+		if e.ComplexityRoot.CloudEventHeader.DataSchema == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.DataSchema(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.DataSchema(childComplexity), true
 	case "CloudEventHeader.dataversion":
-		if e.complexity.CloudEventHeader.DataVersion == nil {
+		if e.ComplexityRoot.CloudEventHeader.DataVersion == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.DataVersion(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.DataVersion(childComplexity), true
 	case "CloudEventHeader.id":
-		if e.complexity.CloudEventHeader.ID == nil {
+		if e.ComplexityRoot.CloudEventHeader.ID == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.ID(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.ID(childComplexity), true
 	case "CloudEventHeader.producer":
-		if e.complexity.CloudEventHeader.Producer == nil {
+		if e.ComplexityRoot.CloudEventHeader.Producer == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Producer(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Producer(childComplexity), true
 	case "CloudEventHeader.raweventid":
-		if e.complexity.CloudEventHeader.RawEventID == nil {
+		if e.ComplexityRoot.CloudEventHeader.RawEventID == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.RawEventID(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.RawEventID(childComplexity), true
 	case "CloudEventHeader.signature":
-		if e.complexity.CloudEventHeader.Signature == nil {
+		if e.ComplexityRoot.CloudEventHeader.Signature == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Signature(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Signature(childComplexity), true
 	case "CloudEventHeader.source":
-		if e.complexity.CloudEventHeader.Source == nil {
+		if e.ComplexityRoot.CloudEventHeader.Source == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Source(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Source(childComplexity), true
 	case "CloudEventHeader.specversion":
-		if e.complexity.CloudEventHeader.SpecVersion == nil {
+		if e.ComplexityRoot.CloudEventHeader.SpecVersion == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.SpecVersion(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.SpecVersion(childComplexity), true
 	case "CloudEventHeader.subject":
-		if e.complexity.CloudEventHeader.Subject == nil {
+		if e.ComplexityRoot.CloudEventHeader.Subject == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Subject(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Subject(childComplexity), true
 	case "CloudEventHeader.tags":
-		if e.complexity.CloudEventHeader.Tags == nil {
+		if e.ComplexityRoot.CloudEventHeader.Tags == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Tags(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Tags(childComplexity), true
 	case "CloudEventHeader.time":
-		if e.complexity.CloudEventHeader.Time == nil {
+		if e.ComplexityRoot.CloudEventHeader.Time == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Time(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Time(childComplexity), true
 	case "CloudEventHeader.type":
-		if e.complexity.CloudEventHeader.Type == nil {
+		if e.ComplexityRoot.CloudEventHeader.Type == nil {
 			break
 		}
 
-		return e.complexity.CloudEventHeader.Type(childComplexity), true
+		return e.ComplexityRoot.CloudEventHeader.Type(childComplexity), true
 
 	case "CloudEventIndex.header":
-		if e.complexity.CloudEventIndex.Header == nil {
+		if e.ComplexityRoot.CloudEventIndex.Header == nil {
 			break
 		}
 
-		return e.complexity.CloudEventIndex.Header(childComplexity), true
+		return e.ComplexityRoot.CloudEventIndex.Header(childComplexity), true
 	case "CloudEventIndex.indexKey":
-		if e.complexity.CloudEventIndex.IndexKey == nil {
+		if e.ComplexityRoot.CloudEventIndex.IndexKey == nil {
 			break
 		}
 
-		return e.complexity.CloudEventIndex.IndexKey(childComplexity), true
+		return e.ComplexityRoot.CloudEventIndex.IndexKey(childComplexity), true
 
 	case "CloudEventTypeSummary.count":
-		if e.complexity.CloudEventTypeSummary.Count == nil {
+		if e.ComplexityRoot.CloudEventTypeSummary.Count == nil {
 			break
 		}
 
-		return e.complexity.CloudEventTypeSummary.Count(childComplexity), true
+		return e.ComplexityRoot.CloudEventTypeSummary.Count(childComplexity), true
 	case "CloudEventTypeSummary.firstSeen":
-		if e.complexity.CloudEventTypeSummary.FirstSeen == nil {
+		if e.ComplexityRoot.CloudEventTypeSummary.FirstSeen == nil {
 			break
 		}
 
-		return e.complexity.CloudEventTypeSummary.FirstSeen(childComplexity), true
+		return e.ComplexityRoot.CloudEventTypeSummary.FirstSeen(childComplexity), true
 	case "CloudEventTypeSummary.lastSeen":
-		if e.complexity.CloudEventTypeSummary.LastSeen == nil {
+		if e.ComplexityRoot.CloudEventTypeSummary.LastSeen == nil {
 			break
 		}
 
-		return e.complexity.CloudEventTypeSummary.LastSeen(childComplexity), true
+		return e.ComplexityRoot.CloudEventTypeSummary.LastSeen(childComplexity), true
 	case "CloudEventTypeSummary.type":
-		if e.complexity.CloudEventTypeSummary.Type == nil {
+		if e.ComplexityRoot.CloudEventTypeSummary.Type == nil {
 			break
 		}
 
-		return e.complexity.CloudEventTypeSummary.Type(childComplexity), true
+		return e.ComplexityRoot.CloudEventTypeSummary.Type(childComplexity), true
 
 	case "Query.availableCloudEventTypes":
-		if e.complexity.Query.AvailableCloudEventTypes == nil {
+		if e.ComplexityRoot.Query.AvailableCloudEventTypes == nil {
 			break
 		}
 
@@ -276,9 +261,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.AvailableCloudEventTypes(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
+		return e.ComplexityRoot.Query.AvailableCloudEventTypes(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.cloudEvents":
-		if e.complexity.Query.CloudEvents == nil {
+		if e.ComplexityRoot.Query.CloudEvents == nil {
 			break
 		}
 
@@ -287,9 +272,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.CloudEvents(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
+		return e.ComplexityRoot.Query.CloudEvents(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.indexes":
-		if e.complexity.Query.Indexes == nil {
+		if e.ComplexityRoot.Query.Indexes == nil {
 			break
 		}
 
@@ -298,9 +283,10 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Indexes(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
+		return e.ComplexityRoot.Query.Indexes(childComplexity, args["did"].(string), args["limit"].(*int), args["filter"].(*model.CloudEventFilter)), true
+
 	case "Query.latestCloudEvent":
-		if e.complexity.Query.LatestCloudEvent == nil {
+		if e.ComplexityRoot.Query.LatestCloudEvent == nil {
 			break
 		}
 
@@ -309,9 +295,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.LatestCloudEvent(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
+		return e.ComplexityRoot.Query.LatestCloudEvent(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 	case "Query.latestIndex":
-		if e.complexity.Query.LatestIndex == nil {
+		if e.ComplexityRoot.Query.LatestIndex == nil {
 			break
 		}
 
@@ -320,7 +306,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.LatestIndex(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
+		return e.ComplexityRoot.Query.LatestIndex(childComplexity, args["did"].(string), args["filter"].(*model.CloudEventFilter)), true
 
 	}
 	return 0, false
@@ -328,7 +314,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
-	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
+	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCloudEventFilter,
 	)
@@ -344,9 +330,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
 			} else {
-				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
-					result := <-ec.deferredResults
-					atomic.AddInt32(&ec.pendingDeferred, -1)
+				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
+					result := <-ec.DeferredResults
+					atomic.AddInt32(&ec.PendingDeferred, -1)
 					data = result.Result
 					response.Path = result.Path
 					response.Label = result.Label
@@ -358,8 +344,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 			response.Data = buf.Bytes()
-			if atomic.LoadInt32(&ec.deferred) > 0 {
-				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+			if atomic.LoadInt32(&ec.Deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.PendingDeferred) > 0
 				response.HasNext = &hasNext
 			}
 
@@ -372,44 +358,22 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 }
 
 type executionContext struct {
-	*graphql.OperationContext
-	*executableSchema
-	deferred        int32
-	pendingDeferred int32
-	deferredResults chan graphql.DeferredResult
+	*graphql.ExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 }
 
-func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
-	atomic.AddInt32(&ec.pendingDeferred, 1)
-	go func() {
-		ctx := graphql.WithFreshResponseContext(dg.Context)
-		dg.FieldSet.Dispatch(ctx)
-		ds := graphql.DeferredResult{
-			Path:   dg.Path,
-			Label:  dg.Label,
-			Result: dg.FieldSet,
-			Errors: graphql.GetErrors(ctx),
-		}
-		// null fields should bubble up
-		if dg.FieldSet.Invalids > 0 {
-			ds.Result = graphql.Null
-		}
-		ec.deferredResults <- ds
-	}()
-}
-
-func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
+func newExecutionContext(
+	opCtx *graphql.OperationContext,
+	execSchema *executableSchema,
+	deferredResults chan graphql.DeferredResult,
+) executionContext {
+	return executionContext{
+		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
+			opCtx,
+			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+			parsedSchema,
+			deferredResults,
+		),
 	}
-	return introspection.WrapSchema(ec.Schema()), nil
-}
-
-func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
-	}
-	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
@@ -459,26 +423,51 @@ type Query {
   Latest cloud event index matching filters.
   """
   latestIndex(did: String!, filter: CloudEventFilter): CloudEventIndex!
+    @mcpTool(
+      name: "get_latest_index"
+      description: "Get the latest CloudEvent index entry (header + storage key) for a DID-scoped subject, optionally filtered by event type, source, producer, or time range. Returns metadata only — use fetch_get_latest_cloud_event for the full payload."
+      selection: "header { type source subject id time producer dataversion } indexKey"
+    )
 
   """
   List cloud event indexes matching filters.
   """
   indexes(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!
+    @mcpTool(
+      name: "list_indexes"
+      description: "List CloudEvent index entries for a DID-scoped subject, optionally filtered and limited (default 10). Returns headers + storage keys without payloads — cheaper than fetch_list_cloud_events when exploring."
+      selection: "header { type source subject id time producer } indexKey"
+    )
 
   """
   Latest full cloud event.
   """
   latestCloudEvent(did: String!, filter: CloudEventFilter): CloudEvent!
+    @mcpTool(
+      name: "get_latest_cloud_event"
+      description: "Get the latest full CloudEvent (header + JSON payload) for a DID-scoped subject, optionally filtered. Returns dataUrl (presigned S3 link) for large binary payloads instead of inlining them."
+      selection: "header { type source subject id time producer } data dataUrl"
+    )
 
   """
   List full cloud events.
   """
   cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!
+    @mcpTool(
+      name: "list_cloud_events"
+      description: "List full CloudEvents (headers + JSON payloads) for a DID-scoped subject, optionally filtered and limited (default 10). Large binary payloads are returned as presigned S3 URLs via dataUrl instead of inlined data."
+      selection: "header { type source subject id time producer } data dataUrl"
+    )
 
   """
   List cloud event types available for a subject, with counts and time ranges.
   """
   availableCloudEventTypes(did: String!, filter: CloudEventFilter): [CloudEventTypeSummary!]!
+    @mcpTool(
+      name: "list_available_event_types"
+      description: "Summarize the CloudEvent types present for a DID-scoped subject. Returns each type with its count, firstSeen, and lastSeen timestamps — useful for discovering what kinds of events exist before querying them."
+      selection: "type count firstSeen lastSeen"
+    )
 }
 
 """
@@ -522,6 +511,10 @@ input CloudEventFilter {
   before: Time
   after: Time
 }
+`, BuiltIn: false},
+	{Name: "../../schema/mcp.graphqls", Input: `directive @mcpTool(name: String!, description: String!, selection: String!, readOnly: Boolean = true) on FIELD_DEFINITION
+directive @mcpExample(description: String!, query: String!) repeatable on FIELD_DEFINITION
+directive @mcpHide on FIELD_DEFINITION
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -690,7 +683,7 @@ func (ec *executionContext) _CloudEvent_header(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_CloudEvent_header,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CloudEvent().Header(ctx, obj)
+			return ec.Resolvers.CloudEvent().Header(ctx, obj)
 		},
 		nil,
 		ec.marshalNCloudEventHeader2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋcloudeventᚐCloudEventHeader,
@@ -747,7 +740,7 @@ func (ec *executionContext) _CloudEvent_data(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_CloudEvent_data,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CloudEvent().Data(ctx, obj)
+			return ec.Resolvers.CloudEvent().Data(ctx, obj)
 		},
 		nil,
 		ec.marshalOJSON2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐRawJSON,
@@ -776,7 +769,7 @@ func (ec *executionContext) _CloudEvent_dataBase64(ctx context.Context, field gr
 		field,
 		ec.fieldContext_CloudEvent_dataBase64,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CloudEvent().DataBase64(ctx, obj)
+			return ec.Resolvers.CloudEvent().DataBase64(ctx, obj)
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -1414,7 +1407,7 @@ func (ec *executionContext) _Query_latestIndex(ctx context.Context, field graphq
 		ec.fieldContext_Query_latestIndex,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().LatestIndex(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.Resolvers.Query().LatestIndex(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex,
@@ -1461,7 +1454,7 @@ func (ec *executionContext) _Query_indexes(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_indexes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Indexes(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.Resolvers.Query().Indexes(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEventIndex2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndexᚄ,
@@ -1508,7 +1501,7 @@ func (ec *executionContext) _Query_latestCloudEvent(ctx context.Context, field g
 		ec.fieldContext_Query_latestCloudEvent,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().LatestCloudEvent(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.Resolvers.Query().LatestCloudEvent(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper,
@@ -1559,7 +1552,7 @@ func (ec *executionContext) _Query_cloudEvents(ctx context.Context, field graphq
 		ec.fieldContext_Query_cloudEvents,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CloudEvents(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.Resolvers.Query().CloudEvents(ctx, fc.Args["did"].(string), fc.Args["limit"].(*int), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapperᚄ,
@@ -1610,7 +1603,7 @@ func (ec *executionContext) _Query_availableCloudEventTypes(ctx context.Context,
 		ec.fieldContext_Query_availableCloudEventTypes,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().AvailableCloudEventTypes(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
+			return ec.Resolvers.Query().AvailableCloudEventTypes(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter))
 		},
 		nil,
 		ec.marshalNCloudEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummaryᚄ,
@@ -1661,7 +1654,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query___type,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.introspectType(fc.Args["name"].(string))
+			return ec.IntrospectType(fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
@@ -1725,7 +1718,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query___schema,
 		func(ctx context.Context) (any, error) {
-			return ec.introspectSchema()
+			return ec.IntrospectSchema()
 		},
 		nil,
 		ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema,
@@ -3209,6 +3202,10 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, obj any) (model.CloudEventFilter, error) {
 	var it model.CloudEventFilter
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -3279,7 +3276,6 @@ func (ec *executionContext) unmarshalInputCloudEventFilter(ctx context.Context, 
 			it.After = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -3415,10 +3411,10 @@ func (ec *executionContext) _CloudEvent(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3499,10 +3495,10 @@ func (ec *executionContext) _CloudEventHeader(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3543,10 +3539,10 @@ func (ec *executionContext) _CloudEventIndex(ctx context.Context, sel ast.Select
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3597,10 +3593,10 @@ func (ec *executionContext) _CloudEventTypeSummary(ctx context.Context, sel ast.
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3757,10 +3753,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3813,10 +3809,10 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3861,10 +3857,10 @@ func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3919,10 +3915,10 @@ func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -3974,10 +3970,10 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -4029,10 +4025,10 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -4088,10 +4084,10 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -4127,39 +4123,11 @@ func (ec *executionContext) marshalNCloudEvent2githubᚗcomᚋDIMOᚑNetworkᚋf
 }
 
 func (ec *executionContext) marshalNCloudEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapperᚄ(ctx context.Context, sel ast.SelectionSet, v []*CloudEventWrapper) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4199,39 +4167,11 @@ func (ec *executionContext) marshalNCloudEventIndex2githubᚗcomᚋDIMOᚑNetwor
 }
 
 func (ec *executionContext) marshalNCloudEventIndex2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndexᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CloudEventIndex) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4253,39 +4193,11 @@ func (ec *executionContext) marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNet
 }
 
 func (ec *executionContext) marshalNCloudEventTypeSummary2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CloudEventTypeSummary) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCloudEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummary(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCloudEventTypeSummary2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventTypeSummary(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4389,39 +4301,11 @@ func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlge
 }
 
 func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Directive) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4464,39 +4348,11 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx conte
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4520,39 +4376,11 @@ func (ec *executionContext) marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlg
 }
 
 func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4568,39 +4396,11 @@ func (ec *executionContext) marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋg
 }
 
 func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4797,39 +4597,11 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4844,39 +4616,11 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4891,39 +4635,11 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -4945,39 +4661,11 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {

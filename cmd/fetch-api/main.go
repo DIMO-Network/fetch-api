@@ -71,6 +71,7 @@ func main() {
 	})
 	mux.Handle("/", app.LoggerMiddleware(app.PanicRecoveryMiddleware(playground.Handler("GraphQL playground", "/query"))))
 	mux.Handle("/query", application.Handler)
+	mux.Handle("/mcp", application.MCPHandler)
 
 	logger.Info().Msgf("Server started on port: %d", cfg.Port)
 	runner.RunHandler(runnerCtx, runnerGroup, mux, ":"+strconv.Itoa(cfg.Port))
