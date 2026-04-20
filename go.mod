@@ -7,7 +7,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
 	github.com/DIMO-Network/cloudevent v0.2.7
-	github.com/DIMO-Network/server-garage v0.1.0
+	github.com/DIMO-Network/server-garage v0.1.1
 	github.com/DIMO-Network/shared v1.1.7
 	github.com/DIMO-Network/token-exchange-api v0.4.0
 	github.com/auth0/go-jwt-middleware/v2 v2.2.2
