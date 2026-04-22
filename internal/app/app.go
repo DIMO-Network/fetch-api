@@ -13,6 +13,7 @@ import (
 	"github.com/DIMO-Network/fetch-api/internal/graph"
 	"github.com/DIMO-Network/fetch-api/internal/identity"
 	"github.com/DIMO-Network/fetch-api/internal/limits"
+	"github.com/DIMO-Network/fetch-api/internal/proxy"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	fetchgrpc "github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -53,7 +54,11 @@ func New(settings config.Settings) (*App, error) {
 		identityClient = identity.New(settings.IdentityAPIURL)
 	}
 
-	es := newExecutableSchema(eventService, buckets, identityClient)
+	var proxyClient *proxy.Client
+	if settings.DQEndpoint != "" {
+		proxyClient = proxy.NewClient(settings.DQEndpoint)
+	}
+	es := newExecutableSchema(eventService, buckets, identityClient, proxyClient)
 	gqlSrv := newGraphQLHandler(es)
 
 	jwtMiddleware, err := auth.NewJWTMiddleware(settings.TokenExchangeIssuer, settings.TokenExchangeJWTKeySetURL)
@@ -73,10 +78,12 @@ func New(settings config.Settings) (*App, error) {
 	authChain := func(inner http.Handler) http.Handler {
 		return PanicRecoveryMiddleware(
 			LoggerMiddleware(
-				limiter.AddRequestTimeout(
-					jwtMiddleware.CheckJWT(
-						authLoggerMiddleware(
-							auth.AddClaimHandler(inner),
+				rawAuthMiddleware(
+					limiter.AddRequestTimeout(
+						jwtMiddleware.CheckJWT(
+							authLoggerMiddleware(
+								auth.AddClaimHandler(inner),
+							),
 						),
 					),
 				),
@@ -109,11 +116,12 @@ func (a *App) Cleanup() {
 }
 
 // newExecutableSchema builds the gqlgen ExecutableSchema shared by the GraphQL and MCP handlers.
-func newExecutableSchema(eventService *eventrepo.Service, buckets []string, identityClient identity.Client) graphql.ExecutableSchema {
+func newExecutableSchema(eventService *eventrepo.Service, buckets []string, identityClient identity.Client, proxyClient *proxy.Client) graphql.ExecutableSchema {
 	resolver := &graph.Resolver{
 		EventService:   eventService,
 		Buckets:        buckets,
 		IdentityClient: identityClient,
+		ProxyClient:    proxyClient,
 	}
 	return graph.NewExecutableSchema(graph.Config{Resolvers: resolver})
 }

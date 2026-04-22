@@ -10,6 +10,7 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/graph/model"
 	"github.com/DIMO-Network/fetch-api/internal/identity"
+	"github.com/DIMO-Network/fetch-api/internal/proxy"
 	"github.com/DIMO-Network/fetch-api/pkg/eventrepo"
 	"github.com/DIMO-Network/fetch-api/pkg/grpc"
 	"github.com/DIMO-Network/token-exchange-api/pkg/tokenclaims"
@@ -26,6 +27,8 @@ type Resolver struct {
 	EventService   *eventrepo.Service
 	Buckets        []string
 	IdentityClient identity.Client
+	// ProxyClient, when non-nil, forwards all queries to dq instead of ClickHouse.
+	ProxyClient *proxy.Client
 }
 
 // TODO(elffjs): Shouldn't these be Errors?

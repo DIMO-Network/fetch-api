@@ -22,4 +22,7 @@ type Settings struct {
 	S3AWSSecretAccessKey      string          `yaml:"S3_AWS_SECRET_ACCESS_KEY"`
 	Clickhouse                config.Settings `yaml:",inline"`
 	IdentityAPIURL            string          `yaml:"IDENTITY_API_URL"`
+	// DQEndpoint is the URL of the dq GraphQL endpoint (e.g. http://dq:3000/query).
+	// When set, all queries are proxied to dq instead of ClickHouse.
+	DQEndpoint string `yaml:"DQ_ENDPOINT"`
 }
