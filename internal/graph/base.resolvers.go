@@ -48,6 +48,13 @@ func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *mod
 	if err != nil {
 		return nil, err
 	}
+	if r.ProxyClient != nil {
+		result, err := r.ProxyClient.ProxyLatestIndex(ctx, opts.Subject.In[0], filter)
+		if err != nil {
+			return nil, err
+		}
+		return &model.CloudEventIndex{Header: &result.Header, IndexKey: ""}, nil
+	}
 	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -60,6 +67,17 @@ func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, fil
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
+	}
+	if r.ProxyClient != nil {
+		results, err := r.ProxyClient.ProxyIndexes(ctx, opts.Subject.In[0], limit, filter)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]*model.CloudEventIndex, len(results))
+		for i := range results {
+			out[i] = &model.CloudEventIndex{Header: &results[i].Header, IndexKey: ""}
+		}
+		return out, nil
 	}
 	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
 	if err != nil {
@@ -80,6 +98,18 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
+	}
+	if r.ProxyClient != nil {
+		result, err := r.ProxyClient.ProxyLatestCloudEvent(ctx, opts.Subject.In[0], filter)
+		if err != nil {
+			return nil, err
+		}
+		raw := &cloudevent.RawEvent{
+			CloudEventHeader: result.Header,
+			DataBase64:       result.DataBase64,
+		}
+		raw.Data = result.Data
+		return &CloudEventWrapper{Raw: raw, DataURL: result.DataURL}, nil
 	}
 	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
 	if err != nil {
@@ -105,6 +135,22 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
+	}
+	if r.ProxyClient != nil {
+		results, err := r.ProxyClient.ProxyCloudEvents(ctx, opts.Subject.In[0], limit, filter)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]*CloudEventWrapper, len(results))
+		for i, result := range results {
+			raw := &cloudevent.RawEvent{
+				CloudEventHeader: result.Header,
+				DataBase64:       result.DataBase64,
+			}
+			raw.Data = result.Data
+			out[i] = &CloudEventWrapper{Raw: raw, DataURL: result.DataURL}
+		}
+		return out, nil
 	}
 	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
 	if err != nil {
@@ -151,6 +197,9 @@ func (r *queryResolver) AvailableCloudEventTypes(ctx context.Context, did string
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
+	}
+	if r.ProxyClient != nil {
+		return r.ProxyClient.ProxyAvailableCloudEventTypes(ctx, opts.Subject.In[0], filter)
 	}
 	summaries, err := r.EventService.GetCloudEventTypeSummariesAdvanced(ctx, opts)
 	if err != nil {
