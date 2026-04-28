@@ -34,6 +34,7 @@ env:
   CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
   EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
   PARQUET_BUCKET: dimo-storage-dev
+  BLOB_BUCKET: dimo-blob-storage-dev
   S3_AWS_REGION: us-east-2
   IDENTITY_API_URL: https://identity-api.dev.dimo.zone/query
 service:

@@ -60,11 +60,11 @@ func setupClickHouseContainer(t *testing.T) *container.Container {
 	return globalTestContainer.container
 }
 
-// insertTestData inserts test data into ClickHouse.
+// insertTestData inserts test data into ClickHouse and returns the index_key.
 func insertTestData(t *testing.T, ctx context.Context, conn clickhouse.Conn, index *cloudevent.CloudEventHeader) string {
 	values := chindexer.CloudEventToSlice(index)
 
 	err := conn.Exec(ctx, chindexer.InsertStmt, values...)
 	require.NoError(t, err)
-	return values[len(values)-1].(string)
+	return chindexer.CloudEventToObjectKey(index)
 }
