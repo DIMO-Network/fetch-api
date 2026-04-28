@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/fetch-api/internal/fetch"
@@ -85,8 +84,8 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	if err != nil {
 		return nil, err
 	}
-	if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
-		url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key)
+	if idx.Data.DataIndexKey != "" {
+		url, err := r.EventService.PresignBlobURL(ctx, idx.Data.DataIndexKey)
 		if err != nil {
 			return nil, err
 		}
@@ -119,8 +118,8 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 	var nonBlobPos []int
 
 	for i, idx := range list {
-		if strings.HasPrefix(idx.Data.Key, eventrepo.BlobKeyPrefix) {
-			url, err := r.EventService.PresignBlobURL(ctx, idx.Data.Key)
+		if idx.Data.DataIndexKey != "" {
+			url, err := r.EventService.PresignBlobURL(ctx, idx.Data.DataIndexKey)
 			if err != nil {
 				return nil, err
 			}
