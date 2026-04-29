@@ -2,14 +2,11 @@ module github.com/DIMO-Network/fetch-api
 
 go 1.25.0
 
-// temporary for local testing of dimo.tombstone work; remove before release.
-replace github.com/DIMO-Network/cloudevent => ../cloudevent
-
 require (
 	github.com/99designs/gqlgen v0.17.89
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
-	github.com/DIMO-Network/cloudevent v0.2.8
+	github.com/DIMO-Network/cloudevent v0.2.9-0.20260429154543-207c0df87d44
 	github.com/DIMO-Network/server-garage v0.1.1
 	github.com/DIMO-Network/shared v1.1.7
 	github.com/DIMO-Network/token-exchange-api v0.4.0
