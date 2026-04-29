@@ -42,12 +42,12 @@ func (r *cloudEventResolver) DataBase64(ctx context.Context, obj *CloudEventWrap
 }
 
 // LatestIndex is the resolver for the latestIndex field.
-func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter) (*model.CloudEventIndex, error) {
+func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *model.CloudEventFilter, includeDeleted *bool) (*model.CloudEventIndex, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
-	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
+	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +55,12 @@ func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *mod
 }
 
 // Indexes is the resolver for the indexes field.
-func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*model.CloudEventIndex, error) {
+func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter, includeDeleted *bool) ([]*model.CloudEventIndex, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
-	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
+	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return emptyCloudEventIndexList, nil
@@ -75,12 +75,12 @@ func (r *queryResolver) Indexes(ctx context.Context, did string, limit *int, fil
 }
 
 // LatestCloudEvent is the resolver for the latestCloudEvent field.
-func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter) (*CloudEventWrapper, error) {
+func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter *model.CloudEventFilter, includeDeleted *bool) (*CloudEventWrapper, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
-	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts)
+	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +100,12 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 }
 
 // CloudEvents is the resolver for the cloudEvents field.
-func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter) ([]*CloudEventWrapper, error) {
+func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int, filter *model.CloudEventFilter, includeDeleted *bool) ([]*CloudEventWrapper, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
-	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts)
+	list, err := r.EventService.ListIndexesAdvanced(ctx, resolveLimit(limit), opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return emptyCloudEventList, nil
@@ -146,12 +146,12 @@ func (r *queryResolver) CloudEvents(ctx context.Context, did string, limit *int,
 }
 
 // AvailableCloudEventTypes is the resolver for the availableCloudEventTypes field.
-func (r *queryResolver) AvailableCloudEventTypes(ctx context.Context, did string, filter *model.CloudEventFilter) ([]*model.CloudEventTypeSummary, error) {
+func (r *queryResolver) AvailableCloudEventTypes(ctx context.Context, did string, filter *model.CloudEventFilter, includeDeleted *bool) ([]*model.CloudEventTypeSummary, error) {
 	opts, err := r.requireSubjectOptsByDID(ctx, did, filter)
 	if err != nil {
 		return nil, err
 	}
-	summaries, err := r.EventService.GetCloudEventTypeSummariesAdvanced(ctx, opts)
+	summaries, err := r.EventService.GetCloudEventTypeSummariesAdvanced(ctx, opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
 		return nil, err
 	}

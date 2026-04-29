@@ -999,7 +999,7 @@ func TestListIndexesAdvanced(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			results, err := indexService.ListIndexesAdvanced(t.Context(), 10, tt.advancedOpts)
+			results, err := indexService.ListIndexesAdvanced(t.Context(), 10, tt.advancedOpts, true)
 			if tt.expectedError {
 				require.Error(t, err, "Expected error but got none")
 			} else {
@@ -1158,4 +1158,139 @@ func randAddress() common.Address {
 		log.Fatalf("Failed to generate private key: %v", err)
 	}
 	return crypto.PubkeyToAddress(privateKey.PublicKey)
+}
+
+// TestTombstoneSuppression verifies that ListIndexesAdvanced honors
+// includeDeleted: when false, attestations whose (source, id) appears as
+// (source, voids_id) on a dimo.tombstone row for the same subject are
+// hidden; when true, they come back. Mismatched-source and orphan-target
+// tombstones never suppress.
+func TestTombstoneSuppression(t *testing.T) {
+	t.Parallel()
+	chContainer := setupClickHouseContainer(t)
+
+	conn, err := chContainer.GetClickHouseAsConn()
+	require.NoError(t, err)
+	ctx := context.Background()
+	now := time.Now()
+
+	subject := cloudevent.ERC721DID{
+		ChainID:         153,
+		ContractAddress: randAddress(),
+		TokenID:         big.NewInt(7777),
+	}.String()
+
+	// One attestation that will be tombstoned.
+	att := &cloudevent.CloudEventHeader{
+		ID:       "att-target",
+		Subject:  subject,
+		Type:     cloudevent.TypeAttestation,
+		Source:   "0xSrcA",
+		Producer: "producer-A",
+		Time:     now.Add(-3 * time.Hour),
+	}
+	insertTestData(t, ctx, conn, att)
+
+	// Another attestation by the same source that will NOT be tombstoned.
+	attKept := &cloudevent.CloudEventHeader{
+		ID:       "att-kept",
+		Subject:  subject,
+		Type:     cloudevent.TypeAttestation,
+		Source:   "0xSrcA",
+		Producer: "producer-A",
+		Time:     now.Add(-2 * time.Hour),
+	}
+	insertTestData(t, ctx, conn, attKept)
+
+	// Matching tombstone (same source, voids_id == att.ID) → suppresses att.
+	tombstone := &cloudevent.CloudEventHeader{
+		ID:       "tombstone-1",
+		Subject:  subject,
+		Type:     cloudevent.TypeAttestationTombstone,
+		Source:   "0xSrcA",
+		Producer: "producer-A",
+		Time:     now.Add(-1 * time.Hour),
+	}
+	insertTombstoneTestData(t, ctx, conn, tombstone, att.ID)
+
+	// Mismatched-source tombstone (different source claims to void att) → MUST NOT suppress.
+	tombstoneWrongSource := &cloudevent.CloudEventHeader{
+		ID:       "tombstone-wrong-source",
+		Subject:  subject,
+		Type:     cloudevent.TypeAttestationTombstone,
+		Source:   "0xSrcB",
+		Producer: "producer-B",
+		Time:     now.Add(-50 * time.Minute),
+	}
+	insertTombstoneTestData(t, ctx, conn, tombstoneWrongSource, attKept.ID)
+
+	// Orphan tombstone (target id doesn't exist) → harmless, doesn't suppress anything.
+	tombstoneOrphan := &cloudevent.CloudEventHeader{
+		ID:       "tombstone-orphan",
+		Subject:  subject,
+		Type:     cloudevent.TypeAttestationTombstone,
+		Source:   "0xSrcA",
+		Producer: "producer-A",
+		Time:     now.Add(-40 * time.Minute),
+	}
+	insertTombstoneTestData(t, ctx, conn, tombstoneOrphan, "no-such-attestation")
+
+	indexService := eventrepo.New(conn, nil, nil, "", "")
+
+	subjectFilter := &grpc.AdvancedSearchOptions{
+		Subject: &grpc.StringFilterOption{In: []string{subject}},
+	}
+
+	t.Run("includeDeleted=false suppresses tombstoned attestations and only those", func(t *testing.T) {
+		// Filter to attestations only so we don't have to reason about tombstone rows.
+		opts := &grpc.AdvancedSearchOptions{
+			Subject: subjectFilter.Subject,
+			Type:    &grpc.StringFilterOption{In: []string{cloudevent.TypeAttestation}},
+		}
+		results, err := indexService.ListIndexesAdvanced(ctx, 100, opts, false)
+		require.NoError(t, err)
+
+		ids := make([]string, len(results))
+		for i, r := range results {
+			ids[i] = r.ID
+		}
+		require.ElementsMatch(t, []string{attKept.ID}, ids,
+			"only the non-tombstoned attestation should come back; mismatched-source tombstone must NOT suppress attKept")
+	})
+
+	t.Run("includeDeleted=true returns tombstoned attestation as well", func(t *testing.T) {
+		opts := &grpc.AdvancedSearchOptions{
+			Subject: subjectFilter.Subject,
+			Type:    &grpc.StringFilterOption{In: []string{cloudevent.TypeAttestation}},
+		}
+		results, err := indexService.ListIndexesAdvanced(ctx, 100, opts, true)
+		require.NoError(t, err)
+
+		ids := make([]string, len(results))
+		for i, r := range results {
+			ids[i] = r.ID
+		}
+		require.ElementsMatch(t, []string{att.ID, attKept.ID}, ids)
+	})
+
+	t.Run("includeDeleted=true plus tombstone type returns both attestations and tombstones", func(t *testing.T) {
+		opts := &grpc.AdvancedSearchOptions{
+			Subject: subjectFilter.Subject,
+			Type: &grpc.StringFilterOption{In: []string{
+				cloudevent.TypeAttestation,
+				cloudevent.TypeAttestationTombstone,
+			}},
+		}
+		results, err := indexService.ListIndexesAdvanced(ctx, 100, opts, true)
+		require.NoError(t, err)
+
+		ids := make([]string, len(results))
+		for i, r := range results {
+			ids[i] = r.ID
+		}
+		require.ElementsMatch(t,
+			[]string{att.ID, attKept.ID, tombstone.ID, tombstoneWrongSource.ID, tombstoneOrphan.ID},
+			ids,
+		)
+	})
 }
