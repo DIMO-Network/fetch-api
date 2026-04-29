@@ -15,8 +15,9 @@ var MCPTools = []mcpserver.ToolDefinition{
 		Args: []mcpserver.ArgDefinition{
 			{Name: "did", Type: "string", Description: "did (String!, required)", Required: true, ItemsType: ""},
 			{Name: "filter", Type: "object", Description: "filter (CloudEventFilter, optional)", Required: false, ItemsType: ""},
+			{Name: "includeDeleted", Type: "boolean", Description: "includeDeleted (Boolean, optional)", Required: false, ItemsType: ""},
 		},
-		Query: "query($did: String!, $filter: CloudEventFilter) { latestIndex(did: $did, filter: $filter) { header { type source subject id time producer dataversion } indexKey } }",
+		Query: "query($did: String!, $filter: CloudEventFilter, $includeDeleted: Boolean) { latestIndex(did: $did, filter: $filter, includeDeleted: $includeDeleted) { header { type source subject id time producer dataversion } indexKey } }",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    true,
 			DestructiveHint: boolPtr(false),
@@ -31,8 +32,9 @@ var MCPTools = []mcpserver.ToolDefinition{
 			{Name: "did", Type: "string", Description: "did (String!, required)", Required: true, ItemsType: ""},
 			{Name: "limit", Type: "integer", Description: "limit (Int, optional)", Required: false, ItemsType: ""},
 			{Name: "filter", Type: "object", Description: "filter (CloudEventFilter, optional)", Required: false, ItemsType: ""},
+			{Name: "includeDeleted", Type: "boolean", Description: "includeDeleted (Boolean, optional)", Required: false, ItemsType: ""},
 		},
-		Query: "query($did: String!, $limit: Int, $filter: CloudEventFilter) { indexes(did: $did, limit: $limit, filter: $filter) { header { type source subject id time producer } indexKey } }",
+		Query: "query($did: String!, $limit: Int, $filter: CloudEventFilter, $includeDeleted: Boolean) { indexes(did: $did, limit: $limit, filter: $filter, includeDeleted: $includeDeleted) { header { type source subject id time producer } indexKey } }",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    true,
 			DestructiveHint: boolPtr(false),
@@ -46,8 +48,9 @@ var MCPTools = []mcpserver.ToolDefinition{
 		Args: []mcpserver.ArgDefinition{
 			{Name: "did", Type: "string", Description: "did (String!, required)", Required: true, ItemsType: ""},
 			{Name: "filter", Type: "object", Description: "filter (CloudEventFilter, optional)", Required: false, ItemsType: ""},
+			{Name: "includeDeleted", Type: "boolean", Description: "includeDeleted (Boolean, optional)", Required: false, ItemsType: ""},
 		},
-		Query: "query($did: String!, $filter: CloudEventFilter) { latestCloudEvent(did: $did, filter: $filter) { header { type source subject id time producer } data dataUrl } }",
+		Query: "query($did: String!, $filter: CloudEventFilter, $includeDeleted: Boolean) { latestCloudEvent(did: $did, filter: $filter, includeDeleted: $includeDeleted) { header { type source subject id time producer } data dataUrl } }",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    true,
 			DestructiveHint: boolPtr(false),
@@ -62,8 +65,9 @@ var MCPTools = []mcpserver.ToolDefinition{
 			{Name: "did", Type: "string", Description: "did (String!, required)", Required: true, ItemsType: ""},
 			{Name: "limit", Type: "integer", Description: "limit (Int, optional)", Required: false, ItemsType: ""},
 			{Name: "filter", Type: "object", Description: "filter (CloudEventFilter, optional)", Required: false, ItemsType: ""},
+			{Name: "includeDeleted", Type: "boolean", Description: "includeDeleted (Boolean, optional)", Required: false, ItemsType: ""},
 		},
-		Query: "query($did: String!, $limit: Int, $filter: CloudEventFilter) { cloudEvents(did: $did, limit: $limit, filter: $filter) { header { type source subject id time producer } data dataUrl } }",
+		Query: "query($did: String!, $limit: Int, $filter: CloudEventFilter, $includeDeleted: Boolean) { cloudEvents(did: $did, limit: $limit, filter: $filter, includeDeleted: $includeDeleted) { header { type source subject id time producer } data dataUrl } }",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    true,
 			DestructiveHint: boolPtr(false),
@@ -77,8 +81,9 @@ var MCPTools = []mcpserver.ToolDefinition{
 		Args: []mcpserver.ArgDefinition{
 			{Name: "did", Type: "string", Description: "did (String!, required)", Required: true, ItemsType: ""},
 			{Name: "filter", Type: "object", Description: "filter (CloudEventFilter, optional)", Required: false, ItemsType: ""},
+			{Name: "includeDeleted", Type: "boolean", Description: "includeDeleted (Boolean, optional)", Required: false, ItemsType: ""},
 		},
-		Query: "query($did: String!, $filter: CloudEventFilter) { availableCloudEventTypes(did: $did, filter: $filter) { type count firstSeen lastSeen } }",
+		Query: "query($did: String!, $filter: CloudEventFilter, $includeDeleted: Boolean) { availableCloudEventTypes(did: $did, filter: $filter, includeDeleted: $includeDeleted) { type count firstSeen lastSeen } }",
 		Annotations: &mcp.ToolAnnotations{
 			ReadOnlyHint:    true,
 			DestructiveHint: boolPtr(false),
@@ -88,4 +93,4 @@ var MCPTools = []mcpserver.ToolDefinition{
 	},
 }
 
-var CondensedSchema = "scalar JSON  # Arbitrary JSON value; serialized as raw JSON (object/array), not an escaped string.\nscalar Time  # A point in time, encoded per RFC-3339.\n\ntype Query {\n  \"Latest cloud event index matching filters.\"\n  latestIndex(did: String!, filter: CloudEventFilter): CloudEventIndex!\n\n  indexes(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEventIndex!]!\n  \"Latest full cloud event.\"\n  latestCloudEvent(did: String!, filter: CloudEventFilter): CloudEvent!\n\n  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter): [CloudEvent!]!\n  availableCloudEventTypes(did: String!, filter: CloudEventFilter): [CloudEventTypeSummary!]!\n}\n\ntype CloudEvent { header: CloudEventHeader!, data: JSON, dataBase64: String, dataUrl: String }\n\ninput CloudEventFilter { id: String, type: String, types: [String!], dataversion: String, source: String, producer: String, before: Time, after: Time }\n\ntype CloudEventHeader { specversion: String!, type: String!, source: String!, subject: String!, id: String!, time: Time!, datacontenttype: String, dataschema: String, dataversion: String, producer: String!, signature: String, raweventid: String, tags: [String!]! }\n\ntype CloudEventIndex { header: CloudEventHeader!, indexKey: String! }\n\ntype CloudEventTypeSummary { type: String!, count: Int!, firstSeen: Time!, lastSeen: Time! }\n"
+var CondensedSchema = "scalar JSON  # Arbitrary JSON value; serialized as raw JSON (object/array), not an escaped string.\nscalar Time  # A point in time, encoded per RFC-3339.\n\ntype Query {\n  \"Latest cloud event index matching filters. Tombstoned attestations are hidden from the result by default; pass includeDeleted: true to disable tombstone suppression.\"\n  latestIndex(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEventIndex!\n\n  indexes(did: String!, limit: Int = 10, filter: CloudEventFilter, includeDeleted: Boolean = false): [CloudEventIndex!]!\n  \"Latest full cloud event. Tombstoned attestations are hidden from the result by default; pass includeDeleted: true to disable tombstone suppression.\"\n  latestCloudEvent(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEvent!\n\n  cloudEvents(did: String!, limit: Int = 10, filter: CloudEventFilter, includeDeleted: Boolean = false): [CloudEvent!]!\n  availableCloudEventTypes(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): [CloudEventTypeSummary!]!\n}\n\ntype CloudEvent { header: CloudEventHeader!, data: JSON, dataBase64: String, dataUrl: String }\n\ninput CloudEventFilter { id: String, type: String, types: [String!], dataversion: String, source: String, producer: String, before: Time, after: Time }\n\ntype CloudEventHeader { specversion: String!, type: String!, source: String!, subject: String!, id: String!, time: Time!, datacontenttype: String, dataschema: String, dataversion: String, producer: String!, signature: String, raweventid: String, tags: [String!]! }\n\ntype CloudEventIndex { header: CloudEventHeader!, indexKey: String! }\n\ntype CloudEventTypeSummary { type: String!, count: Int!, firstSeen: Time!, lastSeen: Time! }\n"

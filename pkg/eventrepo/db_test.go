@@ -68,3 +68,18 @@ func insertTestData(t *testing.T, ctx context.Context, conn clickhouse.Conn, ind
 	require.NoError(t, err)
 	return chindexer.CloudEventToObjectKey(index)
 }
+
+// insertTombstoneTestData inserts a tombstone row with the given voids_id.
+// Returns the index_key.
+func insertTombstoneTestData(t *testing.T, ctx context.Context, conn clickhouse.Conn, index *cloudevent.CloudEventHeader, voidsID string) string {
+	key := chindexer.CloudEventToObjectKey(index)
+	stored := &cloudevent.StoredEvent{
+		RawEvent: cloudevent.RawEvent{CloudEventHeader: *index},
+		VoidsID:  voidsID,
+	}
+	values := chindexer.StoredEventToSlice(stored, key)
+
+	err := conn.Exec(ctx, chindexer.InsertStmt, values...)
+	require.NoError(t, err)
+	return key
+}
