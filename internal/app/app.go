@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/executor"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -86,7 +87,13 @@ func New(settings config.Settings) (*App, error) {
 
 	serverHandler := authChain(gqlSrv)
 
-	mcpHandler, err := mcpserver.New(mcpserver.NewGQLGenExecutor(es), "DIMO Fetch", "0.1.0", "fetch",
+	// The MCP executor gets the same extension set as the HTTP GraphQL server
+	// so tool calls are complexity-limited, traced, and error-shaped identically.
+	mcpExec := mcpserver.NewGQLGenExecutor(es, func(e *executor.Executor) {
+		configureGQLExtensions(e)
+	})
+
+	mcpHandler, err := mcpserver.New(mcpExec, "DIMO Fetch", "0.1.0", "fetch",
 		mcpserver.WithTools(graph.MCPTools),
 		mcpserver.WithCondensedSchema(graph.CondensedSchema),
 	)
@@ -124,11 +131,26 @@ func newGraphQLHandler(es graphql.ExecutableSchema) *handler.Server {
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
+	configureGQLExtensions(srv)
+	return srv
+}
+
+// gqlExtensionTarget is satisfied by both *handler.Server and
+// *executor.Executor, letting the HTTP GraphQL server and the MCP executor
+// share one extension configuration.
+type gqlExtensionTarget interface {
+	Use(graphql.HandlerExtension)
+	SetErrorPresenter(graphql.ErrorPresenterFunc)
+}
+
+// configureGQLExtensions applies the extension set shared by the HTTP GraphQL
+// server and the MCP executor: introspection, complexity limit, metrics, and
+// error shaping.
+func configureGQLExtensions(srv gqlExtensionTarget) {
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.FixedComplexityLimit(100))
 	srv.Use(gqlmetrics.Tracer{})
 	srv.SetErrorPresenter(errorhandler.ErrorPresenter)
-	return srv
 }
 
 // CreateGRPCServer creates a new gRPC server with the given logger and settings.
