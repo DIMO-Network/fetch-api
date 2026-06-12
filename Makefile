@@ -19,7 +19,7 @@ VERSION   := $(shell git describe --tags || echo "v0.0.0")
 VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
 # Dependency versions
-GOLANGCI_VERSION   = latest
+GOLANGCI_VERSION   = v2.12.1
 PROTOC_VERSION             = 33.4
 PROTOC_GEN_GO_VERSION      = $(shell go list -m -f '{{.Version}}' google.golang.org/protobuf)
 PROTOC_GEN_GO_GRPC_VERSION = v1.5.1
@@ -78,7 +78,7 @@ podman-push-multiarch:
 
 tools-golangci-lint: ## install golangci-lint
 	@mkdir -p $(PATHINSTBIN)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | BINARY=golangci-lint bash -s -- ${GOLANGCI_VERSION}
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/$(GOLANGCI_VERSION)/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
 tools-protoc: ## install protoc
 	@mkdir -p $(PATHINSTBIN)
