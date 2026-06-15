@@ -49,6 +49,12 @@ func (r *queryResolver) LatestIndex(ctx context.Context, did string, filter *mod
 	}
 	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No matching index is a normal empty result, not a failure. The
+			// field is nullable, so return null rather than erroring (which
+			// would null-propagate and tank sibling aliases in a batched query).
+			return nil, nil
+		}
 		return nil, err
 	}
 	return indexToModel(idx), nil
@@ -82,6 +88,13 @@ func (r *queryResolver) LatestCloudEvent(ctx context.Context, did string, filter
 	}
 	idx, err := r.EventService.GetLatestIndexAdvanced(ctx, opts, resolveIncludeDeleted(includeDeleted))
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// No matching event is a normal empty result, not a failure. The
+			// field is nullable, so return null: erroring here would
+			// null-propagate through the schema and, in an aliased multi-source
+			// query, tank sibling aliases that did resolve.
+			return nil, nil
+		}
 		return nil, err
 	}
 	if idx.Data.DataIndexKey != "" {
