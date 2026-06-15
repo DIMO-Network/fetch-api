@@ -420,11 +420,13 @@ The root query type for the Fetch API GraphQL schema. ERC721 DID (e.g. did:eth:c
 """
 type Query {
   """
-  Latest cloud event index matching filters. Tombstoned attestations are
-  hidden from the result by default; pass includeDeleted: true to disable
-  tombstone suppression.
+  Latest cloud event index matching filters, or null when none match.
+  Nullable so an aliased multi-source query with an empty source resolves to
+  null instead of erroring and null-propagating over its siblings. Tombstoned
+  attestations are hidden from the result by default; pass includeDeleted:
+  true to disable tombstone suppression.
   """
-  latestIndex(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEventIndex!
+  latestIndex(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEventIndex
     @mcpTool(
       name: "get_latest_index"
       description: "Get the latest CloudEvent index entry (header + storage key) for a DID-scoped subject, optionally filtered by event type, source, producer, or time range. Returns metadata only — use fetch_get_latest_cloud_event for the full payload."
@@ -444,11 +446,13 @@ type Query {
     )
 
   """
-  Latest full cloud event. Tombstoned attestations are hidden from the
-  result by default; pass includeDeleted: true to disable tombstone
-  suppression.
+  Latest full cloud event, or null when the subject has no matching event.
+  Nullable so that, in an aliased multi-source query, a source with no event
+  resolves to null instead of erroring and null-propagating over its siblings.
+  Tombstoned attestations are hidden from the result by default; pass
+  includeDeleted: true to disable tombstone suppression.
   """
-  latestCloudEvent(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEvent!
+  latestCloudEvent(did: String!, filter: CloudEventFilter, includeDeleted: Boolean = false): CloudEvent
     @mcpTool(
       name: "get_latest_cloud_event"
       description: "Get the latest full CloudEvent (header + JSON payload) for a DID-scoped subject, optionally filtered. Returns dataUrl (presigned S3 link) for large binary payloads instead of inlining them."
@@ -1445,9 +1449,9 @@ func (ec *executionContext) _Query_latestIndex(ctx context.Context, field graphq
 			return ec.Resolvers.Query().LatestIndex(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter), fc.Args["includeDeleted"].(*bool))
 		},
 		nil,
-		ec.marshalNCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex,
+		ec.marshalOCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -1539,9 +1543,9 @@ func (ec *executionContext) _Query_latestCloudEvent(ctx context.Context, field g
 			return ec.Resolvers.Query().LatestCloudEvent(ctx, fc.Args["did"].(string), fc.Args["filter"].(*model.CloudEventFilter), fc.Args["includeDeleted"].(*bool))
 		},
 		nil,
-		ec.marshalNCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper,
+		ec.marshalOCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -3664,16 +3668,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "latestIndex":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_latestIndex(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -3708,16 +3709,13 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		case "latestCloudEvent":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._Query_latestCloudEvent(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -4153,10 +4151,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNCloudEvent2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper(ctx context.Context, sel ast.SelectionSet, v CloudEventWrapper) graphql.Marshaler {
-	return ec._CloudEvent(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNCloudEvent2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapperᚄ(ctx context.Context, sel ast.SelectionSet, v []*CloudEventWrapper) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -4195,10 +4189,6 @@ func (ec *executionContext) marshalNCloudEventHeader2ᚖgithubᚗcomᚋDIMOᚑNe
 		return graphql.Null
 	}
 	return ec._CloudEventHeader(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNCloudEventIndex2githubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex(ctx context.Context, sel ast.SelectionSet, v model.CloudEventIndex) graphql.Marshaler {
-	return ec._CloudEventIndex(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNCloudEventIndex2ᚕᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndexᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CloudEventIndex) graphql.Marshaler {
@@ -4502,12 +4492,26 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
+func (ec *executionContext) marshalOCloudEvent2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚐCloudEventWrapper(ctx context.Context, sel ast.SelectionSet, v *CloudEventWrapper) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CloudEvent(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOCloudEventFilter2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventFilter(ctx context.Context, v any) (*model.CloudEventFilter, error) {
 	if v == nil {
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputCloudEventFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOCloudEventIndex2ᚖgithubᚗcomᚋDIMOᚑNetworkᚋfetchᚑapiᚋinternalᚋgraphᚋmodelᚐCloudEventIndex(ctx context.Context, sel ast.SelectionSet, v *model.CloudEventIndex) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CloudEventIndex(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
